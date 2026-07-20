@@ -6,7 +6,7 @@ import { defineConfig } from 'drizzle-kit'
 // ./src/embedded.ts). There is no external database to point drizzle-kit at.
 export default defineConfig({
   schema: './src/schema/index.ts',
-  out: './drizzle',
+  out: './drizzle/migrations',
   dialect: 'postgresql',
   strict: true,
   verbose: true,

@@ -98,7 +98,7 @@ export async function startNextServer(): Promise<void> {
   // and orphan every existing user's data. Keep them stable across versions.
   process.env.DATABASE_DRIVER ??= 'embedded'
   process.env.PGLITE_DATA_DIR ??= join(app.getPath('userData'), 'pglite')
-  process.env.PGLITE_MIGRATIONS_DIR ??= join(process.resourcesPath, 'drizzle')
+  process.env.PGLITE_MIGRATIONS_DIR ??= join(process.resourcesPath, 'migrations')
   process.env.DATABASE_URL ??= 'postgres://embedded'
 
   // If a reset was requested last session, move the corrupt data dir aside NOW,

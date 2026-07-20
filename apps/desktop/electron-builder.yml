@@ -30,10 +30,10 @@ extraResources:
   - from: ../web/public
     to: web/apps/web/public
   # Drizzle SQL migrations — not traced into the standalone bundle (they're read
-  # from disk, not imported), so ship them explicitly. main.ts points
-  # PGLITE_MIGRATIONS_DIR here.
-  - from: ../../packages/database/drizzle
-    to: drizzle
+  # from disk, not imported), so ship them explicitly. server.ts points
+  # PGLITE_MIGRATIONS_DIR at resources/migrations.
+  - from: ../../packages/database/drizzle/migrations
+    to: migrations
 
 win:
   target:

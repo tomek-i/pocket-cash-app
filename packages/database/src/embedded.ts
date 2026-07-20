@@ -20,7 +20,7 @@ export interface RunEmbeddedMigrationsOptions extends EmbeddedDbOptions {
 }
 
 function defaultMigrationsFolder(): string {
-  return join(dirname(fileURLToPath(import.meta.url)), '../drizzle')
+  return join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
 }
 
 // Memoised on `globalThis` (not a module-local) for the same reason as the db

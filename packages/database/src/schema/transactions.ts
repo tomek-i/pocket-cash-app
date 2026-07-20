@@ -50,5 +50,9 @@ export const transactions = pgTable(
   (table) => [
     uniqueIndex('transactions_account_fingerprint_idx').on(table.accountId, table.fingerprint),
     index('transactions_account_date_idx').on(table.accountId, table.date),
+    // Trigram GIN index for fuzzy "similar transactions" search (pg_trgm's `%`
+    // operator + similarity()). The pg_trgm extension itself is created before
+    // migrations run in runEmbeddedMigrations() (@repo/database/embedded).
+    index('transactions_description_trgm_idx').using('gin', table.description.op('gin_trgm_ops')),
   ],
 )
