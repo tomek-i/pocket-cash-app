@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+release/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Misc
+.vercel
+.aspire/
+
+# Embedded PGlite data dir (offline desktop dev)
+.pglite/
+**/.pglite/
+
+# Desktop app icon — generated from apps/web/public/logo.png by
+# apps/desktop/scripts/prepare-icon.mjs at build time (single source of truth).
+apps/desktop/build/icon.png
