@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": ["tsconfig.base.json"],
+  "globalEnv": ["NODE_ENV", "DATABASE_DRIVER", "PGLITE_DATA_DIR", "PGLITE_MIGRATIONS_DIR"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {},
+    "db:generate": {
+      "cache": false
+    }
+  }
+}

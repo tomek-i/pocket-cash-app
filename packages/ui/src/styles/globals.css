@@ -1,0 +1,135 @@
+/* Design tokens + theme mapping. The consuming app imports Tailwind itself and
+   then this file, so `@import "tailwindcss"` intentionally lives in the app. */
+
+/* Dark mode driven by a `.dark` class on a parent (e.g. <html>). */
+@custom-variant dark (&:is(.dark *));
+
+/* Map semantic tokens to CSS variables so utilities like `bg-primary`,
+   `text-muted-foreground`, `border-border` resolve to themeable colors. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Positive/negative money accents (income vs spend). */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  /* Categorical chart palette (donut slices, etc.). */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* ── Pocket Cash · "Slate Indigo" theme ──────────────────────────────────────
+   A slate canvas with an electric indigo accent. The dark palette is the
+   reference design; the light palette is a coherent slate + indigo counterpart
+   so both color schemes stay on-brand. */
+:root {
+  color-scheme: light;
+
+  --radius: 0.75rem;
+
+  --background: #f7f7fa;
+  --foreground: #1a1b24;
+  --card: #ffffff;
+  --card-foreground: #1a1b24;
+  --popover: #ffffff;
+  --popover-foreground: #1a1b24;
+  --primary: #6b5fd6;
+  --primary-foreground: #ffffff;
+  --secondary: #eeeef3;
+  --secondary-foreground: #2a2c3a;
+  --muted: #eeeef3;
+  --muted-foreground: #62657a;
+  --accent: #ebeafd;
+  --accent-foreground: #4a3fc0;
+  --destructive: #d4604a;
+  --destructive-foreground: #ffffff;
+  --success: #2f9e6b;
+  --success-foreground: #ffffff;
+  --border: #e3e3ea;
+  --input: #e3e3ea;
+  --ring: #6b5fd6;
+
+  --chart-1: #6b5fd6;
+  --chart-2: #58b09a;
+  --chart-3: #e0a458;
+  --chart-4: #c96f8e;
+  --chart-5: #5a91d6;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0b0c11;
+  --foreground: #f1f2f7;
+  --card: #15161e;
+  --card-foreground: #f1f2f7;
+  --popover: #181922;
+  --popover-foreground: #f1f2f7;
+  --primary: #8b7ff0;
+  --primary-foreground: #0c0c14;
+  --secondary: #1e1f29;
+  --secondary-foreground: #c2c4d2;
+  --muted: #1a1b24;
+  --muted-foreground: #9095a8;
+  --accent: #1c1d2c;
+  --accent-foreground: #a79efc;
+  --destructive: #e79d8f;
+  --destructive-foreground: #0c0c14;
+  --success: #5fd09e;
+  --success-foreground: #0c0c14;
+  --border: #24252f;
+  --input: #24252f;
+  --ring: #8b7ff0;
+
+  --chart-1: #8b7ff0;
+  --chart-2: #5fd0ae;
+  --chart-3: #e6b873;
+  --chart-4: #e289a8;
+  --chart-5: #6fa8e8;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Tailwind v4's Preflight no longer sets a pointer cursor on buttons, which
+     made icon buttons and other controls look non-interactive. Restore it for
+     anything clickable that isn't disabled (disabled controls keep the default
+     arrow and, via `disabled:pointer-events-none`, don't react anyway). */
+  button:not(:disabled):not([aria-disabled="true"]):not([data-disabled]),
+  [role="button"]:not([aria-disabled="true"]):not([data-disabled]),
+  label:has(> input[type="checkbox"]:not(:disabled)),
+  summary {
+    cursor: pointer;
+  }
+}

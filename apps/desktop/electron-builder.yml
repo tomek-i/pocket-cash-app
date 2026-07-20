@@ -1,0 +1,79 @@
+# ⚠️ DATA SAFETY: `productName` decides the per-user data dir (%APPDATA%\<productName>)
+# where the embedded database lives, and `appId` identifies the app for updates.
+# Both MUST stay stable across releases — changing either orphans every existing
+# user's database (it would look for data under a new path). See apps/desktop/src/
+# main.ts (PGLITE_DATA_DIR) and the export/import backup feature in the app.
+appId: app.pocketcash.desktop
+productName: Pocket Cash
+directories:
+  # Emit artifacts to the repo-root release/ (paths here are relative to this
+  # config, i.e. apps/desktop). Kept out of the app dir so the whole monorepo's
+  # build output lives in one predictable place. Already covered by root .gitignore.
+  output: ../../release
+  buildResources: build
+
+# The compiled main/preload are all that get packed into the asar; the Next.js
+# standalone server is shipped alongside as unpacked resources so Node can
+# execute it at runtime.
+files:
+  - dist/**
+  - package.json
+
+extraResources:
+  # Next standalone bundle (server.js + traced node_modules). For a monorepo this
+  # lands at resources/web/apps/web/server.js — matches startNextServer() above.
+  - from: ../web/.next/standalone
+    to: web
+  # Static assets and public/ aren't traced into standalone; copy them in.
+  - from: ../web/.next/static
+    to: web/apps/web/.next/static
+  - from: ../web/public
+    to: web/apps/web/public
+  # Drizzle SQL migrations — not traced into the standalone bundle (they're read
+  # from disk, not imported), so ship them explicitly. main.ts points
+  # PGLITE_MIGRATIONS_DIR here.
+  - from: ../../packages/database/drizzle
+    to: drizzle
+
+win:
+  target:
+    - nsis
+    - portable
+    - zip
+  # Default artifact name (used by any target without its own override below).
+  # The zip target picks this up → PocketCash-<version>.zip.
+  artifactName: PocketCash-${version}.${ext}
+
+# Primary, responsive install path. oneClick + perMachine:false = a per-user
+# install with no admin/UAC prompt: double-click → unpacks to %LOCALAPPDATA% in a
+# few seconds → Start Menu + desktop shortcuts → launches. Every later launch runs
+# straight from disk (no per-run extraction), so the splash paints on the first
+# frame. This is the VS Code / Slack / Discord model.
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  runAfterFinish: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Pocket Cash
+  artifactName: PocketCash-Setup-${version}.exe
+
+# Secondary: a single no-install file (e.g. for a USB stick). Trade-off — it
+# self-extracts ~110 MB on every cold launch BEFORE any of our code runs, so it
+# cannot show the splash, and the first launch can be slow while Windows Defender
+# scans the freshly written payload. Prefer the installer above for daily use.
+portable:
+  artifactName: PocketCash.exe
+
+# The `zip` target (see win.target) packs the full unpacked app into
+# PocketCash-<version>.zip. Unzip once and run "Pocket Cash.exe" inside — no
+# install and, unlike the portable exe, no per-launch extraction, so it launches
+# instantly with the splash. Good for a drop-in / no-admin folder.
+
+mac:
+  target: dmg
+  category: public.app-category.finance
+linux:
+  target: AppImage
+  category: Finance

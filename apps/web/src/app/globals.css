@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@repo/ui/globals.css";
+
+/* Generate utilities for classes used inside the shared UI package. */
+@source "../../node_modules/@repo/ui/src";

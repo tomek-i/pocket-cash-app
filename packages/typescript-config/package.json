@@ -1,0 +1,25 @@
+{
+  "name": "@repo/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "base.json",
+    "nextjs.json",
+    "react-library.json"
+  ],
+  "author": {
+    "name": "Tomek Iwainski",
+    "email": "tomek.iwainski@gmail.com",
+    "url": "https://tomek.au"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/tomek-i/pocket-cash-app#readme",
+  "bugs": {
+    "url": "https://github.com/tomek-i/pocket-cash-app/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomek-i/pocket-cash-app.git",
+    "directory": "packages/typescript-config"
+  }
+}

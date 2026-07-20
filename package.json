@@ -1,0 +1,63 @@
+{
+  "name": "pocket-cash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline-first personal finance, on your desktop — track accounts, import bank statements, categorise spending, and see your net worth. Runs entirely on your machine with no cloud, no auth, and no telemetry.",
+  "keywords": [
+    "personal-finance",
+    "desktop",
+    "offline-first",
+    "electron",
+    "nextjs",
+    "pglite",
+    "budgeting",
+    "money"
+  ],
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter desktop dev",
+    "dev:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle pnpm --filter web dev",
+    "build": "pnpm --filter desktop build",
+    "build:web": "pnpm --filter web build",
+    "build:all": "turbo run build",
+    "start:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle pnpm --filter web start",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "db:generate": "turbo run db:generate"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.0",
+    "cross-env": "^7.0.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  },
+  "author": {
+    "name": "Tomek Iwainski",
+    "email": "tomek.iwainski@gmail.com",
+    "url": "https://tomek.au"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/tomek-i/pocket-cash-app#readme",
+  "bugs": {
+    "url": "https://github.com/tomek-i/pocket-cash-app/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomek-i/pocket-cash-app.git"
+  }
+}

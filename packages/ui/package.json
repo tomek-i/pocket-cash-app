@@ -1,0 +1,49 @@
+{
+  "name": "@repo/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./globals.css": "./src/styles/globals.css",
+    "./cn": "./src/lib/cn.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check ."
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "author": {
+    "name": "Tomek Iwainski",
+    "email": "tomek.iwainski@gmail.com",
+    "url": "https://tomek.au"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/tomek-i/pocket-cash-app#readme",
+  "bugs": {
+    "url": "https://github.com/tomek-i/pocket-cash-app/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomek-i/pocket-cash-app.git",
+    "directory": "packages/ui"
+  }
+}

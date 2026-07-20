@@ -1,0 +1,46 @@
+{
+  "name": "desktop",
+  "productName": "Pocket Cash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pocket Cash — offline-first personal finance, on your desktop.",
+  "author": {
+    "name": "Tomek Iwainski",
+    "email": "tomek.iwainski@gmail.com",
+    "url": "https://tomek.au"
+  },
+  "type": "module",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k -n web,electron -c blue,magenta \"cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle pnpm --filter web dev\" \"pnpm dev:electron\"",
+    "dev:electron": "node esbuild.mjs && wait-on tcp:127.0.0.1:3000 && cross-env NODE_ENV=development electron dist/main.cjs",
+    "build:main": "node esbuild.mjs",
+    "build": "pnpm --filter web build && node scripts/flatten-standalone.mjs && node scripts/prepare-icon.mjs && pnpm build:main && electron-builder",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check ."
+  },
+  "dependencies": {
+    "@repo/desktop-contract": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.3",
+    "wait-on": "^8.0.1"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/tomek-i/pocket-cash-app#readme",
+  "bugs": {
+    "url": "https://github.com/tomek-i/pocket-cash-app/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomek-i/pocket-cash-app.git",
+    "directory": "apps/desktop"
+  }
+}

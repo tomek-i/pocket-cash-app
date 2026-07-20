@@ -1,0 +1,73 @@
+name: Release
+
+# Automated versioning + changelog + Windows build, driven by Conventional Commits.
+#
+# How it works:
+#   1. On every push to main, release-please opens (or updates) a "Release PR" that
+#      bumps the version in package.json (root + apps/desktop + apps/web) and
+#      regenerates CHANGELOG.md from the commit history since the last release.
+#   2. Merging that PR tags `vX.Y.Z` and creates the GitHub Release with notes.
+#   3. That same run then builds the Windows installer/portable/zip and attaches
+#      them to the release.
+#
+# The build lives in THIS workflow (gated on release_created) rather than a
+# separate tag-triggered one because tags pushed by the default GITHUB_TOKEN do
+# not trigger other workflows — folding it in keeps releases fully automatic with
+# no personal access token required.
+#
+# Commit messages must follow Conventional Commits (feat:, fix:, refactor:, …);
+# `feat!:`/`fix!:` or a `BREAKING CHANGE:` footer bumps the major. See docs/releasing.md.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-windows:
+    name: Build Windows installer
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Builds the web standalone bundle, flattens it, then runs electron-builder
+      # (see apps/desktop/package.json "build"). Artifacts land in ./release.
+      - name: Build desktop app
+        run: pnpm --filter desktop build
+
+      - name: Attach artifacts to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" release/*.exe release/*.zip --clobber
