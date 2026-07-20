@@ -20,11 +20,11 @@
   },
   "scripts": {
     "dev": "pnpm --filter desktop dev",
-    "dev:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm--filter web dev",
+    "dev:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm --filter web dev",
     "build": "pnpm --filter desktop build",
     "build:web": "pnpm --filter web build",
     "build:all": "turbo run build",
-    "start:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm--filter web start",
+    "start:web": "cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm --filter web start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",

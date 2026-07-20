@@ -12,7 +12,7 @@
   "type": "module",
   "main": "dist/main.cjs",
   "scripts": {
-    "dev": "concurrently -k -n web,electron -c blue,magenta \"cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm--filter web dev\" \"pnpm dev:electron\"",
+    "dev": "concurrently -k -n web,electron -c blue,magenta \"cross-env DATABASE_DRIVER=embedded PGLITE_DATA_DIR=.pglite PGLITE_MIGRATIONS_DIR=../../packages/database/drizzle/migrations pnpm --filter web dev\" \"pnpm dev:electron\"",
     "dev:electron": "node esbuild.mjs && wait-on tcp:127.0.0.1:3000 && cross-env NODE_ENV=development electron dist/main.cjs",
     "build:main": "node esbuild.mjs",
     "build": "pnpm --filter web build && node scripts/flatten-standalone.mjs && node scripts/prepare-icon.mjs && pnpm build:main && electron-builder",
