@@ -1,0 +1,17 @@
+# Normalise line endings to LF in the repo and working tree on every platform.
+# `eol=lf` overrides a local core.autocrlf=true, so Windows checkouts stay LF —
+# matching Biome's formatter (LF) so `pnpm lint` is consistent everywhere.
+* text=auto eol=lf
+
+# Binary assets: never touch line endings or diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
