@@ -6,6 +6,9 @@ import { build } from 'esbuild'
 const common = {
   bundle: true,
   platform: 'node',
+  // Targets the Node bundled INSIDE Electron (Electron 33 → Node 20.18), NOT the
+  // repo's toolchain Node (24, see .nvmrc). Keep this pinned to Electron's Node —
+  // only raise it when the electron dependency is upgraded to a newer Node.
   target: 'node20',
   format: 'cjs',
   outExtension: { '.js': '.cjs' },
