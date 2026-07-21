@@ -15,8 +15,8 @@
       "!**/node_modules",
       "!**/*.css",
       "!**/drizzle",
-      "!infrastructure/aspire",
-      "!pocket-cash-theme.html"
+      "!pocket-cash-theme.html",
+      "!site"
     ]
   },
   "formatter": {

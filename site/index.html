@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Cash — finally understand where your money goes</title>
+    <meta
+      name="description"
+      content="Turn messy bank CSV exports into a calm, organized view of your spending — import, auto-dedupe, categorise, and run tax reports, all on your own device. No account, no cloud, no telemetry."
+    />
+    <link rel="icon" href="./logo.png" />
+    <meta property="og:title" content="Pocket Cash" />
+    <meta
+      property="og:description"
+      content="Finally understand where your money goes. A private, offline-first personal-finance desktop app."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./logo.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #0a0a08;
+        --bg2: #0c0c0a;
+        --surface: #141410;
+        --border: #24241d;
+        --fborder: #222219;
+        --nav-bg: rgba(10, 10, 8, 0.9);
+        --text: #f6f6f0;
+        --text2: #a3a39a;
+        --text3: #76766c;
+        --accent: #e5e52e;
+        --accent-fg: #0a0a08;
+        --accent-text: #d7d72e;
+        --income: #8ec06a;
+        --chip: #1f1f18;
+        --chip-fg: #c9c9bf;
+        --icon-bg: #1e1e16;
+        --bar-dim: #33331f;
+        --step-num: #26261c;
+        --max: 1160px;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-decoration: none; }
+      .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+      .wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+      svg { display: block; }
+      .eyebrow {
+        font-family: "Geist Mono", monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-text);
+      }
+
+      /* ── Nav ── */
+      header {
+        position: sticky; top: 0; z-index: 20;
+        background: var(--nav-bg);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; gap: 20px; }
+      .brand { display: flex; align-items: center; gap: 11px; }
+      .brand img { width: 34px; height: 34px; border-radius: 8px; background: #000; }
+      .brand span { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+      .nav-links { display: flex; align-items: center; gap: 28px; }
+      .nav-links a { font-size: 14px; color: var(--text2); transition: color 0.15s; }
+      .nav-links a:hover { color: var(--text); }
+
+      .btn {
+        display: inline-flex; align-items: center; gap: 9px;
+        font-family: inherit; font-weight: 600; font-size: 15px;
+        padding: 12px 22px; border-radius: 11px; border: 1px solid transparent;
+        cursor: pointer; white-space: nowrap;
+        transition: transform 0.12s, filter 0.15s, background 0.15s;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn svg { width: 17px; height: 17px; }
+      .btn-primary { background: var(--accent); color: var(--accent-fg); }
+      .btn-primary:hover { filter: brightness(1.07); }
+      .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+      .btn-ghost:hover { background: #1b1b15; }
+      .btn-sm { padding: 9px 18px; font-size: 14px; border-radius: 9px; }
+
+      /* ── Hero ── */
+      .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; padding: 76px 0 64px; align-items: center; position: relative; }
+      .hero-copy { position: relative; z-index: 1; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: "Geist Mono", monospace; font-size: 11.5px; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--accent-text);
+        border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px;
+      }
+      h1 { font-size: clamp(38px, 5.6vw, 58px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; margin: 22px 0 0; }
+      .lede { font-size: 17px; color: var(--text2); margin: 22px 0 0; max-width: 46ch; }
+      .hero-cta { display: flex; align-items: center; gap: 13px; margin-top: 32px; flex-wrap: wrap; }
+      .trust { display: flex; align-items: center; gap: 9px; margin-top: 26px; font-size: 13px; color: var(--text3); }
+      .trust svg { width: 16px; height: 16px; color: var(--accent-text); flex: none; }
+
+      /* Product mock */
+      .mock { background: var(--surface); border: 1px solid #26261f; border-radius: 16px; padding: 20px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4); }
+      .mock-head { display: flex; align-items: center; justify-content: space-between; }
+      .mock-head .lbl { font-size: 12px; color: var(--text3); }
+      .mock-worth { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin-top: 6px; }
+      .bars { display: flex; align-items: flex-end; gap: 6px; height: 44px; margin-top: 14px; }
+      .bars i { flex: 1; background: var(--bar-dim); border-radius: 3px; display: block; }
+      .rule { height: 1px; background: var(--border); margin: 16px 0; }
+      .rows { display: flex; flex-direction: column; gap: 12px; }
+      .row { display: flex; align-items: center; gap: 11px; }
+      .row .ic { width: 32px; height: 32px; border-radius: 9px; background: var(--chip); color: var(--chip-fg); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+      .row .ic svg { width: 16px; height: 16px; }
+      .row .meta { flex: 1; min-width: 0; }
+      .row .meta b { display: block; font-size: 12.5px; font-weight: 500; color: #e8e8e0; }
+      .row .meta small { font-size: 10.5px; color: var(--text3); }
+      .row .amt { font-size: 12.5px; color: #e3e3db; }
+      .row .amt.pos { color: var(--income); }
+
+      /* ── Bank strip ── */
+      .strip { padding: 26px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg2); }
+      .strip .wrap { display: flex; align-items: center; gap: 34px; flex-wrap: wrap; }
+      .strip .lbl { font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+      .strip .names { display: flex; gap: 34px; flex: 1; justify-content: space-between; flex-wrap: wrap; }
+      .strip .names span { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: var(--text2); }
+
+      /* ── Sections ── */
+      section { padding: 72px 0; }
+      .sec-head { max-width: 640px; }
+      .sec-head h2 { font-size: clamp(28px, 4vw, 36px); font-weight: 700; letter-spacing: -0.02em; margin-top: 12px; }
+      .alt { background: var(--bg2); border-top: 1px solid var(--border); }
+
+      .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+      .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 24px; }
+      .card .ic { width: 44px; height: 44px; border-radius: 11px; background: var(--icon-bg); color: var(--accent-text); display: flex; align-items: center; justify-content: center; }
+      .card .ic svg { width: 21px; height: 21px; }
+      .card h3 { font-size: 16.5px; font-weight: 600; letter-spacing: -0.01em; margin-top: 18px; }
+      .card p { font-size: 13.5px; color: var(--text2); margin-top: 8px; }
+      .step-n { font-family: "Geist Mono", monospace; font-size: 40px; font-weight: 600; color: var(--step-num); line-height: 1; }
+      .step h3 { margin-top: 16px; font-size: 15.5px; }
+
+      /* ── Statement band ── */
+      .band { background: var(--accent); color: var(--accent-fg); padding: 82px 0; position: relative; overflow: hidden; }
+      .band .motif { position: absolute; right: -240px; top: 50%; transform: translateY(-50%); width: 640px; height: 640px; opacity: 0.13; background: repeating-radial-gradient(circle at 50% 50%, #000 0 6px, transparent 6px 20px); -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 50%); mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 50%); }
+      .band .eyebrow { color: rgba(10, 10, 8, 0.6); }
+      .band h2 { font-size: clamp(34px, 5vw, 52px); line-height: 1.05; font-weight: 700; letter-spacing: -0.03em; margin-top: 18px; max-width: 15ch; color: #0a0a08; position: relative; }
+
+      /* ── Privacy ── */
+      .privacy { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+      .privacy .big-ic { width: 48px; height: 48px; border-radius: 12px; background: var(--icon-bg); color: var(--accent-text); display: flex; align-items: center; justify-content: center; }
+      .privacy h2 { font-size: clamp(26px, 3.5vw, 32px); font-weight: 700; letter-spacing: -0.02em; margin-top: 20px; }
+      .privacy p { font-size: 16px; color: var(--text2); margin-top: 16px; max-width: 44ch; }
+      .checks { display: flex; flex-direction: column; gap: 12px; }
+      .check { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 17px 19px; }
+      .check svg { width: 19px; height: 19px; color: var(--accent-text); flex: none; }
+      .check span { font-size: 14.5px; color: #e8e8e0; font-weight: 500; }
+
+      /* ── Final CTA ── */
+      .final { text-align: center; background: var(--bg2); border-top: 1px solid var(--border); }
+      .final img { width: 56px; height: 56px; border-radius: 14px; background: #000; margin: 0 auto; }
+      .final h2 { font-size: clamp(32px, 4.5vw, 42px); font-weight: 700; letter-spacing: -0.03em; margin-top: 24px; }
+      .final p { font-size: 16px; color: var(--text2); margin: 14px auto 0; max-width: 44ch; }
+      .final .hero-cta { justify-content: center; }
+
+      /* ── Footer ── */
+      footer { border-top: 1px solid var(--border); padding: 36px 0; }
+      .foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+      .foot .brand span { font-size: 15px; font-weight: 600; }
+      .foot .brand img { width: 30px; height: 30px; }
+      .foot-links { display: flex; gap: 26px; }
+      .foot-links a { font-size: 13px; color: var(--text3); }
+      .foot-links a:hover { color: var(--text); }
+      .foot .copy { font-family: "Geist Mono", monospace; font-size: 12px; color: var(--text3); }
+      .license { margin-top: 18px; font-size: 12.5px; color: var(--text3); max-width: 78ch; }
+      .license a { color: var(--accent-text); }
+
+      /* ── Responsive ── */
+      @media (max-width: 900px) {
+        .hero { grid-template-columns: 1fr; gap: 40px; padding: 56px 0 48px; }
+        .mock { order: 2; }
+        .grid3 { grid-template-columns: repeat(2, 1fr); }
+        .grid4 { grid-template-columns: repeat(2, 1fr); }
+        .privacy { grid-template-columns: 1fr; gap: 32px; }
+        .nav-links { display: none; }
+      }
+      @media (max-width: 560px) {
+        section { padding: 56px 0; }
+        .grid3, .grid4 { grid-template-columns: 1fr; }
+        .strip .names { display: none; }
+        .foot { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
+  </head>
+
+  <body id="top">
+    <!-- Nav -->
+    <header>
+      <div class="wrap nav">
+        <a class="brand" href="#top"><img src="./logo.png" alt="" /><span>Pocket Cash</span></a>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#privacy">Privacy</a>
+          <a href="https://github.com/tomek-i/pocket-cash-app">GitHub</a>
+        </nav>
+        <a class="btn btn-primary btn-sm" href="https://github.com/tomek-i/pocket-cash-app/releases/latest">Download</a>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="wrap">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="pill">Private money tracker</span>
+          <h1>Finally understand where your money goes.</h1>
+          <p class="lede">
+            Turn messy bank CSV exports into a calm, organized view of your spending life. Import,
+            auto-dedupe, categorise — all on your own device.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="https://github.com/tomek-i/pocket-cash-app/releases/latest">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn-ghost" href="#how">See how it works</a>
+          </div>
+          <div class="trust">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            No account. No cloud. Your data stays on your device.
+          </div>
+        </div>
+
+        <!-- Product mock -->
+        <div class="mock">
+          <div class="mock-head">
+            <span class="lbl">Total net worth</span>
+            <span class="mono" style="font-size: 11px; color: var(--accent-text)">+2.4%</span>
+          </div>
+          <div class="mock-worth mono">$31,356.23</div>
+          <div class="bars">
+            <i style="height: 24px"></i><i style="height: 30px"></i><i style="height: 22px"></i>
+            <i style="height: 38px"></i><i style="height: 31px"></i>
+            <i style="height: 40px; background: var(--accent)"></i>
+          </div>
+          <div class="rule"></div>
+          <div class="rows">
+            <div class="row">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg></span>
+              <span class="meta"><b>Greenfield Market</b><small>Groceries</small></span>
+              <span class="amt mono">−$86.40</span>
+            </div>
+            <div class="row">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+              <span class="meta"><b>Bright Studios</b><small>Income</small></span>
+              <span class="amt pos mono">+$2,400.00</span>
+            </div>
+            <div class="row">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span>
+              <span class="meta"><b>Cloudhouse</b><small>Subscription · Jun 30</small></span>
+              <span class="amt mono">$15.49</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bank strip -->
+    <div class="strip">
+      <div class="wrap">
+        <span class="lbl">Works with exports from any bank</span>
+        <div class="names">
+          <span>Northwall</span><span>Lumen</span><span>Vantage</span><span>Meridian</span><span>Coastal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="wrap">
+      <section id="features">
+        <div class="sec-head">
+          <div class="eyebrow">Everything in one place</div>
+          <h2>Built for the way your money actually arrives — as CSV chaos.</h2>
+        </div>
+        <div class="grid3">
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <h3>Import from any bank</h3>
+            <p>Map each bank's CSV once; that mapping becomes a reusable, one-click importer for every future statement.</p>
+          </div>
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+            <h3>Automatic dedup</h3>
+            <p>Re-import the same file safely — a per-account fingerprint means nothing is ever double-counted.</p>
+          </div>
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h6"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+            <h3>Categories &amp; tags</h3>
+            <p>Organise every transaction with flexible categories and tags, then slice your spending any way you like.</p>
+          </div>
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+            <h3>Reports &amp; tax</h3>
+            <p>Financial-year summaries, net-worth trends, and a tax report with CSV export — ready when you need them.</p>
+          </div>
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+            <h3>Subscriptions &amp; bills</h3>
+            <p>Track recurring payments like rent and streaming, and see what's coming up on your dashboard.</p>
+          </div>
+          <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg></div>
+            <h3>AI, only if you want it</h3>
+            <p>Optional auto-categorising, insights and a deduction scan — a local model or your own key. Off by default.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- How it works -->
+    <div class="alt">
+      <div class="wrap">
+        <section id="how">
+          <div class="sec-head">
+            <div class="eyebrow">The core loop</div>
+            <h2>Set it up once. It runs itself.</h2>
+          </div>
+          <div class="grid4">
+            <div class="card step">
+              <div class="step-n">01</div>
+              <h3>Export a CSV</h3>
+              <p>Download a statement from your bank's website — any format, any delimiter.</p>
+            </div>
+            <div class="card step">
+              <div class="step-n">02</div>
+              <h3>Map it once</h3>
+              <p>Point columns at dates, amounts and descriptions. Pocket Cash remembers it per bank.</p>
+            </div>
+            <div class="card step">
+              <div class="step-n">03</div>
+              <h3>Import &amp; dedupe</h3>
+              <p>Rows normalise into one clean shape; duplicates are skipped automatically.</p>
+            </div>
+            <div class="card step">
+              <div class="step-n">04</div>
+              <h3>See the picture</h3>
+              <p>Categorise, watch your net worth, and pull tax-ready reports whenever you need them.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Statement band -->
+    <div class="band">
+      <div class="motif"></div>
+      <div class="wrap">
+        <div class="eyebrow">The goal</div>
+        <h2>Zero spreadsheet anxiety. Total control over every dollar.</h2>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="wrap">
+      <section id="privacy" class="privacy">
+        <div>
+          <div class="big-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h2>Yours alone. Single-user by design.</h2>
+          <p>
+            No shared servers, no ad targeting, no selling your transaction history. Pocket Cash is a
+            private tool for one person: you.
+          </p>
+        </div>
+        <div class="checks">
+          <div class="check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            <span>Local-first storage — your data never leaves your device</span>
+          </div>
+          <div class="check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+            <span>Automatic dedup — nothing gets double-counted</span>
+          </div>
+          <div class="check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Export anytime — no lock-in, ever</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Final CTA -->
+    <div class="final">
+      <div class="wrap">
+        <section>
+          <img src="./logo.png" alt="" />
+          <h2>Take back control of your money.</h2>
+          <p>Free to use. No account required. Import a CSV and see your first insights in minutes.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="https://github.com/tomek-i/pocket-cash-app/releases/latest">Get Pocket Cash</a>
+            <a class="btn btn-ghost" href="https://github.com/tomek-i/pocket-cash-app#readme">Read the docs</a>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="wrap">
+        <div class="foot">
+          <a class="brand" href="#top"><img src="./logo.png" alt="" /><span>Pocket Cash</span></a>
+          <nav class="foot-links">
+            <a href="#features">Features</a>
+            <a href="#privacy">Privacy</a>
+            <a href="https://github.com/tomek-i/pocket-cash-app#readme">Docs</a>
+            <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/CHANGELOG.md">Changelog</a>
+            <a href="https://github.com/tomek-i/pocket-cash-app">GitHub</a>
+          </nav>
+          <span class="copy">© 2026 Pocket Cash</span>
+        </div>
+        <p class="license">
+          Source-available under the
+          <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>
+          — free for personal and noncommercial use. © 2026 Tomek Iwainski.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
