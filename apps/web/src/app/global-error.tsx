@@ -70,8 +70,8 @@ const bodyStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: '#0b0c11',
-  color: '#f1f2f7',
+  background: '#0a0a08',
+  color: '#f6f6f0',
   fontFamily: 'system-ui, -apple-system, sans-serif',
 }
 
@@ -85,14 +85,14 @@ const baseButton: CSSProperties = {
 
 const primaryButton: CSSProperties = {
   ...baseButton,
-  border: '1px solid #6b5fd6',
-  background: '#6b5fd6',
-  color: '#fff',
+  border: '1px solid #e5e52e',
+  background: '#e5e52e',
+  color: '#0a0a08',
 }
 
 const secondaryButton: CSSProperties = {
   ...baseButton,
-  border: '1px solid #24252f',
+  border: '1px solid #24241d',
   background: 'transparent',
-  color: '#f1f2f7',
+  color: '#f6f6f0',
 }

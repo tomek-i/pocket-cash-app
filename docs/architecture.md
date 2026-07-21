@@ -29,7 +29,7 @@ in-process Postgres. There is no server to deploy and nothing phones home.
 │  • apps/desktop  Electron — runs the SAME Next app in-process  │
 ├──────────────────────────────────────────────────────────────┤
 │  UI (shared)                                                   │
-│  • @repo/ui      design system + "Slate Indigo" theme          │
+│  • @repo/ui      design system + "Citron" theme                │
 ├──────────────────────────────────────────────────────────────┤
 │  Domain packages (shared, framework-light)                     │
 │  • @repo/csv         CSV import engine (pure, tested)          │
@@ -59,18 +59,20 @@ route is `/api/health`.
 
 | #   | Decision      | Choice                                                                                              |
 | --- | ------------- | --------------------------------------------------------------------------------------------------- |
-| 1   | Theme         | **"Slate Indigo"** (dark slate canvas + indigo accent), light + dark pair                           |
+| 1   | Theme         | **"Citron"** (warm near-black/off-white neutrals + electric citron accent), light + dark pair       |
 | 2   | Desktop shell | **Electron running the existing Next.js app in-process** (nothing rebuilt for desktop)              |
 | 3   | Data          | **PGlite** — embedded Postgres (WASM), same `pg-core` schema + Drizzle queries                      |
 | 4   | Tenancy       | **None** — single local user, no orgs/workspaces/accounts                                           |
 | 5   | UI ↔ data     | **Server Actions + RSC**, not a separate API/RPC layer                                              |
 | 6   | AI            | **Opt-in, provider-agnostic** (`@repo/ai`, Vercel AI SDK), key stored in the OS keychain on desktop |
 
-### Theme — Slate Indigo
+### Theme — Citron
 
-Defined once in `@repo/ui` (`packages/ui/src/styles/globals.css`) as a coherent
-light `:root` + dark `.dark` pair with Tailwind v4 `@theme inline` tokens. The app
-defaults to dark. Reference mockups live in `pocket-cash-theme.html`.
+Warm near-black / off-white neutrals with an electric citron (yellow-lime, `#e5e52e`)
+accent. Money reads as green (`--success`, income) vs soft rose (`--destructive`,
+spend). Defined once in `@repo/ui` (`packages/ui/src/styles/globals.css`) as a
+coherent light `:root` + dark `.dark` pair with Tailwind v4 `@theme inline` tokens.
+The app defaults to dark. Reference mockups live in `pocket-cash-theme.html`.
 
 ### Desktop shell — Electron runs Next in-process
 

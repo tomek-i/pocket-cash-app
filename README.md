@@ -48,7 +48,7 @@ for how packaging works. To run or build the **web** app on its own, use
 | Monorepo       | pnpm workspaces + Turborepo                              |
 | Desktop shell  | Electron (boots the Next.js standalone server in-process)|
 | Framework      | Next.js (App Router) · React 19                          |
-| Styling / UI   | Tailwind v4 · shadcn (Radix) + Base UI · Slate Indigo    |
+| Styling / UI   | Tailwind v4 · shadcn (Radix) + Base UI · Citron theme    |
 | Database       | Embedded PGlite (in-process Postgres) · Drizzle ORM      |
 | AI (opt-in)    | Vercel AI SDK · bring-your-own-key (Anthropic / OpenAI-compatible) |
 | Tooling        | Biome · Vitest · Playwright                              |
@@ -66,7 +66,7 @@ packages/
 ├── logger/              # Zero-dep structured logger (feeds the desktop file log)
 ├── shared/              # Cross-cutting utilities
 ├── types/               # Shared types
-├── ui/                  # shadcn (Radix) + Base UI components · Slate Indigo theme
+├── ui/                  # shadcn (Radix) + Base UI components · Citron theme
 ├── validation/          # Zod schemas (finance + env)
 └── typescript-config/   # Shared tsconfig presets
 ```

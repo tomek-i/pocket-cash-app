@@ -2,7 +2,7 @@
 
 A thin Electron shell around the **same** Next.js app in `apps/web`. There is one
 UI codebase: the desktop reuses every page, component, and server action — and the
-shared `@repo/ui` design system (Slate Indigo theme) — with nothing rebuilt. It
+shared `@repo/ui` design system (Citron theme) — with nothing rebuilt. It
 runs fully offline against an embedded database, with no auth and no network
 dependency.
 

@@ -41,76 +41,84 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* Typography — Geist (self-hosted via the `geist` package; the CSS vars are set
+     on <html> by the app layout). Fallbacks keep text sane if a consumer doesn't
+     load the font. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Menlo", monospace;
 }
 
-/* ── Pocket Cash · "Slate Indigo" theme ──────────────────────────────────────
-   A slate canvas with an electric indigo accent. The dark palette is the
-   reference design; the light palette is a coherent slate + indigo counterpart
-   so both color schemes stay on-brand. */
+/* ── Pocket Cash · "Citron" theme ────────────────────────────────────────────
+   Warm near-black / off-white neutrals with an electric citron (yellow-lime)
+   accent. The dark palette is the reference design; the light palette is a
+   coherent warm counterpart so both color schemes stay on-brand. Money uses
+   `--success` (income, green) and `--destructive` (spend, soft rose). */
 :root {
   color-scheme: light;
 
   --radius: 0.75rem;
 
-  --background: #f7f7fa;
-  --foreground: #1a1b24;
+  --background: #f6f5ef;
+  --foreground: #141310;
   --card: #ffffff;
-  --card-foreground: #1a1b24;
+  --card-foreground: #141310;
   --popover: #ffffff;
-  --popover-foreground: #1a1b24;
-  --primary: #6b5fd6;
-  --primary-foreground: #ffffff;
-  --secondary: #eeeef3;
-  --secondary-foreground: #2a2c3a;
-  --muted: #eeeef3;
-  --muted-foreground: #62657a;
-  --accent: #ebeafd;
-  --accent-foreground: #4a3fc0;
-  --destructive: #d4604a;
+  --popover-foreground: #141310;
+  --primary: #e5e52e;
+  --primary-foreground: #141310;
+  --secondary: #f0efe6;
+  --secondary-foreground: #57564d;
+  --muted: #efeee5;
+  --muted-foreground: #57564d;
+  --accent: #f2f1d9;
+  --accent-foreground: #8f8f18;
+  --destructive: #b8503c;
   --destructive-foreground: #ffffff;
-  --success: #2f9e6b;
+  --success: #3f8f4a;
   --success-foreground: #ffffff;
-  --border: #e3e3ea;
-  --input: #e3e3ea;
-  --ring: #6b5fd6;
+  --border: #e4e2d6;
+  --input: #e0ded1;
+  --ring: #8f8f18;
 
-  --chart-1: #6b5fd6;
-  --chart-2: #58b09a;
-  --chart-3: #e0a458;
-  --chart-4: #c96f8e;
-  --chart-5: #5a91d6;
+  --chart-1: #a8a81c;
+  --chart-2: #3f8f4a;
+  --chart-3: #c0803a;
+  --chart-4: #c06a5a;
+  --chart-5: #4f8299;
 }
 
 .dark {
   color-scheme: dark;
 
-  --background: #0b0c11;
-  --foreground: #f1f2f7;
-  --card: #15161e;
-  --card-foreground: #f1f2f7;
-  --popover: #181922;
-  --popover-foreground: #f1f2f7;
-  --primary: #8b7ff0;
-  --primary-foreground: #0c0c14;
-  --secondary: #1e1f29;
-  --secondary-foreground: #c2c4d2;
-  --muted: #1a1b24;
-  --muted-foreground: #9095a8;
-  --accent: #1c1d2c;
-  --accent-foreground: #a79efc;
-  --destructive: #e79d8f;
-  --destructive-foreground: #0c0c14;
-  --success: #5fd09e;
-  --success-foreground: #0c0c14;
-  --border: #24252f;
-  --input: #24252f;
-  --ring: #8b7ff0;
+  --background: #0a0a08;
+  --foreground: #f6f6f0;
+  --card: #141410;
+  --card-foreground: #f6f6f0;
+  --popover: #1b1b15;
+  --popover-foreground: #f6f6f0;
+  --primary: #e5e52e;
+  --primary-foreground: #0a0a08;
+  --secondary: #1f1f18;
+  --secondary-foreground: #c9c9bf;
+  --muted: #1b1b15;
+  --muted-foreground: #a3a39a;
+  --accent: #26261a;
+  --accent-foreground: #d7d72e;
+  --destructive: #e3b3a6;
+  --destructive-foreground: #0a0a08;
+  --success: #8ec06a;
+  --success-foreground: #0a0a08;
+  --border: #24241d;
+  --input: #222219;
+  --ring: #d7d72e;
 
-  --chart-1: #8b7ff0;
-  --chart-2: #5fd0ae;
-  --chart-3: #e6b873;
-  --chart-4: #e289a8;
-  --chart-5: #6fa8e8;
+  --chart-1: #e5e52e;
+  --chart-2: #8ec06a;
+  --chart-3: #dba05e;
+  --chart-4: #e3b3a6;
+  --chart-5: #7fb0c4;
 }
 
 @layer base {
@@ -120,6 +128,8 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      sans-serif;
   }
 
   /* Tailwind v4's Preflight no longer sets a pointer cursor on buttons, which

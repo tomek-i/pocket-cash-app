@@ -47,21 +47,21 @@ function splashHtml(): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
-  body{background:#0b0c11;color:#e5e7eb;overflow:hidden;
+  body{background:#0a0a08;color:#f6f6f0;overflow:hidden;
     font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
     display:flex;align-items:center;justify-content:center;
     -webkit-user-select:none;user-select:none}
   .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
   .logo{width:72px;height:72px;border-radius:18px;object-fit:contain;
-    box-shadow:0 10px 34px rgba(99,102,241,.35)}
-  .logo-fallback{color:#fff;font-weight:700;font-size:26px;
-    background:linear-gradient(140deg,#6366f1,#8b5cf6);
+    box-shadow:0 10px 34px rgba(229,229,46,.28)}
+  .logo-fallback{color:#0a0a08;font-weight:700;font-size:26px;
+    background:linear-gradient(140deg,#e5e52e,#c9c91f);
     display:flex;align-items:center;justify-content:center}
   .name{font-size:20px;font-weight:600;letter-spacing:-.01em}
   .bar{width:180px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
   .bar::after{content:"";display:block;height:100%;width:40%;border-radius:3px;
-    background:linear-gradient(90deg,#6366f1,#8b5cf6);animation:slide 1.1s ease-in-out infinite}
-  .status{font-size:13px;color:#8b8f9a}
+    background:linear-gradient(90deg,#e5e52e,#c9c91f);animation:slide 1.1s ease-in-out infinite}
+  .status{font-size:13px;color:#a3a39a}
   @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 </style></head><body><div class="wrap">
   ${logoMarkup}
@@ -88,7 +88,7 @@ export function createSplash(): Promise<void> {
     resizable: false,
     center: true,
     show: false,
-    backgroundColor: '#0b0c11',
+    backgroundColor: '#0a0a08',
     alwaysOnTop: true,
     skipTaskbar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false },

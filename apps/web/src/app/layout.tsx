@@ -1,4 +1,6 @@
 import './globals.css'
+import { GeistMono } from 'geist/font/mono'
+import { GeistSans } from 'geist/font/sans'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Providers } from './providers'
@@ -16,7 +18,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen antialiased">
         <Providers>{children}</Providers>
       </body>

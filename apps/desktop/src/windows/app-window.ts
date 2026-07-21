@@ -23,7 +23,7 @@ export function createWindow(): void {
     height: 832,
     minWidth: 960,
     minHeight: 640,
-    backgroundColor: '#0b0c11', // Slate Indigo canvas — avoids white flash on load
+    backgroundColor: '#0a0a08', // Citron theme canvas — avoids white flash on load
     // The app is a dark single-window shell: hide the (white) native menu bar —
     // Alt still reveals it, and copy/paste shortcuts keep working.
     autoHideMenuBar: true,
