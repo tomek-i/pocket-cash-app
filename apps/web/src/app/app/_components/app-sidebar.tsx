@@ -42,7 +42,7 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
         <div className="leading-tight">
           <p className="font-semibold text-sm">Pocket Cash</p>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Private · Single-user
+            Personal Finance
           </p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
         </Button>
       </div>
 
-      <div className="border-t p-3">{footer}</div>
+      {/* <div className="border-t p-3">{footer}</div> */}
     </aside>
   )
 }

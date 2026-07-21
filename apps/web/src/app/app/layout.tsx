@@ -21,23 +21,23 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     throw new Error(dbStatus.detail)
   }
 
-  const footer = (
-    <div className="flex items-center gap-3 rounded-lg px-1 py-1">
-      <Avatar className="size-8 rounded-lg">
-        <AvatarImage src="/logo.png" alt="" className="object-contain" />
-        <AvatarFallback className="rounded-lg bg-primary/15 text-primary">PC</AvatarFallback>
-      </Avatar>
-      <div className="min-w-0 flex-1 leading-tight">
-        <p className="truncate font-medium text-sm">Local workspace</p>
-        <p className="truncate text-muted-foreground text-xs">Single-user</p>
-      </div>
-      <ChevronsUpDown className="size-4 text-muted-foreground" />
-    </div>
-  )
+  // const footer = (
+  //   <div className="flex items-center gap-3 rounded-lg px-1 py-1">
+  //     <Avatar className="size-8 rounded-lg">
+  //       <AvatarImage src="/logo.png" alt="" className="object-contain" />
+  //       <AvatarFallback className="rounded-lg bg-primary/15 text-primary">PC</AvatarFallback>
+  //     </Avatar>
+  //     <div className="min-w-0 flex-1 leading-tight">
+  //       <p className="truncate font-medium text-sm">Local workspace</p>
+  //       <p className="truncate text-muted-foreground text-xs">Single-user</p>
+  //     </div>
+  //     <ChevronsUpDown className="size-4 text-muted-foreground" />
+  //   </div>
+  // )
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar footer={footer} />
+      <AppSidebar footer={null} />
       <main className="min-w-0 flex-1">{dbStatus.ok ? children : <DatabaseRecovery />}</main>
     </div>
   )
