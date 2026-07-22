@@ -21,6 +21,7 @@ import {
 import { updateSettingsSchema } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
+import { wipeAllFinanceData } from '../_lib/seed'
 
 export interface AppSettingsView {
   defaultCurrency: string
@@ -166,20 +167,7 @@ export async function clearAllTransactions(): Promise<DangerResult> {
 /** Wipe ALL finance data — banks, branches, accounts, mappings, imports,
  * transactions, categories, tags and subscriptions. Settings are untouched. */
 export async function resetAllData(): Promise<DangerResult> {
-  const deleted = await db.transaction(async (tx) => {
-    // Children first so foreign keys never block (transaction_tags cascade off
-    // transactions; accounts/branches/mappings cascade off banks).
-    const removed = await tx.delete(transactions).returning({ id: transactions.id })
-    await tx.delete(csvImports)
-    await tx.delete(financialSubscriptions)
-    await tx.delete(accounts)
-    await tx.delete(branches)
-    await tx.delete(csvMappings)
-    await tx.delete(banks)
-    await tx.delete(categories)
-    await tx.delete(tags)
-    return removed.length
-  })
+  const deleted = await db.transaction((tx) => wipeAllFinanceData(tx))
   for (const path of [
     '/app',
     '/app/banks',
@@ -285,17 +273,9 @@ export async function importData(json: string): Promise<ImportResult> {
 
   try {
     await db.transaction(async (tx) => {
-      // 1. Wipe existing finance data (children first, mirroring resetAllData).
-      //    transaction_tags cascade off transactions.
-      await tx.delete(transactions)
-      await tx.delete(csvImports)
-      await tx.delete(financialSubscriptions)
-      await tx.delete(accounts)
-      await tx.delete(branches)
-      await tx.delete(csvMappings)
-      await tx.delete(banks)
-      await tx.delete(categories)
-      await tx.delete(tags)
+      // 1. Wipe existing finance data (children first; transaction_tags cascade
+      //    off transactions).
+      await wipeAllFinanceData(tx)
 
       // 2. Insert the backup's rows parent→child, reviving dates. Insert in
       //    batches: a single multi-row INSERT of thousands of rows overflows the

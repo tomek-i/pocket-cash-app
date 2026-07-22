@@ -26,12 +26,18 @@ export function DangerAction({
   buttonLabel,
   confirmPhrase,
   action,
+  successTemplate = 'Removed {n} record(s).',
 }: {
   title: string
   description: string
   buttonLabel: string
   confirmPhrase: string
   action: () => Promise<DangerResult>
+  /**
+   * Success message; `{n}` is replaced with the affected-row count. A plain string
+   * (not a function) so it can cross the Server→Client boundary from the page.
+   */
+  successTemplate?: string
 }) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
@@ -87,7 +93,11 @@ export function DangerAction({
               onClick={() =>
                 startTransition(async () => {
                   const res = await action()
-                  setNotice('error' in res ? res.error : `Removed ${res.deleted} record(s).`)
+                  setNotice(
+                    'error' in res
+                      ? res.error
+                      : successTemplate.replace('{n}', String(res.deleted)),
+                  )
                   setValue('')
                   setOpen(false)
                 })

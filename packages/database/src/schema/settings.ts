@@ -22,6 +22,8 @@ export interface AppSettings {
   defaultCurrency?: string
   ai?: AiSettings
   aiInsights?: Record<string, CachedInsight>
+  /** Set once the first-run welcome tour is finished. Unset/false = show it. */
+  onboardingCompleted?: boolean
 }
 
 /**

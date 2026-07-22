@@ -46,3 +46,4 @@ Thumbs.db
 # Desktop app icon — generated from apps/web/public/logo.png by
 # apps/desktop/scripts/prepare-icon.mjs at build time (single source of truth).
 apps/desktop/build/icon.png
+.narrate/

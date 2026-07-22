@@ -1,9 +1,12 @@
+import { getAppSettings } from '@repo/database'
 import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui'
 import { ChevronsUpDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { prepareEmbeddedDatabase } from '@/lib/workspace'
 import { AppSidebar } from './_components/app-sidebar'
 import { DatabaseRecovery } from './_components/database-recovery'
+import { Onboarding } from './_components/onboarding/onboarding'
+import { isWorkspaceEmpty } from './_lib/seed'
 
 // Every /app page reads data from the embedded database at request time. This
 // is a local-only build with no auth, so nothing reads cookies/headers and Next
@@ -19,6 +22,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const dbStatus = await prepareEmbeddedDatabase()
   if (!dbStatus.ok && !dbStatus.corrupt) {
     throw new Error(dbStatus.detail)
+  }
+
+  // First run: once the DB is healthy but before the app is set up, show the
+  // welcome tour (choose demo data vs a clean slate) in place of everything else.
+  // The flag lives in the single-row app_settings blob, so it survives restarts.
+  // Guarded on an empty workspace too, so an install that predates the flag but
+  // already has data is never interrupted (and can't hit demo-seed conflicts).
+  if (dbStatus.ok && !(await getAppSettings()).onboardingCompleted && (await isWorkspaceEmpty())) {
+    return (
+      <main className="min-h-screen">
+        <Onboarding />
+      </main>
+    )
   }
 
   // const footer = (

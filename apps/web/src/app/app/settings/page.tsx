@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@repo/ui'
+import { resetAndSeedDemo } from '../_lib/seed-actions'
 import { AiSettings } from './_components/ai-settings'
 import { DangerAction } from './_components/danger-action'
 import { DataBackup } from './_components/data-backup'
@@ -92,6 +93,15 @@ export default async function SettingsPage() {
               buttonLabel="Reset everything"
               confirmPhrase="RESET"
               action={resetAllData}
+            />
+            <div className="h-px bg-border" />
+            <DangerAction
+              title="Reset & load demo data"
+              description="Deletes everything, then loads a realistic sample dataset — two accounts, categories and a few months of transactions — so you can explore the app."
+              buttonLabel="Reset & load demo"
+              confirmPhrase="DEMO"
+              action={resetAndSeedDemo}
+              successTemplate="Loaded demo data — {n} transactions."
             />
           </CardContent>
         </Card>
