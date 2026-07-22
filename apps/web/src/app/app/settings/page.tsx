@@ -4,6 +4,7 @@ import { AiSettings } from './_components/ai-settings'
 import { DangerAction } from './_components/danger-action'
 import { DataBackup } from './_components/data-backup'
 import { GeneralSettings } from './_components/general-settings'
+import { ImportData } from './_components/import-data'
 import {
   clearAllTransactions,
   getAiConfig,
@@ -57,10 +58,10 @@ export default async function SettingsPage() {
 
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="font-semibold text-lg">Backup &amp; restore</h2>
+          <h2 className="font-semibold text-lg">Backup</h2>
           <p className="text-muted-foreground text-sm">
-            Export everything to a file, or restore a previous backup. Your data lives on this
-            device — keep a backup so it&apos;s safe across updates and machines.
+            Export everything to a file. Your data lives on this device — keep a backup so it&apos;s
+            safe across updates and machines. Restoring a backup lives in the Danger zone below.
           </p>
         </div>
         <Card>
@@ -79,6 +80,8 @@ export default async function SettingsPage() {
         </div>
         <Card className="border-destructive/40">
           <CardContent className="flex flex-col gap-5 p-5">
+            <ImportData />
+            <div className="h-px bg-border" />
             <DangerAction
               title="Clear all transactions"
               description="Removes every imported transaction and import batch. Banks, accounts, mappings, categories and tags are kept — useful before re-importing."

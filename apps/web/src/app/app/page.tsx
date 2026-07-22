@@ -159,7 +159,7 @@ export default async function OverviewPage() {
               Spending by category
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center gap-5">
+          <CardContent className="flex flex-col items-center gap-5">
             {data.categorySpend.length === 0 ? (
               <p className="py-6 text-muted-foreground text-sm">No spending this month.</p>
             ) : (
@@ -170,7 +170,7 @@ export default async function OverviewPage() {
                   centerLabel={monthLabel}
                   className="shrink-0"
                 />
-                <ul className="flex flex-1 flex-col gap-2.5">
+                <ul className="flex w-full flex-col gap-2.5">
                   {data.categorySpend.map((slice) => (
                     <li key={slice.label} className="flex items-center gap-2 text-sm">
                       <span
