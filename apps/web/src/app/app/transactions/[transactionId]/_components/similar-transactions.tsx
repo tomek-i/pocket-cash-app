@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
   Input,
@@ -240,21 +241,23 @@ export function SimilarTransactions({
                       }
                     />
                     <DropdownMenuContent align="start" className="max-h-72 w-48 overflow-auto">
-                      <DropdownMenuLabel>Tags to add</DropdownMenuLabel>
-                      {tags.length === 0 ? (
-                        <p className="px-2 py-1.5 text-muted-foreground text-sm">No tags yet</p>
-                      ) : (
-                        tags.map((t) => (
-                          <DropdownMenuCheckboxItem
-                            key={t.id}
-                            checked={addTags.has(t.id)}
-                            closeOnClick={false}
-                            onCheckedChange={() => toggleTag(t.id)}
-                          >
-                            {t.name}
-                          </DropdownMenuCheckboxItem>
-                        ))
-                      )}
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Tags to add</DropdownMenuLabel>
+                        {tags.length === 0 ? (
+                          <p className="px-2 py-1.5 text-muted-foreground text-sm">No tags yet</p>
+                        ) : (
+                          tags.map((t) => (
+                            <DropdownMenuCheckboxItem
+                              key={t.id}
+                              checked={addTags.has(t.id)}
+                              closeOnClick={false}
+                              onCheckedChange={() => toggleTag(t.id)}
+                            >
+                              {t.name}
+                            </DropdownMenuCheckboxItem>
+                          ))
+                        )}
+                      </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
 

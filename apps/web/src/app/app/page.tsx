@@ -46,7 +46,27 @@ function shortDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default async function OverviewPage() {
+/** The last 12 months as picker options, newest first, keyed `YYYY-MM`. */
+function monthOptions(): { key: string; label: string }[] {
+  const now = new Date()
+  const opts: { key: string; label: string }[] = []
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+    opts.push({
+      key,
+      label: d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+    })
+  }
+  return opts
+}
+
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
+  const { month } = await searchParams
   // RSC renders this page concurrently with the layout, so the layout's DB-prep
   // await does NOT gate our queries below. On a cold process the embedded DB may
   // still be opening/migrating; await readiness here (memoised process-wide, so
@@ -54,11 +74,12 @@ export default async function OverviewPage() {
   // route, so it's the one cold start that would otherwise race.
   await prepareEmbeddedDatabase()
   const [data, aiConfigured, insight] = await Promise.all([
-    getDashboardData(),
+    getDashboardData(month),
     isAiConfigured(),
     getDashboardInsight(),
   ])
-  const { currency } = data
+  const { currency, monthLabel, monthShort } = data
+  const months = monthOptions()
 
   const today = new Date()
   const dateLabel = today.toLocaleDateString('en-US', {
@@ -66,7 +87,6 @@ export default async function OverviewPage() {
     month: 'long',
     day: 'numeric',
   })
-  const monthLabel = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   return (
     <div className="flex flex-col gap-6 px-5 py-5 lg:px-8 lg:py-7">
@@ -75,7 +95,7 @@ export default async function OverviewPage() {
           <h1 className="font-semibold text-2xl tracking-tight">Overview</h1>
           <p className="text-muted-foreground text-sm">{dateLabel} · everything in one place.</p>
         </div>
-        <OverviewTopbar />
+        <OverviewTopbar months={months} selected={data.monthKey} />
       </div>
 
       {/* Top row */}
@@ -106,7 +126,7 @@ export default async function OverviewPage() {
               {data.trend.some((v) => v !== 0) ? (
                 <MiniBars
                   values={data.trend}
-                  highlightIndex={data.trend.length - 1}
+                  highlightIndex={data.trendHighlightIndex}
                   className="w-32"
                 />
               ) : null}
@@ -192,7 +212,7 @@ export default async function OverviewPage() {
         {/* Income / Spending */}
         <div className="flex flex-col gap-4 xl:col-span-3">
           <StatCard
-            label={`Income · ${today.toLocaleDateString('en-US', { month: 'short' })}`}
+            label={`Income · ${monthShort}`}
             value={formatMoney(data.income, currency)}
             delta={
               data.incomeChangePct !== null
@@ -202,7 +222,7 @@ export default async function OverviewPage() {
             positive={(data.incomeChangePct ?? 0) >= 0}
           />
           <StatCard
-            label={`Spending · ${today.toLocaleDateString('en-US', { month: 'short' })}`}
+            label={`Spending · ${monthShort}`}
             value={formatMoney(data.spending, currency)}
             delta={
               data.spendingChangePct !== null

@@ -23,10 +23,18 @@ import { getDefaultCurrency } from '../settings/actions'
  */
 export interface DashboardData {
   currency: string
+  /** The month the flow widgets (category spend, income, spending) are scoped to. */
+  monthKey: string
+  /** e.g. "June 2026" — the selected month, long form. */
+  monthLabel: string
+  /** e.g. "Jun" — the selected month, short form. */
+  monthShort: string
   accounts: { id: string; name: string; bankName: string | null; balance: number }[]
   netWorth: number
   netWorthChangePct: number | null
   trend: number[]
+  /** Index into `trend` (last 12 months) to highlight — the selected month. */
+  trendHighlightIndex: number
   categorySpend: { label: string; value: number; color: string }[]
   monthSpendTotal: number
   income: number
@@ -77,13 +85,32 @@ function lastMonthKeys(n: number): string[] {
   return keys
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+/**
+ * @param monthKey Optional `YYYY-MM` to scope the flow widgets (category spend,
+ *   income, spending) to a past month from the picker. Defaults to the current
+ *   month; an unknown key falls back to it. Net worth, accounts, recent activity
+ *   and subscriptions are always "now" — only the monthly figures move.
+ */
+export async function getDashboardData(monthKey?: string): Promise<DashboardData> {
   const currency = await getDefaultCurrency()
 
-  const now = new Date()
-  const startThisMonth = ymd(now.getUTCFullYear(), now.getUTCMonth())
-  const startLastMonth = ymd(now.getUTCFullYear(), now.getUTCMonth() - 1)
-  const startNextMonth = ymd(now.getUTCFullYear(), now.getUTCMonth() + 1)
+  // Resolve the selected month against the same 12-month window the trend uses, so
+  // the picker's keys line up with a trend index. Unknown/absent → current month.
+  const trendKeys = lastMonthKeys(12)
+  const selectedKey = monthKey && trendKeys.includes(monthKey) ? monthKey : trendKeys[11]
+  const [selYearStr, selMonthStr] = (selectedKey as string).split('-')
+  const selYear = Number(selYearStr)
+  const selMonth0 = Number(selMonthStr) - 1
+  const startThisMonth = ymd(selYear, selMonth0)
+  const startLastMonth = ymd(selYear, selMonth0 - 1)
+  const startNextMonth = ymd(selYear, selMonth0 + 1)
+  const selDate = new Date(Date.UTC(selYear, selMonth0, 1))
+  const monthLabel = selDate.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+  const monthShort = selDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })
 
   // ── Accounts + balances (opening balance + net of transactions) ──────────────
   const accountRows = await db
@@ -231,10 +258,14 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   return {
     currency,
+    monthKey: selectedKey as string,
+    monthLabel,
+    monthShort,
     accounts: accountBalances,
     netWorth,
     netWorthChangePct,
     trend,
+    trendHighlightIndex: trendKeys.indexOf(selectedKey as string),
     categorySpend,
     monthSpendTotal,
     income: thisMonth.income,

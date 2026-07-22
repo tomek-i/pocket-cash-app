@@ -148,15 +148,17 @@ const ONE_OFFS = [
 ]
 
 /**
- * Build the full demo dataset relative to `now`, spanning roughly the last five
- * months plus the current month. Recurring income/bills/subscriptions, everyday
+ * Build the full demo dataset relative to `now`, spanning a full year — the last
+ * twelve months plus the current month to date. That's enough history to populate
+ * the reports (including a complete previous financial year), the net-worth trend
+ * and the dashboard's month picker. Recurring income/bills/subscriptions, everyday
  * spending, transfers between the two accounts, and a few one-offs.
  */
 export function buildDemoData(now: Date): DemoData {
   const transactions: DemoTxnDef[] = []
   const add = (t: DemoTxnDef) => transactions.push(t)
 
-  const MONTHS_BACK = 5
+  const MONTHS_BACK = 12
   for (let back = MONTHS_BACK; back >= 0; back--) {
     const anchor = new Date(now.getFullYear(), now.getMonth() - back, 1)
     const y = anchor.getFullYear()

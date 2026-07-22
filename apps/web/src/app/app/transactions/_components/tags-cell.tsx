@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -49,26 +50,28 @@ export function TagsCell({
           }
         />
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel>Tags</DropdownMenuLabel>
-          {allTags.length === 0 ? (
-            <DropdownMenuItem disabled>No tags yet</DropdownMenuItem>
-          ) : (
-            allTags.map((t) => (
-              <DropdownMenuCheckboxItem
-                key={t.id}
-                checked={assigned.has(t.id)}
-                disabled={pending}
-                closeOnClick={false}
-                onCheckedChange={(checked) =>
-                  startTransition(async () => {
-                    await toggleTransactionTag(transactionId, t.id, checked)
-                  })
-                }
-              >
-                {t.name}
-              </DropdownMenuCheckboxItem>
-            ))
-          )}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Tags</DropdownMenuLabel>
+            {allTags.length === 0 ? (
+              <DropdownMenuItem disabled>No tags yet</DropdownMenuItem>
+            ) : (
+              allTags.map((t) => (
+                <DropdownMenuCheckboxItem
+                  key={t.id}
+                  checked={assigned.has(t.id)}
+                  disabled={pending}
+                  closeOnClick={false}
+                  onCheckedChange={(checked) =>
+                    startTransition(async () => {
+                      await toggleTransactionTag(transactionId, t.id, checked)
+                    })
+                  }
+                >
+                  {t.name}
+                </DropdownMenuCheckboxItem>
+              ))
+            )}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
