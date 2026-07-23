@@ -2,9 +2,10 @@
 
 import { createLogger } from '@repo/logger'
 import { Button } from '@repo/ui'
-import { FileText, RotateCw, TriangleAlert } from 'lucide-react'
+import { Bug, FileText, RotateCw, TriangleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { getDesktopBridge } from '@/lib/desktop'
+import { buildIssueUrl } from '@/lib/report-issue'
 
 const log = createLogger('app')
 
@@ -66,6 +67,14 @@ export default function AppError({
             Reload app
           </Button>
         )}
+        <Button
+          variant="ghost"
+          onClick={() => window.open(buildIssueUrl(error.digest), '_blank', 'noopener,noreferrer')}
+          className="gap-2"
+        >
+          <Bug className="size-4" />
+          Report an issue
+        </Button>
       </div>
     </div>
   )
