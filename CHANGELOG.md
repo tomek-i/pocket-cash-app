@@ -9,6 +9,24 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## 0.1.0 (2026-07-23)
+
+
+### Features
+
+* initial public release of Pocket Cash ([8d350c2](https://github.com/tomek-i/pocket-cash-app/commit/8d350c292e2dad0bd3a9ecc92f8e9b54fbb013e2))
+
+
+### Documentation
+
+* add AGENTS.md contributor guide + skip release job on docs-only pushes ([74933ac](https://github.com/tomek-i/pocket-cash-app/commit/74933ac48df60ffe106f0d441889e95ad9465397))
+* add AGENTS.md contributor guide for AI agents ([a261cd1](https://github.com/tomek-i/pocket-cash-app/commit/a261cd15976af0d8c8e683e2802168f0f915da95))
+
+
+### Miscellaneous
+
+* pin the first release to v0.1.0 ([ba2aa59](https://github.com/tomek-i/pocket-cash-app/commit/ba2aa598cfb84fa568757b17a181b3b75d25e320))
+
 ## [Unreleased]
 
 ## [0.1.0] - 2026-07-17
