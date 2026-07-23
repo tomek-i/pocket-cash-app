@@ -56,7 +56,7 @@ jobs:
       release_created: ${{ steps.rp.outputs.release_created }}
       tag_name: ${{ steps.rp.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: rp
         with:
           config-file: release-please-config.json
@@ -75,13 +75,13 @@ jobs:
     steps:
       # On dispatch, build from the branch the workflow was launched on (which has
       # any post-tag build fixes); on a release push, build the pushed commit.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
