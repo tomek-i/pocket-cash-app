@@ -9,6 +9,19 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.2.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.1.0...v0.2.0) (2026-07-23)
+
+
+### Features
+
+* add Open logs + Report an issue to the global error screen ([2288293](https://github.com/tomek-i/pocket-cash-app/commit/228829336f7a9f21461068cd99514fbc1a030e3b))
+
+
+### Bug Fixes
+
+* don't let electron-builder publish (workflow uploads artifacts itself) ([cf5c4e3](https://github.com/tomek-i/pocket-cash-app/commit/cf5c4e3284ff07e75f1d1e1dd99ba4ab57177a4f))
+* resolve pglite from apps/web in the desktop build (unbreaks Windows build) ([bef1270](https://github.com/tomek-i/pocket-cash-app/commit/bef1270ef4ce9fd61ccb66da256679f9ea9c1fd2))
+
 ## 0.1.0 (2026-07-23)
 
 

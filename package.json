@@ -1,6 +1,6 @@
 {
   "name": "pocket-cash",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Offline-first personal finance, on your desktop — track accounts, import bank statements, categorise spending, and see your net worth. Runs entirely on your machine with no cloud, no auth, and no telemetry.",
   "keywords": [
