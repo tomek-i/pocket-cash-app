@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import { getDesktopBridge } from '@/lib/desktop'
+import { buildIssueUrl } from '@/lib/report-issue'
 
 /**
  * Last-resort boundary: catches errors thrown by the root layout itself, which
@@ -38,8 +39,20 @@ export default function GlobalError({
               Ref: {error.digest}
             </p>
           ) : null}
+          {desktop?.openLogs ? (
+            <p style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#62657a' }}>
+              Open logs to see what failed, then report an issue and attach{' '}
+              <span style={{ fontFamily: 'monospace' }}>pocket-cash.log</span>.
+            </p>
+          ) : null}
           <div
-            style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1rem' }}
+            style={{
+              display: 'flex',
+              gap: '0.5rem',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              marginTop: '1rem',
+            }}
           >
             <button type="button" onClick={() => reset()} style={primaryButton}>
               Try again
@@ -57,6 +70,20 @@ export default function GlobalError({
                 Reload
               </button>
             )}
+            {desktop?.openLogs ? (
+              <button type="button" onClick={() => desktop.openLogs?.()} style={secondaryButton}>
+                Open logs
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                window.open(buildIssueUrl(error.digest), '_blank', 'noopener,noreferrer')
+              }
+              style={secondaryButton}
+            >
+              Report an issue
+            </button>
           </div>
         </div>
       </body>
