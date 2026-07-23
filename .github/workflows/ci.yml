@@ -1,8 +1,9 @@
 name: CI
 
+# Runs on pull requests only. Merging to main is gated on this check passing via
+# branch protection, and merges use rebase/squash, so re-running the identical
+# suite on the push to main would be a pure duplicate.
 on:
-  push:
-    branches: [main]
   pull_request:
 
 # Cancel in-progress runs for the same ref when new commits land.
@@ -15,13 +16,13 @@ jobs:
     name: Lint, typecheck & test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
