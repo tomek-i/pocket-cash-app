@@ -22,6 +22,15 @@ on:
   push:
     branches:
       - main
+    # Docs-only pushes can never produce a release anyway (release-please only
+    # bumps on feat:/fix:/breaking commits), so skip spinning the job for them.
+    # A docs commit skipped here still lands in the changelog on the next code
+    # push, because release-please re-scans the full history since the last tag.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'site/**'
+      - 'LICENSE'
 
 permissions:
   contents: write
