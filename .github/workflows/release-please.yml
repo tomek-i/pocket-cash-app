@@ -11,9 +11,14 @@ name: Release
 #      them to the release.
 #
 # The build lives in THIS workflow (gated on release_created) rather than a
-# separate tag-triggered one because tags pushed by the default GITHUB_TOKEN do
-# not trigger other workflows — folding it in keeps releases fully automatic with
-# no personal access token required.
+# separate tag-triggered one because tags/releases created by the default
+# GITHUB_TOKEN do not trigger other workflows — folding it in keeps releases fully
+# automatic with no personal access token required.
+#
+# For the same reason there is a manual `workflow_dispatch` path: it (re)builds
+# the Windows artifacts from the current branch and uploads them to an EXISTING
+# release tag. Use it to attach artifacts to a release whose in-line build failed
+# (e.g. a build-tooling fix landed after the tag was cut).
 #
 # Commit messages must follow Conventional Commits (feat:, fix:, refactor:, …);
 # `feat!:`/`fix!:` or a `BREAKING CHANGE:` footer bumps the major. See docs/releasing.md.
@@ -31,6 +36,11 @@ on:
       - 'docs/**'
       - 'site/**'
       - 'LICENSE'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to build and attach Windows artifacts to (e.g. v0.1.0)'
+        required: true
 
 permissions:
   contents: write
@@ -39,6 +49,8 @@ permissions:
 jobs:
   release-please:
     name: Prepare release
+    # Only the automated push flow prepares releases; manual dispatch just builds.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
@@ -53,9 +65,16 @@ jobs:
   build-windows:
     name: Build Windows installer
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    # Run after a real release is created, OR on a manual dispatch (where the
+    # release-please job is skipped, so gate on always() + the event).
+    if: >-
+      ${{ always() &&
+      (needs.release-please.outputs.release_created == 'true'
+       || github.event_name == 'workflow_dispatch') }}
     runs-on: windows-latest
     steps:
+      # On dispatch, build from the branch the workflow was launched on (which has
+      # any post-tag build fixes); on a release push, build the pushed commit.
       - uses: actions/checkout@v4
 
       - name: Install pnpm
@@ -79,4 +98,13 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" release/*.exe release/*.zip --clobber
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}"
+          shopt -s nullglob
+          files=(release/*.exe release/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No build artifacts found in ./release" >&2
+            exit 1
+          fi
+          echo "Uploading to $TAG: ${files[*]}"
+          gh release upload "$TAG" "${files[@]}" --clobber

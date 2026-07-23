@@ -16,7 +16,7 @@
 //
 // Runs in the desktop build between `next build` and `electron-builder`.
 
-import { cpSync, lstatSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -95,10 +95,18 @@ rmSync(staging, { recursive: true, force: true })
 //    dynamically via import.meta.url and aren't traced into the standalone).
 const pgliteDest = join(appNm, '@electric-sql/pglite')
 rmSync(pgliteDest, { recursive: true, force: true })
-cpSync(resolve(repo, 'node_modules/@electric-sql/pglite'), pgliteDest, {
-  recursive: true,
-  dereference: true,
-})
+// pnpm does not hoist @electric-sql/pglite to the repo root; it's symlinked into
+// apps/web (its declaring package). Prefer that location, and fall back to a
+// hoisted root node_modules for setups that do hoist. (dereference copies the
+// real files behind the symlink.)
+const pgliteSrc = [
+  resolve(repo, 'apps/web/node_modules/@electric-sql/pglite'),
+  resolve(repo, 'node_modules/@electric-sql/pglite'),
+].find((p) => existsSync(p))
+if (!pgliteSrc) {
+  throw new Error('flatten-standalone: could not locate @electric-sql/pglite to overlay')
+}
+cpSync(pgliteSrc, pgliteDest, { recursive: true, dereference: true })
 
 // 4. Drop the now-redundant symlinked pnpm store so no symlinks get packaged.
 rmSync(join(standalone, 'node_modules'), { recursive: true, force: true })
