@@ -13,7 +13,7 @@ Electron desktop share **one UI and one codebase**.
 
 - **Architecture** — one UI as web + desktop, embedded PGlite: [`architecture.md`](./docs/architecture.md)
 - **Import design** — bank/account/transaction model + CSV importers: [`csv-import-plan.md`](./docs/csv-import-plan.md)
-- **Releasing** — automated versioning + Windows builds: [`releasing.md`](./docs/releasing.md)
+- **Releasing** — automated versioning + Windows/macOS builds: [`releasing.md`](./docs/releasing.md)
 
 ## Quick start
 
@@ -36,10 +36,16 @@ directory; on first run the database is created for you.
 pnpm build              # builds the Next.js standalone bundle, then electron-builder
 ```
 
-Artifacts land in `release/` — a Windows installer (`PocketCash-Setup-<v>.exe`), a
-portable `.exe`, and a `.zip`. See [`apps/desktop/README.md`](./apps/desktop/README.md)
-for how packaging works. To run or build the **web** app on its own, use
-`pnpm dev:web` / `pnpm build:web`.
+Artifacts land in `release/`, for whichever platform you're building **on**
+(electron-builder doesn't cross-compile these):
+
+- **Windows** — an installer (`PocketCash-Setup-<v>.exe`), a portable `.exe`, and a `.zip`.
+- **macOS** (Apple Silicon) — `PocketCash-<v>-mac-arm64.dmg` and a matching `.zip`.
+
+Releases build both automatically. See [`apps/desktop/README.md`](./apps/desktop/README.md)
+for how packaging works, and [`docs/releasing.md`](./docs/releasing.md) for the mac
+Gatekeeper step (the builds are unsigned, so the first launch needs an override).
+To run or build the **web** app on its own, use `pnpm dev:web` / `pnpm build:web`.
 
 ## Stack
 
@@ -126,7 +132,8 @@ Version history lives in [`CHANGELOG.md`](./CHANGELOG.md). Releases are automate
 [release-please](https://github.com/googleapis/release-please): commits to `main`
 that follow [Conventional Commits](https://www.conventionalcommits.org/) maintain a
 release PR (version bump + changelog); merging it tags the release and builds +
-publishes the Windows installer. See [`docs/releasing.md`](./docs/releasing.md).
+publishes the Windows installer and the macOS (Apple Silicon) app. See
+[`docs/releasing.md`](./docs/releasing.md).
 
 ## License
 

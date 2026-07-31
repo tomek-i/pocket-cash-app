@@ -1,14 +1,15 @@
 name: Release
 
-# Automated versioning + changelog + Windows build, driven by Conventional Commits.
+# Automated versioning + changelog + desktop builds (Windows and macOS), driven by
+# Conventional Commits.
 #
 # How it works:
 #   1. On every push to main, release-please opens (or updates) a "Release PR" that
 #      bumps the version in package.json (root + apps/desktop + apps/web) and
 #      regenerates CHANGELOG.md from the commit history since the last release.
 #   2. Merging that PR tags `vX.Y.Z` and creates the GitHub Release with notes.
-#   3. That same run then builds the Windows installer/portable/zip and attaches
-#      them to the release.
+#   3. That same run then builds, in parallel, the Windows installer/portable/zip
+#      and the macOS (Apple Silicon) dmg/zip, and attaches them to the release.
 #
 # The build lives in THIS workflow (gated on release_created) rather than a
 # separate tag-triggered one because tags/releases created by the default
@@ -16,9 +17,9 @@ name: Release
 # automatic with no personal access token required.
 #
 # For the same reason there is a manual `workflow_dispatch` path: it (re)builds
-# the Windows artifacts from the current branch and uploads them to an EXISTING
-# release tag. Use it to attach artifacts to a release whose in-line build failed
-# (e.g. a build-tooling fix landed after the tag was cut).
+# the desktop artifacts for both platforms from the current branch and uploads
+# them to an EXISTING release tag. Use it to attach artifacts to a release whose
+# in-line build failed (e.g. a build-tooling fix landed after the tag was cut).
 #
 # Commit messages must follow Conventional Commits (feat:, fix:, refactor:, …);
 # `feat!:`/`fix!:` or a `BREAKING CHANGE:` footer bumps the major. See docs/releasing.md.
@@ -39,7 +40,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing release tag to build and attach Windows artifacts to (e.g. v0.1.0)'
+        description: 'Existing release tag to build and attach desktop artifacts to (e.g. v0.1.0)'
         required: true
 
 permissions:
@@ -62,8 +63,8 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  build-windows:
-    name: Build Windows installer
+  build-desktop:
+    name: Build ${{ matrix.label }}
     needs: release-please
     # Run after a real release is created, OR on a manual dispatch (where the
     # release-please job is skipped, so gate on always() + the event).
@@ -71,7 +72,22 @@ jobs:
       ${{ always() &&
       (needs.release-please.outputs.release_created == 'true'
        || github.event_name == 'workflow_dispatch') }}
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One platform failing must not cancel the other — a broken macOS build
+      # should still let the Windows artifacts reach the release.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows installer
+            # NSIS installer, portable exe, and the unpacked zip.
+            artifacts: release/*.exe release/*.zip
+          - os: macos-latest
+            # macos-latest runners are Apple Silicon, so this builds arm64
+            # natively for modern MacBooks.
+            label: macOS app (Apple Silicon)
+            artifacts: release/*.dmg release/*.zip
     steps:
       # On dispatch, build from the branch the workflow was launched on (which has
       # any post-tag build fixes); on a release push, build the pushed commit.
@@ -92,6 +108,12 @@ jobs:
       # Builds the web standalone bundle, flattens it, then runs electron-builder
       # (see apps/desktop/package.json "build"). Artifacts land in ./release.
       - name: Build desktop app
+        env:
+          # We have no Apple Developer certificate, and the runner's keychain has
+          # none either. Without this, electron-builder spends time probing for a
+          # signing identity and can fail the build outright. Signing is instead
+          # handled ad-hoc in the afterPack hook — see electron-builder.yml.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: pnpm --filter desktop build
 
       - name: Attach artifacts to the release
@@ -101,7 +123,10 @@ jobs:
         run: |
           TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}"
           shopt -s nullglob
-          files=(release/*.exe release/*.zip)
+          # Per-platform globs (see the matrix). The Windows and macOS zips have
+          # distinct names, so both platforms can upload to the same release
+          # without clobbering each other.
+          files=(${{ matrix.artifacts }})
           if [ ${#files[@]} -eq 0 ]; then
             echo "No build artifacts found in ./release" >&2
             exit 1
