@@ -9,6 +9,13 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.3.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.2.0...v0.3.0) (2026-07-31)
+
+
+### Features
+
+* build and release a macOS (Apple Silicon) desktop app ([fa10f5e](https://github.com/tomek-i/pocket-cash-app/commit/fa10f5e71caf897714cb6396a78491999870d3bd)), closes [#31](https://github.com/tomek-i/pocket-cash-app/issues/31)
+
 ## [0.2.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.1.0...v0.2.0) (2026-07-23)
 
 
