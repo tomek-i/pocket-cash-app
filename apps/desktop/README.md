@@ -14,8 +14,8 @@ dependency.
   in-process, then loads it locally.
 - **Database** — an embedded [PGlite](https://pglite.dev) Postgres runs in the same
   process (`DATABASE_DRIVER=embedded`). Its data lives under the per-user data dir
-  (`%APPDATA%/Pocket Cash`); migrations ship as an unpacked resource and are applied
-  on startup.
+  (`%APPDATA%/Pocket Cash` on Windows, `~/Library/Application Support/Pocket Cash`
+  on macOS); migrations ship as an unpacked resource and are applied on startup.
 
 ```
 apps/desktop
@@ -28,7 +28,7 @@ apps/desktop
 ├── src/windows/         # splash + main BrowserWindow
 ├── src/preload.ts       # contextBridge — safe `window.desktop` API
 ├── esbuild.mjs          # bundles main/preload → dist/*.cjs
-├── scripts/             # flatten-standalone + icon prep (run during build)
+├── scripts/             # flatten-standalone, icon prep, mac ad-hoc signing
 └── electron-builder.yml
 ```
 
@@ -49,9 +49,14 @@ pnpm dev                # starts web (next dev, embedded DB) + Electron together
 pnpm build              # builds web (standalone), flattens it, then electron-builder
 ```
 
-Artifacts land in the repo-root `release/`: a Windows installer
-(`PocketCash-Setup-<version>.exe`), a portable `PocketCash.exe`, and
-`PocketCash-<version>.zip`.
+Artifacts land in the repo-root `release/`, for the platform you build **on**:
+
+- **Windows** — `PocketCash-Setup-<version>.exe` (installer), `PocketCash.exe`
+  (portable), `PocketCash-<version>.zip`.
+- **macOS** (Apple Silicon) — `PocketCash-<version>-mac-arm64.dmg` and
+  `PocketCash-<version>-mac-arm64.zip`.
+
+CI builds both on every release; see [`docs/releasing.md`](../../docs/releasing.md).
 
 > The packaged build expects the standalone server at
 > `resources/web/apps/web/server.js` (produced by `scripts/flatten-standalone.mjs`).
@@ -67,9 +72,14 @@ Artifacts land in the repo-root `release/`: a Windows installer
   Electron `safeStorage` and decrypted into `process.env` for the in-process
   server — never stored in the database. See `src/secrets.ts`.
 - **Logging.** The main process tees stdout/stderr into
-  `%APPDATA%/Pocket Cash/logs/pocket-cash.log` and captures uncaught
+  `<user data dir>/logs/pocket-cash.log` and captures uncaught
   exceptions/rejections; the in-app **Open logs** button opens that folder. App and
   package code log through `@repo/logger`, which writes to the same stream.
 - **Data safety.** `appId` and `productName` in `electron-builder.yml` decide the
   per-user data directory and must stay stable across releases — changing either
   orphans existing users' databases.
+- **macOS builds are unsigned.** There's no Apple Developer certificate, so
+  `scripts/adhoc-sign-mac.mjs` (electron-builder's `afterPack` hook) applies an
+  ad-hoc signature. That's mandatory — Apple Silicon won't execute an unsigned
+  bundle at all. It isn't notarized, so the first launch needs a Gatekeeper
+  override; see [`docs/releasing.md`](../../docs/releasing.md).

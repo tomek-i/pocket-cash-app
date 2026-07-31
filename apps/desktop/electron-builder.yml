@@ -1,5 +1,6 @@
-# ⚠️ DATA SAFETY: `productName` decides the per-user data dir (%APPDATA%\<productName>)
-# where the embedded database lives, and `appId` identifies the app for updates.
+# ⚠️ DATA SAFETY: `productName` decides the per-user data dir (%APPDATA%\<productName>
+# on Windows, ~/Library/Application Support/<productName> on macOS) where the
+# embedded database lives, and `appId` identifies the app for updates.
 # Both MUST stay stable across releases — changing either orphans every existing
 # user's database (it would look for data under a new path). See apps/desktop/src/
 # main.ts (PGLITE_DATA_DIR) and the export/import backup feature in the app.
@@ -71,9 +72,45 @@ portable:
 # install and, unlike the portable exe, no per-launch extraction, so it launches
 # instantly with the splash. Good for a drop-in / no-admin folder.
 
+# macOS. The CI runner (macos-latest) is Apple Silicon, so this is a NATIVE arm64
+# build for modern (M-series) MacBooks — no cross-compilation, no Rosetta.
+# To also ship for Intel Macs, add `- x64` to each arch list below; that roughly
+# doubles the build time and emits a second pair of artifacts.
 mac:
-  target: dmg
+  target:
+    # .dmg is the familiar drag-to-Applications install.
+    - target: dmg
+      arch:
+        - arm64
+    # .zip is the no-ceremony alternative: unzip, run. Also the format a future
+    # auto-updater would need.
+    - target: zip
+      arch:
+        - arm64
   category: public.app-category.finance
+  # Electron 33 requires macOS 11+; state it so older machines get a clear
+  # refusal instead of a crash.
+  minimumSystemVersion: '11.0'
+  darkModeSupport: true
+  artifactName: PocketCash-${version}-mac-${arch}.${ext}
+  # There is no paid Apple Developer certificate for this project, so we can
+  # neither sign with a real identity nor notarize. `identity: null` stops
+  # electron-builder searching the keychain and failing the build; the
+  # `afterPack` hook then applies an AD-HOC signature, which Apple Silicon
+  # requires for the app to run at all. hardenedRuntime must stay off — it is
+  # only meaningful alongside notarization and breaks an ad-hoc signed app.
+  # Consequence: Gatekeeper quarantines the download and the first launch needs
+  # right-click → Open. Documented in docs/releasing.md.
+  identity: null
+  hardenedRuntime: false
+  notarize: false
+
+dmg:
+  artifactName: PocketCash-${version}-mac-${arch}.dmg
+
+# Applies to macOS only (see the hook — it no-ops elsewhere).
+afterPack: ./scripts/adhoc-sign-mac.mjs
+
 linux:
   target: AppImage
   category: Finance
