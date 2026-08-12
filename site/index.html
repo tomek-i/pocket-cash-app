@@ -9,13 +9,45 @@
       content="Turn messy bank CSV exports into a calm, organized view of your spending — import, auto-dedupe, categorise, and run tax reports, all on your own device. No account, no cloud, no telemetry."
     />
     <link rel="icon" href="./logo.png" />
-    <meta property="og:title" content="Pocket Cash" />
+
+    <!--
+      Canonical URL. The Pages site is served from the tomek.au custom domain
+      configured on the tomek-i.github.io USER site; this project site inherits it
+      (tomek-i.github.io/pocket-cash-app 301s here), which is why there is no
+      site/CNAME — a CNAME here would claim the apex domain and collide with the
+      user site. Social crawlers need ABSOLUTE URLs, so the og:/twitter: image and
+      url below are spelled out in full rather than left relative.
+    -->
+    <link rel="canonical" href="https://tomek.au/pocket-cash-app/" />
+    <meta name="theme-color" content="#0a0a08" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pocket Cash" />
+    <meta property="og:url" content="https://tomek.au/pocket-cash-app/" />
+    <meta property="og:title" content="Pocket Cash — finally understand where your money goes" />
     <meta
       property="og:description"
-      content="Finally understand where your money goes. A private, offline-first personal-finance desktop app."
+      content="Turn messy bank CSV exports into a calm, organized view of your spending. Private and offline-first — no account, no cloud, no telemetry."
     />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="./logo.png" />
+    <meta property="og:image" content="https://tomek.au/pocket-cash-app/og-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Pocket Cash — finally understand where your money goes. No account, no cloud, your device."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pocket Cash — finally understand where your money goes" />
+    <meta
+      name="twitter:description"
+      content="Turn messy bank CSV exports into a calm, organized view of your spending. Private and offline-first — no account, no cloud, no telemetry."
+    />
+    <meta name="twitter:image" content="https://tomek.au/pocket-cash-app/og-card.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Pocket Cash — finally understand where your money goes. No account, no cloud, your device."
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
