@@ -9,6 +9,13 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.3.1](https://github.com/tomek-i/pocket-cash-app/compare/v0.3.0...v0.3.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* prevent a second instance from opening on the same embedded database ([848cd8a](https://github.com/tomek-i/pocket-cash-app/commit/848cd8a52732cebc857495dd3cbbe4007ba6ae1e)), closes [#23](https://github.com/tomek-i/pocket-cash-app/issues/23)
+
 ## [0.3.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.2.0...v0.3.0) (2026-07-31)
 
 
