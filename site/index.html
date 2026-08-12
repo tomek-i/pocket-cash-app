@@ -110,6 +110,9 @@
       h1 { font-size: clamp(38px, 5.6vw, 58px); line-height: 1.02; font-weight: 700; letter-spacing: -0.03em; margin: 22px 0 0; }
       .lede { font-size: 17px; color: var(--text2); margin: 22px 0 0; max-width: 46ch; }
       .hero-cta { display: flex; align-items: center; gap: 13px; margin-top: 32px; flex-wrap: wrap; }
+      .req { margin-top: 14px; font-size: 12.5px; line-height: 1.7; color: var(--text3); }
+      .req a { color: var(--text2); text-decoration: underline; text-underline-offset: 2px; }
+      .req a:hover { color: var(--text); }
       .trust { display: flex; align-items: center; gap: 9px; margin-top: 26px; font-size: 13px; color: var(--text3); }
       .trust svg { width: 16px; height: 16px; color: var(--accent-text); flex: none; }
 
@@ -151,6 +154,7 @@
       .card .ic svg { width: 21px; height: 21px; }
       .card h3 { font-size: 16.5px; font-weight: 600; letter-spacing: -0.01em; margin-top: 18px; }
       .card p { font-size: 13.5px; color: var(--text2); margin-top: 8px; }
+      .card p strong { color: var(--text); font-weight: 600; }
       .step-n { font-family: "Geist Mono", monospace; font-size: 40px; font-weight: 600; color: var(--step-num); line-height: 1; }
       .step h3 { margin-top: 16px; font-size: 15.5px; }
 
@@ -182,7 +186,7 @@
       .foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
       .foot .brand span { font-size: 15px; font-weight: 600; }
       .foot .brand img { width: 30px; height: 30px; }
-      .foot-links { display: flex; gap: 26px; }
+      .foot-links { display: flex; flex-wrap: wrap; gap: 12px 26px; }
       .foot-links a { font-size: 13px; color: var(--text3); }
       .foot-links a:hover { color: var(--text); }
       .foot .copy { font-family: "Geist Mono", monospace; font-size: 12px; color: var(--text3); }
@@ -235,10 +239,15 @@
           <div class="hero-cta">
             <a class="btn btn-primary" href="https://github.com/tomek-i/pocket-cash-app/releases/latest">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download for Windows
+              Download
             </a>
             <a class="btn btn-ghost" href="#how">See how it works</a>
           </div>
+          <p class="req">
+            Windows 10/11 · macOS 11+ (Apple Silicon) · 100–120&nbsp;MB download<br />
+            Builds are unsigned, so macOS needs a
+            <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/docs/releasing.md#macos-unsigned-builds-and-gatekeeper">one-time Gatekeeper override</a>.
+          </p>
           <div class="trust">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
             No account. No cloud. Your data stays on your device.
@@ -284,7 +293,7 @@
       <div class="wrap">
         <span class="lbl">Works with exports from any bank</span>
         <div class="names">
-          <span>Northwall</span><span>Lumen</span><span>Vantage</span><span>Meridian</span><span>Coastal</span>
+          <span>Any CSV</span><span>Any currency</span><span>Any date format</span><span>Multi-account</span><span>Reusable mappings</span>
         </div>
       </div>
     </div>
@@ -325,7 +334,7 @@
           <div class="card">
             <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg></div>
             <h3>AI, only if you want it</h3>
-            <p>Optional auto-categorising, insights and a deduction scan — a local model or your own key. Off by default.</p>
+            <p>Optional auto-categorising, insights and a deduction scan. Run a local model with Ollama and stay <strong>100% offline</strong>, or use your own Anthropic key or Claude subscription. Off by default — nothing is sent anywhere until you turn it on.</p>
           </div>
         </div>
       </section>
@@ -426,7 +435,9 @@
             <a href="#features">Features</a>
             <a href="#privacy">Privacy</a>
             <a href="https://github.com/tomek-i/pocket-cash-app#readme">Docs</a>
+            <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/docs/architecture.md">Architecture</a>
             <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/CHANGELOG.md">Changelog</a>
+            <a href="https://github.com/tomek-i/pocket-cash-app/issues">Report an issue</a>
             <a href="https://github.com/tomek-i/pocket-cash-app">GitHub</a>
           </nav>
           <span class="copy">© 2026 Pocket Cash</span>
