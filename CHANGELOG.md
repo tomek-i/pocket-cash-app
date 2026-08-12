@@ -9,6 +9,14 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.4.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.3.1...v0.4.0) (2026-08-12)
+
+
+### Features
+
+* add an FAQ section to the landing page ([#40](https://github.com/tomek-i/pocket-cash-app/issues/40)) ([112d984](https://github.com/tomek-i/pocket-cash-app/commit/112d9847272a2658e72f5a5eceab1573648f5bbb)), closes [#7](https://github.com/tomek-i/pocket-cash-app/issues/7)
+* script and capture product screenshots for the README and landing page ([#42](https://github.com/tomek-i/pocket-cash-app/issues/42)) ([426bc5f](https://github.com/tomek-i/pocket-cash-app/commit/426bc5f2fec02a3991a02dabe1e0f8c41f167e15)), closes [#21](https://github.com/tomek-i/pocket-cash-app/issues/21)
+
 ## [0.3.1](https://github.com/tomek-i/pocket-cash-app/compare/v0.3.0...v0.3.1) (2026-08-12)
 
 
