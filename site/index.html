@@ -213,6 +213,27 @@
       .final p { font-size: 16px; color: var(--text2); margin: 14px auto 0; max-width: 44ch; }
       .final .hero-cta { justify-content: center; }
 
+      /* ── FAQ ──
+         Built on native <details>/<summary>: keyboard operable (Enter/Space) and
+         announced as a disclosure by screen readers with no JS or ARIA wiring. */
+      .faq { max-width: 780px; margin: 40px 0 0; }
+      .faq details { border-bottom: 1px solid var(--border); }
+      .faq details:first-of-type { border-top: 1px solid var(--border); }
+      .faq summary {
+        display: flex; align-items: center; justify-content: space-between; gap: 20px;
+        padding: 20px 2px; cursor: pointer; list-style: none;
+        font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+      }
+      .faq summary::-webkit-details-marker { display: none; }
+      .faq summary:hover { color: var(--accent-text); }
+      .faq summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+      .faq .chev { width: 18px; height: 18px; flex: none; color: var(--text3); transition: transform 0.18s; }
+      .faq details[open] .chev { transform: rotate(180deg); }
+      .faq details[open] summary { color: var(--accent-text); }
+      .faq .ans { padding: 0 2px 22px; font-size: 14.5px; color: var(--text2); max-width: 68ch; }
+      .faq .ans a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+      .faq .ans strong { color: var(--text); font-weight: 600; }
+
       /* ── Footer ── */
       footer { border-top: 1px solid var(--border); padding: 36px 0; }
       .foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
@@ -252,6 +273,7 @@
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <a href="#privacy">Privacy</a>
+          <a href="#faq">FAQ</a>
           <a href="https://github.com/tomek-i/pocket-cash-app">GitHub</a>
         </nav>
         <a class="btn btn-primary btn-sm" href="https://github.com/tomek-i/pocket-cash-app/releases/latest">Download</a>
@@ -443,6 +465,109 @@
       </section>
     </div>
 
+    <!-- FAQ -->
+    <div class="wrap">
+      <section id="faq">
+        <div class="sec-head">
+          <div class="eyebrow">Questions</div>
+          <h2>The things people ask before downloading.</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Is it really free?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              Yes, for personal use. Pocket Cash is source-available under the
+              <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>,
+              which makes it free for personal and noncommercial use. There is no paid tier, no
+              subscription and no account. Commercial use isn't permitted under that licence.
+            </p>
+          </details>
+          <details>
+            <summary>Which banks are supported?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              Any bank that lets you export a CSV — which is essentially all of them. There's no
+              bank list to be on and no connection to set up: you map that bank's columns once, and
+              the mapping becomes a reusable importer for every future statement from the same
+              account.
+            </p>
+          </details>
+          <details>
+            <summary>Is there a macOS or Linux version?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              Windows 10/11 and macOS 11+ on Apple Silicon (M-series) both have builds. There is
+              currently no Intel Mac build and no Linux build. The app itself is cross-platform, so
+              those are a matter of adding build targets rather than a rewrite.
+            </p>
+          </details>
+          <details>
+            <summary>Why does my computer warn me when I install it?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              Because the builds aren't code-signed — that needs paid certificates from Microsoft
+              and Apple, which this project doesn't have. Windows SmartScreen will say "unknown
+              publisher", and macOS needs a
+              <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/docs/releasing.md#macos-unsigned-builds-and-gatekeeper">one-time Gatekeeper override</a>
+              on first launch. The source is public, so you can read or build it yourself.
+            </p>
+          </details>
+          <details>
+            <summary>Does it need an internet connection?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              No. The interface, the database and every report run locally on your machine — you can
+              use the whole app with the network off. The optional AI features are the only part
+              that can reach out, they're off until you turn them on, and even those can run fully
+              offline against a local model.
+            </p>
+          </details>
+          <details>
+            <summary>Where is my data stored — and what if my laptop dies?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              In an embedded database inside the app's own folder on your device
+              (<span class="mono">%APPDATA%\Pocket Cash</span> on Windows,
+              <span class="mono">~/Library/Application Support/Pocket Cash</span> on macOS). Because
+              it's local, backups are your call: Settings has an export that writes everything to a
+              single file you can copy anywhere. Keeping one is worth the ten seconds.
+            </p>
+          </details>
+          <details>
+            <summary>Is my data sent anywhere?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              No. There's no cloud sync, no account to create, and no analytics or telemetry of any
+              kind in the app — not even anonymous usage counts. Nothing is uploaded, so there's
+              nothing to opt out of.
+            </p>
+          </details>
+          <details>
+            <summary>I hit a bug, or I have an idea — where do I say so?
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="ans">
+              <a href="https://github.com/tomek-i/pocket-cash-app/issues">GitHub Issues</a> — one
+              place for bug reports, feature ideas and general feedback. There's no support inbox
+              and nothing to sign up for; if you already have a GitHub account you can file
+              something in under a minute. For a bug, the app helps you out: its error screen has
+              <strong>Report an issue</strong> and <strong>Open logs</strong> buttons, so you can
+              attach the log rather than describe the problem from memory. Feature ideas are
+              genuinely welcome — several of them shape what gets built next.
+            </p>
+          </details>
+        </div>
+      </section>
+    </div>
+
     <!-- Final CTA -->
     <div class="final">
       <div class="wrap">
@@ -466,6 +591,7 @@
           <nav class="foot-links">
             <a href="#features">Features</a>
             <a href="#privacy">Privacy</a>
+            <a href="#faq">FAQ</a>
             <a href="https://github.com/tomek-i/pocket-cash-app#readme">Docs</a>
             <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/docs/architecture.md">Architecture</a>
             <a href="https://github.com/tomek-i/pocket-cash-app/blob/main/CHANGELOG.md">Changelog</a>
