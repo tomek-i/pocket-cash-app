@@ -17,6 +17,25 @@ export function showFatalError(error: unknown): void {
   app.quit()
 }
 
+// The single app window, tracked so a second launch can be handed back to it
+// (see `focusMainWindow`) instead of spawning a rival process on the same
+// embedded database.
+let mainWindow: BrowserWindow | null = null
+
+/**
+ * Bring the running instance's window to the front — un-minimising and showing it
+ * first, since the user's second launch is a request to SEE the app. Falls back to
+ * whatever window exists (the splash, if startup is still in flight) so an early
+ * second launch surfaces something rather than appearing to do nothing.
+ */
+export function focusMainWindow(): void {
+  const win = mainWindow ?? BrowserWindow.getAllWindows()[0]
+  if (!win || win.isDestroyed()) return
+  if (win.isMinimized()) win.restore()
+  if (!win.isVisible()) win.show()
+  win.focus()
+}
+
 export function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,
@@ -33,6 +52,11 @@ export function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  })
+
+  mainWindow = win
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
   })
 
   // Hand off from the splash only once the real window has actually rendered.
