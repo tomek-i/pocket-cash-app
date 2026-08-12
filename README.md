@@ -6,9 +6,9 @@
 
 **Finally understand where your money goes.**
 
-Turn messy bank CSV exports into a calm, organised view of your spending — import,
-auto-dedupe, categorise, and run financial-year and tax reports. Entirely on your
-own machine: no account, no cloud, no telemetry.
+Turn messy bank CSV exports into a calm, organised view of your spending. Import,
+auto-dedupe, categorise, and run financial-year and tax reports. It all runs on
+your own machine, with no account, no cloud and no telemetry.
 
 [![Latest release](https://img.shields.io/github/v/release/tomek-i/pocket-cash-app?label=download&color=e5e52e)](https://github.com/tomek-i/pocket-cash-app/releases/latest)
 [![CI](https://github.com/tomek-i/pocket-cash-app/actions/workflows/ci.yml/badge.svg)](https://github.com/tomek-i/pocket-cash-app/actions/workflows/ci.yml)
@@ -26,16 +26,16 @@ own machine: no account, no cloud, no telemetry.
 
 ## Why
 
-- **Your data never leaves your device.** An embedded database inside the app's own
-  folder. No sign-in, no servers, no analytics — nothing phones home.
-- **Works with any bank.** Anything that exports CSV. Map the columns once and that
-  mapping becomes a reusable importer for every future statement.
-- **Nothing gets double-counted.** Re-import the same file safely; a per-account
-  fingerprint means duplicates are skipped.
+- **Your data never leaves your device.** The database sits in the app's own
+  folder. There is no sign-in, no server and no analytics. Nothing phones home.
+- **Works with any bank.** If it exports CSV, it works. You map the columns once,
+  and that mapping becomes a reusable importer for every future statement.
+- **Nothing gets double-counted.** Re-import the same file safely. Each account
+  fingerprints its rows, so duplicates are skipped.
 - **Built for tax time.** Financial-year summaries, net-worth trends, and a tax
-  report with CSV export.
-- **AI, only if you want it.** Auto-categorising, insights and a deduction scan —
-  off by default, and able to run fully offline against a local model.
+  report you can export to CSV.
+- **AI, only if you want it.** Auto-categorising, insights and a deduction scan.
+  Off by default, and it can run fully offline against a local model.
 
 ## See it in action
 
@@ -47,17 +47,17 @@ own machine: no account, no cloud, no telemetry.
 
 Grab the latest build from [**Releases**](https://github.com/tomek-i/pocket-cash-app/releases/latest).
 
-| Platform                      | What you get                                                      |
-| ----------------------------- | ----------------------------------------------------------------- |
+| Platform                      | What you get                                                          |
+| ----------------------------- | --------------------------------------------------------------------- |
 | **Windows 10/11**             | Installer (`PocketCash-Setup-<v>.exe`), a portable `.exe`, or a `.zip` |
-| **macOS 11+** (Apple Silicon) | `PocketCash-<v>-mac-arm64.dmg` or a `.zip`                        |
+| **macOS 11+** (Apple Silicon) | `PocketCash-<v>-mac-arm64.dmg` or a `.zip`                            |
 
-Roughly a 100–120 MB download. There is no Intel Mac or Linux build.
+The download is around 100 to 120 MB. There is no Intel Mac or Linux build.
 
-The builds are **unsigned** — there are no paid Microsoft or Apple certificates for
-this project — so Windows SmartScreen warns about an unknown publisher, and macOS
+The builds are **unsigned**, because this project has no paid Microsoft or Apple
+certificates. Windows SmartScreen will warn about an unknown publisher, and macOS
 needs a [one-time Gatekeeper override](./docs/releasing.md#macos-unsigned-builds-and-gatekeeper)
-on first launch.
+the first time you open it.
 
 ## Built with
 
@@ -67,21 +67,21 @@ on first launch.
 [Turborepo](https://turbo.build)
 
 The desktop app is a thin Electron shell that boots the same Next.js server
-in-process — web and desktop share one UI and one codebase.
+in-process, so web and desktop share one UI and one codebase.
 
 ## Documentation
 
-| Doc                                          | What it covers                                                       |
-| -------------------------------------------- | -------------------------------------------------------------------- |
-| [development.md](./docs/development.md)       | Run it locally, repo layout, scripts, testing, building the installer |
-| [architecture.md](./docs/architecture.md)     | How web + Electron share one UI over an embedded database             |
-| [releasing.md](./docs/releasing.md)           | How versions and builds are cut, and the macOS Gatekeeper step        |
+| Doc                                       | What it covers                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| [development.md](./docs/development.md)   | Run it locally, repo layout, scripts, testing, building the installer  |
+| [architecture.md](./docs/architecture.md) | How web and Electron share one UI over an embedded database            |
+| [releasing.md](./docs/releasing.md)       | How versions and builds are cut, plus the macOS Gatekeeper step        |
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](./LICENSE) — free to use, fork, modify and
-share for **noncommercial purposes**: personal use, hobby projects, study and
+[PolyForm Noncommercial License 1.0.0](./LICENSE). You can use, fork, modify and
+share it for **noncommercial purposes**. Personal use, hobby projects, study and
 contributions are all welcome. Commercial use is not permitted. This is a
-source-available, not an OSI "open source", licence.
+source-available licence, not an OSI "open source" one.
 
 Copyright © 2026 Tomek Iwainski.
