@@ -1,4 +1,10 @@
-import { CALCULATION_BASES, CALCULATION_TYPES, FREQUENCIES, LOAN_TYPES } from '@repo/property'
+import {
+  CALCULATION_BASES,
+  CALCULATION_TYPES,
+  FREQUENCIES,
+  LOAN_TYPES,
+  RATE_UNITS,
+} from '@repo/property'
 import { COST_SCOPES, PROPERTY_STATUSES, PROPERTY_TYPES, PROPERTY_USES } from '@repo/types'
 import { z } from 'zod'
 
@@ -310,4 +316,66 @@ export const propertyCalculationSettingsSchema = z.object({
             .filter((rate) => Number.isFinite(rate) && rate >= 0)
             .map((rate) => rate / 100),
     ),
+})
+
+// ── Settings: rate schedules ─────────────────────────────────────────────────
+
+/**
+ * One bracket, already in the units the engine uses.
+ *
+ * The editor converts from what the user typed (major units, percentages) before
+ * serialising, so this only has to check the shape. The *rules* about ordering,
+ * overlaps and gaps are `validateRateSchedule` in `@repo/property`, which both
+ * the editor and the server action run.
+ */
+export const rateBracketSchema = z.object({
+  minimum: z.number().int().min(0, 'A bracket minimum cannot be negative'),
+  maximum: z.number().int().nullable(),
+  baseAmount: z.number().int().min(0, 'A base amount cannot be negative'),
+  rate: z.number().min(0, 'A rate cannot be negative'),
+  rateUnit: z.enum(RATE_UNITS),
+  minimumCharge: z.number().int().min(0).optional(),
+  unitSize: z.number().int().positive().optional(),
+})
+
+const bracketsJsonSchema = z
+  .string()
+  .transform((value, ctx) => {
+    try {
+      return JSON.parse(value) as unknown
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Brackets could not be read' })
+      return z.NEVER
+    }
+  })
+  .pipe(z.array(rateBracketSchema).min(1, 'A schedule needs at least one bracket'))
+
+export const rateScheduleFieldsSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(120),
+  jurisdictionKey: z.string().trim().min(1, 'Choose a jurisdiction').max(64),
+  /** What kind of charge this is, e.g. `transfer-tax`. */
+  groupKey: z
+    .string()
+    .trim()
+    .min(1, 'A charge type is required')
+    .max(64)
+    .regex(/^[a-z0-9-]+$/, 'Use lowercase letters, digits and dashes'),
+  currency,
+  effectiveFrom: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
+  effectiveTo: optionalIsoDate,
+  notes: optionalText(500),
+  brackets: bracketsJsonSchema,
+})
+
+export const createRateScheduleSchema = rateScheduleFieldsSchema
+export const updateRateScheduleSchema = rateScheduleFieldsSchema.extend({
+  id: z.string().uuid(),
+})
+export const rateScheduleIdSchema = z.object({ id: z.string().uuid() })
+export const toggleRateScheduleSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.enum(['true', 'false']),
 })
