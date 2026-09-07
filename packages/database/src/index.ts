@@ -22,5 +22,6 @@ export {
   sum,
 } from 'drizzle-orm'
 export { type Database, db } from './client'
+export { seedPropertyDefaults, TRANSFER_TAX_GROUP } from './property-seed'
 export * from './schema'
 export * from './settings-store'

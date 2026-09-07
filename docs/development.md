@@ -45,7 +45,7 @@ pnpm build:all    # turbo run build across every package
 pnpm typecheck    # typecheck all packages
 pnpm lint         # Biome lint + format check
 pnpm test         # run unit tests (Vitest)
-pnpm db:generate  # generate a migration from schema changes
+pnpm db:generate --name=property  # generate a migration from schema changes
 ```
 
 ## Repo layout
@@ -90,6 +90,12 @@ so this doc does not need editing every time a dependency moves.
 - **Embedded database.** `packages/database` runs an in-process PGlite Postgres
   (`DATABASE_DRIVER=embedded`). Migrations are applied on startup in the workspace
   resolver. There is no external database and no network dependency.
+- **Named migrations.** `pnpm db:generate` requires `--name`, e.g.
+  `--name=property`. Left to itself drizzle-kit invents something like
+  `0001_lively_khan.sql`, which says nothing in review or in `git log`. Use
+  snake_case describing what the migration does. Renaming a migration later is
+  safe (Drizzle tracks them by a hash of the SQL, not the filename) as long as
+  the file contents do not change, but naming it right the first time is better.
 - **Local single-user.** No auth, no accounts, no tenancy. App-level settings such
   as default currency and AI config live in a one-row `app_settings` table.
 - **Logging.** `@repo/logger` writes through `console`. In the packaged app the

@@ -17,6 +17,26 @@ export interface CachedInsight {
   generatedAt: string
 }
 
+/**
+ * Defaults the property planner applies to a new property, and the rate list its
+ * interest rate sensitivity table uses. Editable in Settings > Property, and
+ * seeded from `DEFAULT_CALCULATION_SETTINGS` in `@repo/property/defaults`.
+ */
+export interface PropertySettings {
+  /** Years. */
+  defaultLoanTermYears?: number
+  /** Decimal annual rate, `0.06` is 6%. */
+  defaultInterestRate?: number
+  /** Decimal share of the purchase price. */
+  defaultDepositPercentage?: number
+  /** Decimal share of the year a rental sits empty. */
+  defaultVacancyRate?: number
+  /** Decimal share of collected rent paid to a manager. */
+  defaultManagementRate?: number
+  /** Decimal annual rates shown in the sensitivity table. */
+  sensitivityRates?: number[]
+}
+
 /** The app's persisted settings blob — one row for this single-user install. */
 export interface AppSettings {
   defaultCurrency?: string
@@ -24,6 +44,7 @@ export interface AppSettings {
   aiInsights?: Record<string, CachedInsight>
   /** Set once the first-run welcome tour is finished. Unset/false = show it. */
   onboardingCompleted?: boolean
+  property?: PropertySettings
 }
 
 /**
