@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { type Database, type EmbeddedDbOptions, initEmbeddedDb } from './client'
+import { seedPropertyDefaults } from './property-seed'
 
 /**
  * Offline-desktop entrypoint. Kept on a separate export subpath
@@ -51,6 +52,13 @@ export async function runEmbeddedMigrations(
       const migrationsFolder =
         options.migrationsFolder ?? process.env.PGLITE_MIGRATIONS_DIR ?? defaultMigrationsFolder()
       await migrate(db, { migrationsFolder })
+
+      // System property configuration (jurisdictions, rate schedules, cost
+      // catalogue). Insert-only and keyed on stable keys, so this is a no-op
+      // after the first launch and never overwrites a user's edits. It runs here
+      // so the rows are guaranteed present before the first query, rather than
+      // every caller having to remember to seed.
+      await seedPropertyDefaults(db)
 
       return db
     })()

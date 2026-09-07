@@ -12,14 +12,16 @@
  * supplies data; the engine only applies it.
  */
 
-/** How a bracket turns a value into an amount. */
-export type RateUnit =
-  /** `baseAmount + (value - minimum) * rate` */
-  | 'percentage'
-  /** `baseAmount`, a flat charge for anything landing in this bracket. */
-  | 'fixed'
-  /** `baseAmount + ceil((value - minimum) / unitSize) * rate`, e.g. "$3 per $100". */
-  | 'perUnit'
+/**
+ * How a bracket turns a value into an amount.
+ *
+ * - `percentage`: `baseAmount + (value - minimum) * rate`
+ * - `fixed`: `baseAmount`, a flat charge for anything landing in this bracket
+ * - `perUnit`: `baseAmount + ceil((value - minimum) / unitSize) * rate`, e.g. "$3 per $100"
+ */
+export const RATE_UNITS = ['percentage', 'fixed', 'perUnit'] as const
+
+export type RateUnit = (typeof RATE_UNITS)[number]
 
 /**
  * One band of a progressive schedule.
@@ -77,15 +79,20 @@ export interface RateSchedule {
 }
 
 /** How a cost produces its amount. */
-export type CalculationType = 'fixed' | 'percentage' | 'formula' | 'bracketed' | 'manual'
+export const CALCULATION_TYPES = ['fixed', 'percentage', 'formula', 'bracketed', 'manual'] as const
+
+export type CalculationType = (typeof CALCULATION_TYPES)[number]
 
 /** The figure a percentage, formula or bracketed cost is calculated against. */
-export type CalculationBase =
-  | 'purchasePrice'
-  | 'propertyValue'
-  | 'loanAmount'
-  | 'deposit'
-  | 'dutiableValue'
+export const CALCULATION_BASES = [
+  'purchasePrice',
+  'propertyValue',
+  'loanAmount',
+  'deposit',
+  'dutiableValue',
+] as const
+
+export type CalculationBase = (typeof CALCULATION_BASES)[number]
 
 /** The variables a cost calculation and a user formula may read. */
 export interface CalculationContext {
@@ -106,17 +113,22 @@ export interface CalculationContext {
 }
 
 /** How often a recurring amount is charged. */
-export type Frequency =
-  | 'weekly'
-  | 'fortnightly'
-  | 'monthly'
-  | 'quarterly'
-  | 'halfYearly'
-  | 'annual'
-  | 'custom'
+export const FREQUENCIES = [
+  'weekly',
+  'fortnightly',
+  'monthly',
+  'quarterly',
+  'halfYearly',
+  'annual',
+  'custom',
+] as const
+
+export type Frequency = (typeof FREQUENCIES)[number]
 
 /** Repayment structure of a loan. */
-export type LoanType = 'principalAndInterest' | 'interestOnly'
+export const LOAN_TYPES = ['principalAndInterest', 'interestOnly'] as const
+
+export type LoanType = (typeof LOAN_TYPES)[number]
 
 /** A recoverable failure. The engine returns these rather than throwing. */
 export interface EngineError {
