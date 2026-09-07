@@ -3,6 +3,7 @@
 import type { Jurisdiction } from '@repo/database'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@repo/ui'
 import { Building2, Pencil, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import { formatMoney } from '@/lib/money'
 import { PROPERTY_TYPE_LABELS, PROPERTY_USE_LABELS } from '../_lib/labels'
 import type { PropertyPosition } from '../_lib/portfolio'
@@ -40,7 +41,10 @@ export function PropertyCard({
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
+        <Link
+          href={`/app/property/${property.id}/planner`}
+          className="flex min-w-0 items-center gap-3"
+        >
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <Building2 className="size-4" />
           </div>
@@ -50,7 +54,7 @@ export function PropertyCard({
               {property.address || place || '—'}
             </p>
           </div>
-        </div>
+        </Link>
         <div className="flex shrink-0 gap-1">
           <PropertyDialog
             property={property}
