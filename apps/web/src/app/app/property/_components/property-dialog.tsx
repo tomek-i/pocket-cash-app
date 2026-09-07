@@ -21,6 +21,7 @@ import {
 import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../banks/_components/form-field'
+import { toMajorInput, toPercentInput } from '../_lib/format'
 import {
   LOAN_TYPE_LABELS,
   PROPERTY_STATUS_LABELS,
@@ -31,18 +32,6 @@ import { createProperty, type PropertyWithLoans, updateProperty } from '../actio
 
 /** Sentinel for "no configured jurisdiction", since a Select cannot hold an empty value. */
 const OTHER = '__other__'
-
-/** Minor units to the major-unit string the form edits. */
-function toMajor(minorUnits: number | null | undefined): string {
-  if (minorUnits === null || minorUnits === undefined) return ''
-  return (minorUnits / 100).toString()
-}
-
-/** A stored decimal rate to the percentage string the form edits. */
-function toPercent(decimal: number | null | undefined): string {
-  if (decimal === null || decimal === undefined) return ''
-  return (decimal * 100).toString()
-}
 
 function LabelledSelect({
   label,
@@ -240,7 +229,7 @@ export function PropertyDialog({
             <Field
               label="Purchase price"
               name="purchasePrice"
-              defaultValue={state?.values?.purchasePrice ?? toMajor(property?.purchasePrice)}
+              defaultValue={state?.values?.purchasePrice ?? toMajorInput(property?.purchasePrice)}
               placeholder="950000"
               error={state?.errors?.purchasePrice}
             />
@@ -248,7 +237,7 @@ export function PropertyDialog({
               label="Estimated market value"
               name="estimatedMarketValue"
               defaultValue={
-                state?.values?.estimatedMarketValue ?? toMajor(property?.estimatedMarketValue)
+                state?.values?.estimatedMarketValue ?? toMajorInput(property?.estimatedMarketValue)
               }
               placeholder="980000"
               error={state?.errors?.estimatedMarketValue}
@@ -260,7 +249,7 @@ export function PropertyDialog({
               <Field
                 label="Current value"
                 name="currentValue"
-                defaultValue={state?.values?.currentValue ?? toMajor(property?.currentValue)}
+                defaultValue={state?.values?.currentValue ?? toMajorInput(property?.currentValue)}
                 placeholder="1050000"
                 error={state?.errors?.currentValue}
               />
@@ -268,7 +257,8 @@ export function PropertyDialog({
                 label="Original purchase price"
                 name="originalPurchasePrice"
                 defaultValue={
-                  state?.values?.originalPurchasePrice ?? toMajor(property?.originalPurchasePrice)
+                  state?.values?.originalPurchasePrice ??
+                  toMajorInput(property?.originalPurchasePrice)
                 }
                 placeholder="820000"
                 error={state?.errors?.originalPurchasePrice}
@@ -281,7 +271,7 @@ export function PropertyDialog({
               label="Ownership share (%)"
               name="ownershipShare"
               defaultValue={
-                state?.values?.ownershipShare ?? toPercent(property?.ownershipShare ?? 1)
+                state?.values?.ownershipShare ?? toPercentInput(property?.ownershipShare ?? 1)
               }
               placeholder="100"
               error={state?.errors?.ownershipShare}
@@ -301,14 +291,14 @@ export function PropertyDialog({
               <Field
                 label="Loan amount"
                 name="loanAmount"
-                defaultValue={state?.values?.loanAmount ?? toMajor(loan?.loanAmount)}
+                defaultValue={state?.values?.loanAmount ?? toMajorInput(loan?.loanAmount)}
                 placeholder="760000"
                 error={state?.errors?.loanAmount}
               />
               <Field
                 label="Interest rate (%)"
                 name="interestRate"
-                defaultValue={state?.values?.interestRate ?? toPercent(loan?.annualRate)}
+                defaultValue={state?.values?.interestRate ?? toPercentInput(loan?.annualRate)}
                 placeholder="6.25"
                 error={state?.errors?.interestRate}
               />

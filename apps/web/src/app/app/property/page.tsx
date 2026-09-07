@@ -5,6 +5,7 @@ import { formatMoney } from '@/lib/money'
 import { Empty } from '../_components/empty'
 import { PropertyCard } from './_components/property-card'
 import { PropertyDialog } from './_components/property-dialog'
+import { formatPercent } from './_lib/format'
 import { PROPERTY_STATUS_LABELS } from './_lib/labels'
 import { type PortfolioInput, portfolioTotals, propertyPosition } from './_lib/portfolio'
 import { listJurisdictions, listProperties, type PropertyWithLoans } from './actions'
@@ -115,7 +116,7 @@ export default async function PropertyPage() {
               />
               <Summary
                 label="Portfolio LVR"
-                value={totals.value > 0 ? `${(totals.lvr * 100).toFixed(1)}%` : '—'}
+                value={totals.value > 0 ? formatPercent(totals.lvr) : '—'}
               />
             </CardContent>
           </Card>

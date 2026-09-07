@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@repo/ui'
 import { formatMoney } from '@/lib/money'
+import { formatPercent } from '../../../_lib/format'
 import type { FinancingResult } from '../../../_lib/planner'
 
 /**
@@ -56,6 +57,9 @@ export function PlannerDashboard({
   currency,
   upfrontCosts,
   cashRequired,
+  monthlyPropertyCosts,
+  monthlyRentalIncome,
+  monthlyCashFlow,
 }: {
   result: FinancingResult
   currency: string
@@ -63,6 +67,12 @@ export function PlannerDashboard({
   upfrontCosts: number
   /** Minor units. Deposit plus upfront costs. */
   cashRequired: number
+  /** Minor units per month. Holding costs, excluding the loan. */
+  monthlyPropertyCosts: number
+  /** Minor units per month, after vacancy and management. Null when not let. */
+  monthlyRentalIncome: number | null
+  /** Minor units per month, after every cost including principal. Null when not let. */
+  monthlyCashFlow: number | null
 }) {
   const { financing, amortisation } = result
 
@@ -77,10 +87,7 @@ export function PlannerDashboard({
 
       <Panel title="Financing">
         <Metric label="Loan amount" value={formatMoney(financing.loanAmount, currency)} />
-        <Metric
-          label="LVR"
-          value={result.propertyValue > 0 ? `${(financing.lvr * 100).toFixed(1)}%` : '—'}
-        />
+        <Metric label="LVR" value={result.propertyValue > 0 ? formatPercent(financing.lvr) : '—'} />
         <Metric
           label="Monthly repayment"
           value={formatMoney(amortisation.monthlyRepayment, currency)}
@@ -102,9 +109,22 @@ export function PlannerDashboard({
       </Panel>
 
       <Panel title="Ongoing">
-        <Metric label="Monthly property costs" value="—" tone="muted" hint="Added later" />
-        <Metric label="Monthly rental income" value="—" tone="muted" hint="Added later" />
-        <Metric label="Net monthly cash flow" value="—" tone="muted" hint="Added later" />
+        <Metric
+          label="Monthly property costs"
+          value={formatMoney(monthlyPropertyCosts, currency)}
+        />
+        <Metric
+          label="Monthly rental income"
+          value={monthlyRentalIncome === null ? '—' : formatMoney(monthlyRentalIncome, currency)}
+          tone={monthlyRentalIncome === null ? 'muted' : undefined}
+          hint={monthlyRentalIncome === null ? 'Not let' : 'After vacancy and management'}
+        />
+        <Metric
+          label="Net monthly cash flow"
+          value={monthlyCashFlow === null ? '—' : formatMoney(monthlyCashFlow, currency)}
+          tone={monthlyCashFlow === null ? 'muted' : monthlyCashFlow < 0 ? 'negative' : undefined}
+          hint={monthlyCashFlow === null ? 'Not let' : 'Includes principal'}
+        />
         <Metric
           label="Monthly loan repayment"
           value={formatMoney(amortisation.monthlyRepayment, currency)}

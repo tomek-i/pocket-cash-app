@@ -5,16 +5,12 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@repo/u
 import { Building2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { formatMoney } from '@/lib/money'
+import { formatPercent } from '../_lib/format'
 import { PROPERTY_TYPE_LABELS, PROPERTY_USE_LABELS } from '../_lib/labels'
 import type { PropertyPosition } from '../_lib/portfolio'
 import type { PropertyWithLoans } from '../actions'
 import { DeletePropertyDialog } from './delete-property-dialog'
 import { PropertyDialog } from './property-dialog'
-
-/** Percentage with one decimal, e.g. `0.8` becomes "80.0%". */
-function formatPercent(decimal: number): string {
-  return `${(decimal * 100).toFixed(1)}%`
-}
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'negative' }) {
   return (
