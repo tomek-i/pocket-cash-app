@@ -1,8 +1,10 @@
+import { getAppSettings } from '@repo/database'
 import { DEFAULT_COST_CATEGORIES } from '@repo/property/defaults'
 import { Badge, Button } from '@repo/ui'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { resolveNumberLocale } from '@/lib/number-format'
 import {
   buildCostContext,
   snapshotToEngineSchedule,
@@ -37,13 +39,17 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
   const { property, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } = data
   const loan = property.loans[0]
 
-  const [costRows, availableCostTypes, recurringRows, recurringTypes, rental] = await Promise.all([
-    listPropertyCosts(propertyId),
-    listAvailableCostTypes(),
-    listRecurringCosts(propertyId),
-    listRecurringCostTypes(),
-    getRental(propertyId),
-  ])
+  const [costRows, availableCostTypes, recurringRows, recurringTypes, rental, appSettings] =
+    await Promise.all([
+      listPropertyCosts(propertyId),
+      listAvailableCostTypes(),
+      listRecurringCosts(propertyId),
+      listRecurringCostTypes(),
+      getRental(propertyId),
+      getAppSettings(),
+    ])
+
+  const locale = resolveNumberLocale(appSettings.numberLocale)
 
   // A completed purchase reads its frozen snapshot. Everything else follows the
   // schedule in force on the purchase date. This is the one place that choice is
@@ -155,7 +161,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
             Enter any one of deposit, deposit percentage or loan amount. The other two follow.
           </p>
         </div>
-        <FinancingPanel property={property} />
+        <FinancingPanel property={property} locale={locale} />
       </section>
 
       <section className="flex flex-col gap-3">
@@ -174,6 +180,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
           snapshotName={snapshot?.name ?? null}
         />
         <UpfrontCosts
+          locale={locale}
           propertyId={property.id}
           summary={costSummary}
           costTypes={availableCostTypes}
@@ -193,6 +200,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
           </p>
         </div>
         <OngoingCosts
+          locale={locale}
           propertyId={property.id}
           summary={ongoing.recurring}
           costTypes={recurringTypes}
@@ -210,6 +218,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
             </p>
           </div>
           <RentalIncome
+            locale={locale}
             propertyId={property.id}
             rental={rental}
             cashFlow={ongoing.cashFlow}

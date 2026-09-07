@@ -29,6 +29,8 @@ import {
   PROPERTY_USE_LABELS,
 } from '../_lib/labels'
 import { createProperty, type PropertyWithLoans, updateProperty } from '../actions'
+import { DateField } from './date-field'
+import { MoneyInput } from './money-input'
 
 /** Sentinel for "no configured jurisdiction", since a Select cannot hold an empty value. */
 const OTHER = '__other__'
@@ -81,11 +83,14 @@ export function PropertyDialog({
   property,
   jurisdictions,
   defaultCurrency = 'USD',
+  locale,
   trigger,
 }: {
   property?: PropertyWithLoans
   jurisdictions: Jurisdiction[]
   defaultCurrency?: string
+  /** How amounts are grouped. Resolved on the server from the machine or the setting. */
+  locale: string
   trigger: ReactElement
 }) {
   const action = property ? updateProperty : createProperty
@@ -226,41 +231,45 @@ export function PropertyDialog({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
+            <MoneyInput
               label="Purchase price"
               name="purchasePrice"
+              locale={locale}
               defaultValue={state?.values?.purchasePrice ?? toMajorInput(property?.purchasePrice)}
-              placeholder="950000"
+              placeholder={950000}
               error={state?.errors?.purchasePrice}
             />
-            <Field
+            <MoneyInput
               label="Estimated market value"
               name="estimatedMarketValue"
+              locale={locale}
               defaultValue={
                 state?.values?.estimatedMarketValue ?? toMajorInput(property?.estimatedMarketValue)
               }
-              placeholder="980000"
+              placeholder={980000}
               error={state?.errors?.estimatedMarketValue}
             />
           </div>
 
           {status === 'existing' || status === 'sold' ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field
+              <MoneyInput
                 label="Current value"
                 name="currentValue"
+                locale={locale}
                 defaultValue={state?.values?.currentValue ?? toMajorInput(property?.currentValue)}
-                placeholder="1050000"
+                placeholder={1050000}
                 error={state?.errors?.currentValue}
               />
-              <Field
+              <MoneyInput
                 label="Original purchase price"
                 name="originalPurchasePrice"
+                locale={locale}
                 defaultValue={
                   state?.values?.originalPurchasePrice ??
                   toMajorInput(property?.originalPurchasePrice)
                 }
-                placeholder="820000"
+                placeholder={820000}
                 error={state?.errors?.originalPurchasePrice}
               />
             </div>
@@ -276,11 +285,10 @@ export function PropertyDialog({
               placeholder="100"
               error={state?.errors?.ownershipShare}
             />
-            <Field
+            <DateField
               label="Purchase date"
               name="purchaseDate"
               defaultValue={state?.values?.purchaseDate ?? property?.purchaseDate ?? ''}
-              placeholder="2026-08-15"
               error={state?.errors?.purchaseDate}
             />
           </div>
@@ -288,11 +296,12 @@ export function PropertyDialog({
           <div className="grid gap-3 rounded-lg border p-4">
             <p className="font-medium text-sm">Loan</p>
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field
+              <MoneyInput
                 label="Loan amount"
                 name="loanAmount"
+                locale={locale}
                 defaultValue={state?.values?.loanAmount ?? toMajorInput(loan?.loanAmount)}
-                placeholder="760000"
+                placeholder={760000}
                 error={state?.errors?.loanAmount}
               />
               <Field

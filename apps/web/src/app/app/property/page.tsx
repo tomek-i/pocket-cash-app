@@ -2,6 +2,7 @@ import { getAppSettings } from '@repo/database'
 import { Button, Card, CardContent } from '@repo/ui'
 import { Building2, Plus } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
+import { resolveNumberLocale } from '@/lib/number-format'
 import { Empty } from '../_components/empty'
 import { PropertyCard } from './_components/property-card'
 import { PropertyDialog } from './_components/property-dialog'
@@ -50,6 +51,7 @@ export default async function PropertyPage() {
   ])
 
   const defaultCurrency = settings.defaultCurrency ?? 'USD'
+  const locale = resolveNumberLocale(settings.numberLocale)
   const inputs = properties.map(toPortfolioInput)
   const totals = portfolioTotals(inputs)
   // Totals are reported in the default currency. Mixed-currency portfolios need
@@ -84,6 +86,7 @@ export default async function PropertyPage() {
         <PropertyDialog
           jurisdictions={jurisdictions}
           defaultCurrency={defaultCurrency}
+          locale={locale}
           trigger={addButton}
         />
       </div>
@@ -98,6 +101,7 @@ export default async function PropertyPage() {
               <PropertyDialog
                 jurisdictions={jurisdictions}
                 defaultCurrency={defaultCurrency}
+                locale={locale}
                 trigger={addButton}
               />
             }
@@ -133,6 +137,7 @@ export default async function PropertyPage() {
                     property={property}
                     position={propertyPosition(toPortfolioInput(property))}
                     jurisdictions={jurisdictions}
+                    locale={locale}
                   />
                 ))}
               </div>

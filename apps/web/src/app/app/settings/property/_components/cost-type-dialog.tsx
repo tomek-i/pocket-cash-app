@@ -28,6 +28,7 @@ import {
 import { ChevronDown } from 'lucide-react'
 import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
+import { MoneyInput } from '../../../property/_components/money-input'
 import { toMajorInput, toPercentInput } from '../../../property/_lib/format'
 import { FREQUENCY_LABELS } from '../../../property/[propertyId]/planner/_components/ongoing-costs'
 import { createCostType, updateCostType } from '../actions'
@@ -103,9 +104,11 @@ function LabelledSelect({
  */
 export function CostTypeDialog({
   costType,
+  locale,
   trigger,
 }: {
   costType?: CostType
+  locale: string
   trigger: ReactElement
 }) {
   const action = costType ? updateCostType : createCostType
@@ -168,19 +171,14 @@ export function CostTypeDialog({
             ) : null}
           </div>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="defaultValue">Default value</Label>
-            <Input
-              id="defaultValue"
-              name="defaultValue"
-              inputMode="decimal"
-              defaultValue={state?.values?.defaultValue ?? toMajorInput(costType?.defaultValue)}
-              placeholder="250"
-            />
-            {state?.errors?.defaultValue?.[0] ? (
-              <p className="text-destructive text-xs">{state.errors.defaultValue[0]}</p>
-            ) : null}
-          </div>
+          <MoneyInput
+            label="Default value"
+            name="defaultValue"
+            locale={locale}
+            defaultValue={state?.values?.defaultValue ?? toMajorInput(costType?.defaultValue)}
+            placeholder={250}
+            error={state?.errors?.defaultValue}
+          />
 
           <button
             type="button"

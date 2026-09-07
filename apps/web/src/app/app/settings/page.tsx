@@ -1,6 +1,7 @@
 import { Button, Card, CardContent } from '@repo/ui'
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { resolveNumberLocale } from '@/lib/number-format'
 import { resetAndSeedDemo } from '../_lib/seed-actions'
 import { AiSettings } from './_components/ai-settings'
 import { DangerAction } from './_components/danger-action'
@@ -35,7 +36,7 @@ export default async function SettingsPage() {
         </div>
         <Card>
           <CardContent className="p-5">
-            <GeneralSettings settings={settings} />
+            <GeneralSettings settings={settings} systemLocale={resolveNumberLocale()} />
           </CardContent>
         </Card>
       </section>

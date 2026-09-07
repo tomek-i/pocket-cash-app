@@ -27,7 +27,15 @@ function describe(costType: CostType, currency: string): string {
   }
 }
 
-function CostTypeRow({ costType, currency }: { costType: CostType; currency: string }) {
+function CostTypeRow({
+  costType,
+  currency,
+  locale,
+}: {
+  costType: CostType
+  currency: string
+  locale: string
+}) {
   const [, toggleAction] = useActionState(toggleCostType, null)
   const [, deleteAction] = useActionState(deleteCostType, null)
   const [, restoreAction] = useActionState(restoreCostTypeDefault, null)
@@ -91,6 +99,7 @@ function CostTypeRow({ costType, currency }: { costType: CostType; currency: str
 
         <CostTypeDialog
           costType={costType}
+          locale={locale}
           trigger={
             <Button variant="ghost" size="icon" aria-label={`Edit ${costType.name}`}>
               <Pencil className="size-4" />
@@ -119,9 +128,11 @@ function CostTypeRow({ costType, currency }: { costType: CostType; currency: str
 export function CostTypesSection({
   costTypes,
   currency,
+  locale,
 }: {
   costTypes: CostType[]
   currency: string
+  locale: string
 }) {
   const upfront = costTypes.filter((type) => type.scope === 'upfront')
   const recurring = costTypes.filter((type) => type.scope === 'recurring')
@@ -134,6 +145,7 @@ export function CostTypesSection({
             {costTypes.length} cost types. These are what the Add Cost list offers.
           </p>
           <CostTypeDialog
+            locale={locale}
             trigger={
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Plus className="size-4" />
@@ -152,7 +164,12 @@ export function CostTypesSection({
               <p className="font-medium text-muted-foreground text-sm">{group.title}</p>
               <div className="flex flex-col border-t">
                 {group.items.map((costType) => (
-                  <CostTypeRow key={costType.id} costType={costType} currency={currency} />
+                  <CostTypeRow
+                    key={costType.id}
+                    costType={costType}
+                    currency={currency}
+                    locale={locale}
+                  />
                 ))}
               </div>
             </div>

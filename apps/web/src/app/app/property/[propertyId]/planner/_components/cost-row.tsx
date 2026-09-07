@@ -1,10 +1,11 @@
 'use client'
 
 import type { CostBreakdown } from '@repo/property'
-import { Badge, Button, Input } from '@repo/ui'
+import { Badge, Button } from '@repo/ui'
 import { ChevronDown, RotateCcw, Trash2 } from 'lucide-react'
 import { useActionState, useState } from 'react'
 import { formatMoney } from '@/lib/money'
+import { MoneyInput } from '../../../_components/money-input'
 import type { EvaluatedCost } from '../../../_lib/costs'
 import { toMajorInput } from '../../../_lib/format'
 import { removePropertyCost, setPropertyCostValue, togglePropertyCost } from '../costs-actions'
@@ -78,30 +79,28 @@ function AmountForm({
   value,
   label,
   placeholder,
+  locale,
 }: {
   costId: string
   field: 'overrideValue' | 'manualValue' | 'actualValue'
   value: string
   label: string
-  placeholder?: string
+  placeholder?: number
+  locale: string
 }) {
   const [state, formAction, pending] = useActionState(setPropertyCostValue, null)
-  const [draft, setDraft] = useState(value)
 
   return (
     <form action={formAction} className="flex items-end gap-2">
       <input type="hidden" name="id" value={costId} />
       <input type="hidden" name="field" value={field} />
-      <div className="grid gap-1">
-        <span className="text-muted-foreground text-xs">{label}</span>
-        <Input
+      <div className="w-36">
+        <MoneyInput
           name="value"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          label={label}
+          locale={locale}
+          defaultValue={value}
           placeholder={placeholder}
-          inputMode="decimal"
-          className="h-8 w-32"
-          aria-label={label}
         />
       </div>
       <Button type="submit" size="sm" variant="secondary" disabled={pending}>
@@ -114,7 +113,15 @@ function AmountForm({
   )
 }
 
-export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: string }) {
+export function CostRow({
+  entry,
+  currency,
+  locale,
+}: {
+  entry: EvaluatedCost
+  currency: string
+  locale: string
+}) {
   const { row, result } = entry
   const [showDetails, setShowDetails] = useState(false)
   const [editingOverride, setEditingOverride] = useState(false)
@@ -216,7 +223,8 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
             field="manualValue"
             value={toMajorInput(row.manualValue)}
             label="Amount"
-            placeholder="2000"
+            placeholder={2000}
+            locale={locale}
           />
         ) : editingOverride ? (
           <AmountForm
@@ -224,7 +232,8 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
             field="overrideValue"
             value={toMajorInput(row.overrideValue)}
             label="Override amount"
-            placeholder={toMajorInput(result.calculatedValue)}
+            placeholder={(result.calculatedValue ?? 0) / 100}
+            locale={locale}
           />
         ) : (
           <Button variant="outline" size="sm" onClick={() => setEditingOverride(true)}>
@@ -252,7 +261,8 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
             field="actualValue"
             value={toMajorInput(row.actualValue)}
             label="Actual amount"
-            placeholder={toMajorInput(result.estimate)}
+            placeholder={result.estimate / 100}
+            locale={locale}
           />
         ) : (
           <Button variant="ghost" size="sm" onClick={() => setEditingActual(true)}>

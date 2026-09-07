@@ -25,14 +25,19 @@ import { wipeAllFinanceData } from '../_lib/seed'
 
 export interface AppSettingsView {
   defaultCurrency: string
+  /** Empty means follow the machine's own locale. */
+  numberLocale: string
 }
 
-const DEFAULTS: AppSettingsView = { defaultCurrency: 'USD' }
+const DEFAULTS: AppSettingsView = { defaultCurrency: 'USD', numberLocale: '' }
 
 /** Current settings with defaults applied for any unset key. */
 export async function getSettings(): Promise<AppSettingsView> {
   const stored = await getAppSettings()
-  return { defaultCurrency: stored.defaultCurrency || DEFAULTS.defaultCurrency }
+  return {
+    defaultCurrency: stored.defaultCurrency || DEFAULTS.defaultCurrency,
+    numberLocale: stored.numberLocale ?? DEFAULTS.numberLocale,
+  }
 }
 
 /** Convenience for forms that just need the default currency. */
@@ -41,13 +46,21 @@ export async function getDefaultCurrency(): Promise<string> {
 }
 
 export async function updateSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const values = { defaultCurrency: String(formData.get('defaultCurrency') ?? '') }
+  const values = {
+    defaultCurrency: String(formData.get('defaultCurrency') ?? ''),
+    numberLocale: String(formData.get('numberLocale') ?? ''),
+  }
   const parsed = updateSettingsSchema.safeParse(values)
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors, values }
 
   const current = await getAppSettings()
-  await saveAppSettings({ ...current, defaultCurrency: parsed.data.defaultCurrency })
-  revalidatePath('/app/settings')
+  await saveAppSettings({
+    ...current,
+    defaultCurrency: parsed.data.defaultCurrency,
+    numberLocale: parsed.data.numberLocale,
+  })
+  // Amount fields across the app read this, so refresh more than settings.
+  revalidatePath('/app', 'layout')
   return { ok: true }
 }
 
