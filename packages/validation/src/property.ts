@@ -149,3 +149,41 @@ export const plannerDetailsSchema = z.object({
   status: z.enum(PROPERTY_STATUSES),
   purchaseDate: optionalIsoDate,
 })
+
+// ── Planner cost rows ────────────────────────────────────────────────────────
+
+export const propertyCostIdSchema = z.object({ id: z.string().uuid() })
+
+export const addPropertyCostSchema = z.object({
+  propertyId: z.string().uuid(),
+  costTypeId: z.string().uuid(),
+})
+
+export const togglePropertyCostSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.enum(['true', 'false']),
+})
+
+/**
+ * One amount on a cost row.
+ *
+ * An empty value clears the field. That is how "reset to default" and "use
+ * calculation" work: clearing the override brings the calculated figure back,
+ * rather than writing the default in as a fixed number and freezing the cost
+ * against later changes to its definition.
+ */
+export const propertyCostValueSchema = z.object({
+  id: z.string().uuid(),
+  field: z.enum(['overrideValue', 'manualValue', 'actualValue']),
+  value: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/[\s,$]/g, ''))
+    .refine((value) => value === '' || /^\d+(\.\d{1,2})?$/.test(value), 'Enter an amount like 600')
+    .transform((value) => (value === '' ? null : Math.round(Number.parseFloat(value) * 100))),
+})
+
+export const completePurchaseSchema = z.object({
+  id: z.string().uuid(),
+  scheduleId: z.string().uuid().nullable(),
+})
