@@ -57,7 +57,7 @@ Run from the repo root.
 | Typecheck | `pnpm typecheck` |
 | Unit and integration tests | `pnpm test` (`pnpm test:watch`) |
 | E2E tests | `pnpm test:e2e` |
-| Regenerate DB migrations | `pnpm db:generate` |
+| Regenerate DB migrations | `pnpm db:generate --name=<snake_case>` |
 
 **Before opening a PR, run `pnpm lint`, `pnpm typecheck` and `pnpm test`.**
 

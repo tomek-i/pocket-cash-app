@@ -2,7 +2,7 @@
   "name": "pocket-cash",
   "version": "0.4.0",
   "private": true,
-  "description": "Offline-first personal finance, on your desktop — track accounts, import bank statements, categorise spending, and see your net worth. Runs entirely on your machine with no cloud, no auth, and no telemetry.",
+  "description": "Offline-first personal finance, on your desktop \u2014 track accounts, import bank statements, categorise spending, and see your net worth. Runs entirely on your machine with no cloud, no auth, and no telemetry.",
   "keywords": [
     "personal-finance",
     "desktop",
@@ -32,7 +32,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "pnpm --filter web test:e2e",
-    "db:generate": "turbo run db:generate"
+    "db:generate": "turbo run db:generate --"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.0",

@@ -11,7 +11,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "node scripts/generate-migration.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.17",
