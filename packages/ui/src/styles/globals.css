@@ -132,9 +132,11 @@
       sans-serif;
   }
 
-  /* The platform scrollbar is wide, opaque and grey, which looks wrong inside a
-     dialog or a panel. Styling it here rather than per component means every
-     scroll container in the app gets the same treatment.
+  /* A baseline for the scrollbars that are NOT wrapped in <ScrollArea>: the page
+     itself, dropdown menus, and tables inside the import wizard. ScrollArea is
+     the right tool for a container we lay out ourselves, but it replaces native
+     scrolling with its own viewport, which is the wrong trade for the document
+     and for menus that already manage their own overflow.
 
      `::-webkit-scrollbar` is used rather than `scrollbar-width` / `scrollbar-color`
      because it allows a rounded, inset thumb. Chromium ignores the pseudo-elements
