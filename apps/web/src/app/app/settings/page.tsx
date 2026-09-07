@@ -1,4 +1,6 @@
-import { Card, CardContent } from '@repo/ui'
+import { Button, Card, CardContent } from '@repo/ui'
+import { ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { resetAndSeedDemo } from '../_lib/seed-actions'
 import { AiSettings } from './_components/ai-settings'
 import { DangerAction } from './_components/danger-action'
@@ -34,6 +36,31 @@ export default async function SettingsPage() {
         <Card>
           <CardContent className="p-5">
             <GeneralSettings settings={settings} />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Property</h2>
+          <p className="text-muted-foreground text-sm">
+            Cost types, jurisdictions and the defaults the purchase planner calculates from.
+          </p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <p className="text-muted-foreground text-sm">
+              Add your own costs, or change what the built-in ones default to.
+            </p>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              render={<Link href="/app/settings/property" />}
+              nativeButton={false}
+            >
+              Open property settings
+              <ArrowRight className="size-4" />
+            </Button>
           </CardContent>
         </Card>
       </section>

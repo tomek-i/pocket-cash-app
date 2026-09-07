@@ -1,5 +1,5 @@
-import { FREQUENCIES, LOAN_TYPES } from '@repo/property'
-import { PROPERTY_STATUSES, PROPERTY_TYPES, PROPERTY_USES } from '@repo/types'
+import { CALCULATION_BASES, CALCULATION_TYPES, FREQUENCIES, LOAN_TYPES } from '@repo/property'
+import { COST_SCOPES, PROPERTY_STATUSES, PROPERTY_TYPES, PROPERTY_USES } from '@repo/types'
 import { z } from 'zod'
 
 /**
@@ -223,4 +223,91 @@ export const rentalSchema = z.object({
   rentFrequency: z.enum(FREQUENCIES),
   vacancyRate: optionalPercentDecimal(100, 'Vacancy cannot exceed 100%'),
   managementRate: optionalPercentDecimal(100, 'Management cannot exceed 100%'),
+})
+
+// ── Settings: cost types ─────────────────────────────────────────────────────
+
+/**
+ * A cost type as edited in settings.
+ *
+ * Only name and default value are required. Everything else sits behind a
+ * disclosure, because "Solar Inspection, $250" has to stay a two-field job: the
+ * moment adding a cost needs a calculation type and a base, it stops being
+ * something a user does and becomes something they ask a developer for.
+ */
+export const costTypeFieldsSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(120),
+  defaultValue: optionalMoneyMinor,
+  category: z.string().trim().max(64).optional(),
+  scope: z.enum(COST_SCOPES),
+  calculationType: z.enum(CALCULATION_TYPES),
+  percentage: optionalPercentDecimal(1000, 'Enter a percentage like 1.2'),
+  calculationBase: z
+    .enum(CALCULATION_BASES)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  formula: optionalText(500),
+  defaultFrequency: z
+    .enum(FREQUENCIES)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  notes: optionalText(1000),
+})
+
+export const createCostTypeSchema = costTypeFieldsSchema
+export const updateCostTypeSchema = costTypeFieldsSchema.extend({ id: z.string().uuid() })
+export const costTypeIdSchema = z.object({ id: z.string().uuid() })
+export const toggleCostTypeSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.enum(['true', 'false']),
+})
+
+// ── Settings: jurisdictions ──────────────────────────────────────────────────
+
+export const jurisdictionFieldsSchema = z.object({
+  /** Opaque key rate schedules match on, e.g. `AU-NSW`. */
+  key: z
+    .string()
+    .trim()
+    .min(2, 'Key is required')
+    .max(64)
+    .regex(/^[A-Za-z0-9_-]+$/, 'Use letters, digits, dashes or underscores'),
+  name: z.string().trim().min(1, 'Name is required').max(120),
+  country,
+  region: optionalText(64),
+  currency,
+  transferTaxLabel: z.string().trim().min(1, 'A label is required').max(80),
+})
+
+export const createJurisdictionSchema = jurisdictionFieldsSchema
+export const updateJurisdictionSchema = jurisdictionFieldsSchema.extend({ id: z.string().uuid() })
+export const jurisdictionIdSchema = z.object({ id: z.string().uuid() })
+
+// ── Settings: calculation defaults ───────────────────────────────────────────
+
+export const propertyCalculationSettingsSchema = z.object({
+  defaultLoanTermYears: optionalYears,
+  defaultInterestRate: optionalPercentDecimal(100, 'Enter a rate like 6.25'),
+  defaultDepositPercentage: optionalPercentDecimal(100, 'Deposit cannot exceed 100%'),
+  defaultVacancyRate: optionalPercentDecimal(100, 'Vacancy cannot exceed 100%'),
+  defaultManagementRate: optionalPercentDecimal(100, 'Management cannot exceed 100%'),
+  /** Comma-separated percentages for the sensitivity table, e.g. "4, 5, 6, 7, 8". */
+  sensitivityRates: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : ''))
+    .refine(
+      (value) => value === '' || /^[\d.,\s%]+$/.test(value),
+      'Use a comma-separated list like 4, 5, 6, 7, 8',
+    )
+    .transform((value) =>
+      value === ''
+        ? undefined
+        : value
+            .split(',')
+            .map((part) => Number.parseFloat(part.replace('%', '').trim()))
+            .filter((rate) => Number.isFinite(rate) && rate >= 0)
+            .map((rate) => rate / 100),
+    ),
 })
