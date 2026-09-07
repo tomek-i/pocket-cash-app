@@ -78,6 +78,9 @@ importers:
       '@repo/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@repo/property':
+        specifier: workspace:*
+        version: link:../../packages/property
       '@repo/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -305,6 +308,9 @@ importers:
 
   packages/validation:
     dependencies:
+      '@repo/property':
+        specifier: workspace:*
+        version: link:../property
       '@repo/types':
         specifier: workspace:*
         version: link:../types

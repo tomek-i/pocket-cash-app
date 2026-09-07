@@ -1,0 +1,97 @@
+'use client'
+
+import type { Jurisdiction } from '@repo/database'
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@repo/ui'
+import { Building2, Pencil, Trash2 } from 'lucide-react'
+import { formatMoney } from '@/lib/money'
+import { PROPERTY_TYPE_LABELS, PROPERTY_USE_LABELS } from '../_lib/labels'
+import type { PropertyPosition } from '../_lib/portfolio'
+import type { PropertyWithLoans } from '../actions'
+import { DeletePropertyDialog } from './delete-property-dialog'
+import { PropertyDialog } from './property-dialog'
+
+/** Percentage with one decimal, e.g. `0.8` becomes "80.0%". */
+function formatPercent(decimal: number): string {
+  return `${(decimal * 100).toFixed(1)}%`
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone?: 'negative' }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className={tone === 'negative' ? 'font-medium text-destructive' : 'font-medium'}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
+export function PropertyCard({
+  property,
+  position,
+  jurisdictions,
+}: {
+  property: PropertyWithLoans
+  position: PropertyPosition
+  jurisdictions: Jurisdiction[]
+}) {
+  const place = [property.region, property.country].filter(Boolean).join(', ')
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+            <Building2 className="size-4" />
+          </div>
+          <div className="min-w-0">
+            <CardTitle className="truncate text-base">{property.name}</CardTitle>
+            <p className="truncate text-muted-foreground text-xs">
+              {property.address || place || '—'}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <PropertyDialog
+            property={property}
+            jurisdictions={jurisdictions}
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Edit property">
+                <Pencil className="size-4" />
+              </Button>
+            }
+          />
+          <DeletePropertyDialog
+            property={property}
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Delete property">
+                <Trash2 className="size-4" />
+              </Button>
+            }
+          />
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant="outline">{PROPERTY_TYPE_LABELS[property.type]}</Badge>
+          <Badge variant="outline">{PROPERTY_USE_LABELS[property.intendedUse]}</Badge>
+          {property.ownershipShare < 1 ? (
+            <Badge variant="outline">{formatPercent(property.ownershipShare)} owned</Badge>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+          <Stat label="Value" value={formatMoney(position.value, property.currency)} />
+          <Stat label="Loan" value={formatMoney(position.debt, property.currency)} />
+          <Stat
+            label="Equity"
+            value={formatMoney(position.equity, property.currency)}
+            tone={position.equity < 0 ? 'negative' : undefined}
+          />
+          <Stat label="LVR" value={position.value > 0 ? formatPercent(position.lvr) : '—'} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

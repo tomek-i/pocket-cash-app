@@ -1,0 +1,237 @@
+'use server'
+
+import {
+  asc,
+  db,
+  eq,
+  type Jurisdiction,
+  jurisdictions,
+  type Property,
+  type PropertyLoan,
+  properties,
+  propertyLoans,
+} from '@repo/database'
+import { createPropertySchema, propertyIdSchema, updatePropertySchema } from '@repo/validation'
+import { revalidatePath } from 'next/cache'
+import type { ActionState } from '@/lib/action-state'
+
+export type PropertyWithLoans = Property & { loans: PropertyLoan[] }
+
+/** Every property, newest activity first, with the loans held against it. */
+export async function listProperties(): Promise<PropertyWithLoans[]> {
+  return db.query.properties.findMany({
+    with: { loans: true },
+    orderBy: [asc(properties.sortOrder), asc(properties.name)],
+  })
+}
+
+/** The configured jurisdictions, for the picker. Never a hard-coded country list. */
+export async function listJurisdictions(): Promise<Jurisdiction[]> {
+  return db
+    .select()
+    .from(jurisdictions)
+    .where(eq(jurisdictions.enabled, true))
+    .orderBy(asc(jurisdictions.name))
+}
+
+/** The form fields, as strings, ready to echo back on a validation failure. */
+function readValues(formData: FormData): Record<string, string> {
+  const fields = [
+    'name',
+    'address',
+    'jurisdictionKey',
+    'country',
+    'region',
+    'currency',
+    'type',
+    'intendedUse',
+    'status',
+    'purchasePrice',
+    'estimatedMarketValue',
+    'currentValue',
+    'originalPurchasePrice',
+    'ownershipShare',
+    'purchaseDate',
+    'notes',
+    'loanAmount',
+    'interestRate',
+    'loanTermYears',
+    'loanType',
+  ]
+  return Object.fromEntries(fields.map((field) => [field, String(formData.get(field) ?? '')]))
+}
+
+/**
+ * Country, region and currency follow the chosen jurisdiction.
+ *
+ * Letting the two disagree is the bug this prevents: a property tagged `AU-NSW`
+ * but stored with `country: 'GB'` would resolve NSW rate schedules while
+ * displaying British figures. When no jurisdiction is chosen the user's own
+ * entries stand.
+ */
+async function applyJurisdiction(input: {
+  jurisdictionKey?: string
+  country: string
+  region?: string
+  currency: string
+}): Promise<{
+  jurisdictionKey: string | null
+  country: string
+  region: string | null
+  currency: string
+}> {
+  if (!input.jurisdictionKey) {
+    return {
+      jurisdictionKey: null,
+      country: input.country,
+      region: input.region ?? null,
+      currency: input.currency,
+    }
+  }
+
+  const jurisdiction = await db.query.jurisdictions.findFirst({
+    where: eq(jurisdictions.key, input.jurisdictionKey),
+  })
+  if (!jurisdiction) {
+    return {
+      jurisdictionKey: null,
+      country: input.country,
+      region: input.region ?? null,
+      currency: input.currency,
+    }
+  }
+
+  return {
+    jurisdictionKey: jurisdiction.key,
+    country: jurisdiction.country,
+    region: jurisdiction.region,
+    currency: jurisdiction.currency,
+  }
+}
+
+/** True when the user filled in anything about a loan. */
+function hasLoanInput(parsed: {
+  loanAmount?: number
+  interestRate?: number
+  loanTermYears?: number
+}): boolean {
+  return (
+    parsed.loanAmount !== undefined ||
+    parsed.interestRate !== undefined ||
+    parsed.loanTermYears !== undefined
+  )
+}
+
+export async function createProperty(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const values = readValues(formData)
+  const parsed = createPropertySchema.safeParse(values)
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors, values }
+
+  const data = parsed.data
+  const place = await applyJurisdiction(data)
+
+  await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(properties)
+      .values({
+        name: data.name,
+        address: data.address ?? null,
+        ...place,
+        type: data.type,
+        intendedUse: data.intendedUse,
+        status: data.status,
+        purchasePrice: data.purchasePrice ?? 0,
+        estimatedMarketValue: data.estimatedMarketValue ?? null,
+        currentValue: data.currentValue ?? null,
+        originalPurchasePrice: data.originalPurchasePrice ?? null,
+        ownershipShare: data.ownershipShare ?? 1,
+        purchaseDate: data.purchaseDate ?? null,
+        notes: data.notes ?? null,
+      })
+      .returning({ id: properties.id })
+
+    if (created && hasLoanInput(data)) {
+      await tx.insert(propertyLoans).values({
+        propertyId: created.id,
+        loanAmount: data.loanAmount ?? 0,
+        annualRate: data.interestRate ?? 0,
+        termYears: data.loanTermYears ?? 30,
+        loanType: data.loanType ?? 'principalAndInterest',
+      })
+    }
+  })
+
+  revalidatePath('/app/property')
+  return { ok: true }
+}
+
+export async function updateProperty(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const values = readValues(formData)
+  const parsed = updatePropertySchema.safeParse({ id: formData.get('id'), ...values })
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors, values }
+
+  const data = parsed.data
+  const place = await applyJurisdiction(data)
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(properties)
+      .set({
+        name: data.name,
+        address: data.address ?? null,
+        ...place,
+        type: data.type,
+        intendedUse: data.intendedUse,
+        status: data.status,
+        purchasePrice: data.purchasePrice ?? 0,
+        estimatedMarketValue: data.estimatedMarketValue ?? null,
+        currentValue: data.currentValue ?? null,
+        originalPurchasePrice: data.originalPurchasePrice ?? null,
+        ownershipShare: data.ownershipShare ?? 1,
+        purchaseDate: data.purchaseDate ?? null,
+        notes: data.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(properties.id, data.id))
+
+    // The dialog edits a single loan. Update the first one if it exists, add one
+    // if the user has just filled the fields in, and leave extra loans alone:
+    // the planner is where multiple loans are managed.
+    const existing = await tx.query.propertyLoans.findFirst({
+      where: eq(propertyLoans.propertyId, data.id),
+    })
+
+    if (existing) {
+      await tx
+        .update(propertyLoans)
+        .set({
+          loanAmount: data.loanAmount ?? 0,
+          annualRate: data.interestRate ?? 0,
+          termYears: data.loanTermYears ?? existing.termYears,
+          loanType: data.loanType ?? existing.loanType,
+          updatedAt: new Date(),
+        })
+        .where(eq(propertyLoans.id, existing.id))
+    } else if (hasLoanInput(data)) {
+      await tx.insert(propertyLoans).values({
+        propertyId: data.id,
+        loanAmount: data.loanAmount ?? 0,
+        annualRate: data.interestRate ?? 0,
+        termYears: data.loanTermYears ?? 30,
+        loanType: data.loanType ?? 'principalAndInterest',
+      })
+    }
+  })
+
+  revalidatePath('/app/property')
+  return { ok: true }
+}
+
+export async function deleteProperty(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = propertyIdSchema.safeParse({ id: formData.get('id') })
+  if (!parsed.success) return { errors: { id: ['Missing id'] } }
+
+  await db.delete(properties).where(eq(properties.id, parsed.data.id))
+  revalidatePath('/app/property')
+  return { ok: true }
+}

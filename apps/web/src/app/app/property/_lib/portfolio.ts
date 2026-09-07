@@ -1,0 +1,104 @@
+import { equity, lvr } from '@repo/property'
+import type { PropertyStatus } from '@repo/types'
+
+/**
+ * Portfolio aggregation. Pure functions over plain numbers so they can be
+ * tested without a database, and so the maths stays out of the components.
+ *
+ * Two decisions worth knowing when reading a total:
+ *
+ * - **Sold properties are excluded.** They are kept for history, not counted as
+ *   part of what the user holds today.
+ * - **Ownership share is applied to value and debt alike.** A half share of a
+ *   $1,000,000 property with an $800,000 loan counts as $500,000 of value and
+ *   $400,000 of debt, so the equity shown is the user's own $100,000.
+ */
+
+/** The subset of a property row the portfolio maths needs. */
+export interface PortfolioInput {
+  id: string
+  status: PropertyStatus
+  /** Decimal share owned, `1` being outright. */
+  ownershipShare: number
+  /** Minor units. Today's value, for a property already owned. */
+  currentValue: number | null
+  /** Minor units. What it is thought to be worth. */
+  estimatedMarketValue: number | null
+  /** Minor units. */
+  purchasePrice: number
+  /** Minor units. Total borrowed against it. */
+  loanBalance: number
+}
+
+export interface PropertyPosition {
+  id: string
+  /** Minor units, before the ownership share is applied. */
+  value: number
+  /** Minor units, before the ownership share is applied. */
+  debt: number
+  /** Minor units, before the ownership share is applied. */
+  equity: number
+  /** Decimal ratio. Independent of the share, since it applies to both sides. */
+  lvr: number
+  /** Minor units, the user's share of the value. */
+  shareOfValue: number
+  /** Minor units, the user's share of the debt. */
+  shareOfDebt: number
+  /** Minor units, the user's share of the equity. */
+  shareOfEquity: number
+  /** Excluded from portfolio totals. */
+  countsTowardsTotals: boolean
+}
+
+/**
+ * The value to measure a property by.
+ *
+ * Today's value first, then an estimate, then what was paid. An owned property
+ * that has never been revalued still has to show something, and the price paid
+ * is a better answer than zero.
+ */
+export function propertyValue(property: PortfolioInput): number {
+  return property.currentValue ?? property.estimatedMarketValue ?? property.purchasePrice
+}
+
+/** One property's position. */
+export function propertyPosition(property: PortfolioInput): PropertyPosition {
+  const value = propertyValue(property)
+  const debt = property.loanBalance
+  const share = property.ownershipShare
+
+  return {
+    id: property.id,
+    value,
+    debt,
+    equity: equity(value, debt),
+    lvr: lvr(debt, value),
+    shareOfValue: Math.round(value * share),
+    shareOfDebt: Math.round(debt * share),
+    shareOfEquity: Math.round(equity(value, debt) * share),
+    countsTowardsTotals: property.status !== 'sold',
+  }
+}
+
+export interface PortfolioTotals {
+  /** Minor units. */
+  value: number
+  /** Minor units. */
+  debt: number
+  /** Minor units. Can be negative when the loans exceed the values. */
+  equity: number
+  /** Decimal ratio across the whole portfolio. */
+  lvr: number
+  /** How many properties are counted. Sold ones are not. */
+  count: number
+}
+
+/** Totals across every property the user still holds. */
+export function portfolioTotals(properties: PortfolioInput[]): PortfolioTotals {
+  const counted = properties.map(propertyPosition).filter((p) => p.countsTowardsTotals)
+
+  const value = counted.reduce((total, p) => total + p.shareOfValue, 0)
+  const debt = counted.reduce((total, p) => total + p.shareOfDebt, 0)
+
+  return { value, debt, equity: equity(value, debt), lvr: lvr(debt, value), count: counted.length }
+}

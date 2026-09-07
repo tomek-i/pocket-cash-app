@@ -3,3 +3,4 @@ export * from './common'
 // want only the env contract without pulling in feature schemas.
 export * from './env'
 export * from './finance'
+export * from './property'
