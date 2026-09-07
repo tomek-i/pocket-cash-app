@@ -19,6 +19,7 @@
     "@repo/database": "workspace:*",
     "@repo/desktop-contract": "workspace:*",
     "@repo/logger": "workspace:*",
+    "@repo/property": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",

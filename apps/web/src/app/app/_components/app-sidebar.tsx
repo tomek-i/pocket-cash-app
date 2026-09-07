@@ -4,6 +4,7 @@ import { Button, cn } from '@repo/ui'
 import {
   ArrowLeftRight,
   BarChart3,
+  Building2,
   Landmark,
   LayoutDashboard,
   RefreshCw,
@@ -25,6 +26,7 @@ const nav = [
   { href: '/app/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/app/categorize', label: 'Categorise', icon: Sparkles },
   { href: '/app/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/app/property', label: 'Property', icon: Building2 },
   { href: '/app/subscriptions', label: 'Subscriptions', icon: RefreshCw },
   { href: '/app/categories', label: 'Categories', icon: Shapes },
   { href: '/app/tags', label: 'Tags', icon: Tag },
