@@ -6,13 +6,8 @@ import { ChevronDown, RotateCcw, Trash2 } from 'lucide-react'
 import { useActionState, useState } from 'react'
 import { formatMoney } from '@/lib/money'
 import type { EvaluatedCost } from '../../../_lib/costs'
+import { toMajorInput } from '../../../_lib/format'
 import { removePropertyCost, setPropertyCostValue, togglePropertyCost } from '../costs-actions'
-
-/** Minor units to the major-unit string an amount field edits. */
-function toMajor(minorUnits: number | null | undefined): string {
-  if (minorUnits === null || minorUnits === undefined) return ''
-  return (minorUnits / 100).toString()
-}
 
 /**
  * The "Calculation details" panel.
@@ -219,7 +214,7 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
           <AmountForm
             costId={row.id}
             field="manualValue"
-            value={toMajor(row.manualValue)}
+            value={toMajorInput(row.manualValue)}
             label="Amount"
             placeholder="2000"
           />
@@ -227,9 +222,9 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
           <AmountForm
             costId={row.id}
             field="overrideValue"
-            value={toMajor(row.overrideValue)}
+            value={toMajorInput(row.overrideValue)}
             label="Override amount"
-            placeholder={toMajor(result.calculatedValue)}
+            placeholder={toMajorInput(result.calculatedValue)}
           />
         ) : (
           <Button variant="outline" size="sm" onClick={() => setEditingOverride(true)}>
@@ -255,9 +250,9 @@ export function CostRow({ entry, currency }: { entry: EvaluatedCost; currency: s
           <AmountForm
             costId={row.id}
             field="actualValue"
-            value={toMajor(row.actualValue)}
+            value={toMajorInput(row.actualValue)}
             label="Actual amount"
-            placeholder={toMajor(result.estimate)}
+            placeholder={toMajorInput(result.estimate)}
           />
         ) : (
           <Button variant="ghost" size="sm" onClick={() => setEditingActual(true)}>

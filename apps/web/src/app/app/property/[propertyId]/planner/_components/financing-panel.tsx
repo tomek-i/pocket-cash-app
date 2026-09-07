@@ -16,32 +16,10 @@ import {
 import { useActionState, useMemo, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { formatMoney } from '@/lib/money'
+import { formatPercent, toMajorInput, toMinorUnits, toRateDecimal } from '../../../_lib/format'
 import { LOAN_TYPE_LABELS } from '../../../_lib/labels'
 import { buildFinancing } from '../../../_lib/planner'
 import { type PlannerProperty, savePlannerFinancing } from '../actions'
-
-/** Minor units to the major-unit string the form edits. */
-function toMajor(minorUnits: number | null | undefined): string {
-  if (minorUnits === null || minorUnits === undefined) return ''
-  return (minorUnits / 100).toString()
-}
-
-/** A typed major-unit amount back to minor units. Invalid input reads as 0. */
-function toMinor(value: string): number {
-  const cleaned = value.replace(/[\s,$]/g, '')
-  const parsed = Number.parseFloat(cleaned)
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) : 0
-}
-
-/** A typed percentage back to a decimal. */
-function toDecimal(value: string): number {
-  const parsed = Number.parseFloat(value.replace(/[\s%]/g, ''))
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed / 100 : 0
-}
-
-function percent(decimal: number): string {
-  return `${(decimal * 100).toFixed(1)}%`
-}
 
 function MoneyField({
   label,
@@ -109,39 +87,39 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
 
   const loan = property.loans[0]
 
-  const [purchasePrice, setPurchasePrice] = useState(toMajor(property.purchasePrice))
-  const [marketValue, setMarketValue] = useState(toMajor(property.estimatedMarketValue))
+  const [purchasePrice, setPurchasePrice] = useState(toMajorInput(property.purchasePrice))
+  const [marketValue, setMarketValue] = useState(toMajorInput(property.estimatedMarketValue))
   const [deposit, setDeposit] = useState(
-    toMajor(Math.max(0, property.purchasePrice - (loan?.loanAmount ?? 0))),
+    toMajorInput(Math.max(0, property.purchasePrice - (loan?.loanAmount ?? 0))),
   )
   const [depositPercentage, setDepositPercentage] = useState(() => {
     if (!property.purchasePrice) return '20'
     const value = (property.purchasePrice - (loan?.loanAmount ?? 0)) / property.purchasePrice
     return (value * 100).toFixed(2)
   })
-  const [loanAmount, setLoanAmount] = useState(toMajor(loan?.loanAmount ?? 0))
+  const [loanAmount, setLoanAmount] = useState(toMajorInput(loan?.loanAmount ?? 0))
   const [source, setSource] = useState<FinancingSource>('deposit')
 
   const [interestRate, setInterestRate] = useState(loan ? (loan.annualRate * 100).toString() : '6')
   const [termYears, setTermYears] = useState(loan ? String(loan.termYears) : '30')
   const [loanType, setLoanType] = useState<LoanType>(loan?.loanType ?? 'principalAndInterest')
-  const [offsetBalance, setOffsetBalance] = useState(toMajor(loan?.offsetBalance ?? 0))
-  const [otherCosts, setOtherCosts] = useState(toMajor(loan?.otherFinancingCosts ?? 0))
+  const [offsetBalance, setOffsetBalance] = useState(toMajorInput(loan?.offsetBalance ?? 0))
+  const [otherCosts, setOtherCosts] = useState(toMajorInput(loan?.otherFinancingCosts ?? 0))
 
   const result = useMemo(
     () =>
       buildFinancing({
-        purchasePrice: toMinor(purchasePrice),
-        estimatedMarketValue: marketValue ? toMinor(marketValue) : null,
+        purchasePrice: toMinorUnits(purchasePrice),
+        estimatedMarketValue: marketValue ? toMinorUnits(marketValue) : null,
         currentValue: property.currentValue,
         source,
-        deposit: toMinor(deposit),
-        depositPercentage: toDecimal(depositPercentage),
-        loanAmount: toMinor(loanAmount),
-        annualRate: toDecimal(interestRate),
+        deposit: toMinorUnits(deposit),
+        depositPercentage: toRateDecimal(depositPercentage),
+        loanAmount: toMinorUnits(loanAmount),
+        annualRate: toRateDecimal(interestRate),
         termYears: Number.parseInt(termYears, 10) || 0,
         loanType,
-        offsetBalance: toMinor(offsetBalance),
+        offsetBalance: toMinorUnits(offsetBalance),
       }),
     [
       purchasePrice,
@@ -163,12 +141,12 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
 
   // The two fields the user is not editing follow the derived figures, so the
   // panel always shows a consistent set of three.
-  const shownDeposit = source === 'deposit' ? deposit : toMajor(financing.deposit)
+  const shownDeposit = source === 'deposit' ? deposit : toMajorInput(financing.deposit)
   const shownDepositPercentage =
     source === 'depositPercentage'
       ? depositPercentage
       : (financing.depositPercentage * 100).toFixed(2)
-  const shownLoanAmount = source === 'loanAmount' ? loanAmount : toMajor(financing.loanAmount)
+  const shownLoanAmount = source === 'loanAmount' ? loanAmount : toMajorInput(financing.loanAmount)
 
   const hasOffset = result.effectiveLoanBalance !== financing.loanAmount
 
@@ -306,7 +284,7 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
           <Figure label="Deposit" value={formatMoney(financing.deposit, currency)} />
           <Figure
             label="LVR"
-            value={result.propertyValue > 0 ? percent(financing.lvr) : '—'}
+            value={result.propertyValue > 0 ? formatPercent(financing.lvr) : '—'}
             hint={`against ${formatMoney(result.propertyValue, currency)}`}
           />
           <Figure

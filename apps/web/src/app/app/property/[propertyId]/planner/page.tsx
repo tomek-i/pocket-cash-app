@@ -10,14 +10,18 @@ import {
   toEngineSchedule,
 } from '../../_lib/costs'
 import { PROPERTY_STATUS_LABELS, PROPERTY_USE_LABELS } from '../../_lib/labels'
+import { buildOngoing } from '../../_lib/ongoing'
 import { buildFinancing } from '../../_lib/planner'
 import { DetailsPanel } from './_components/details-panel'
 import { FinancingPanel } from './_components/financing-panel'
+import { OngoingCosts } from './_components/ongoing-costs'
 import { PlannerDashboard } from './_components/planner-dashboard'
 import { PurchaseLock } from './_components/purchase-lock'
+import { RentalIncome } from './_components/rental-income'
 import { UpfrontCosts } from './_components/upfront-costs'
 import { getPlannerData } from './actions'
 import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
+import { getRental, listRecurringCosts, listRecurringCostTypes } from './ongoing-actions'
 
 const CATEGORY_NAMES = Object.fromEntries(
   DEFAULT_COST_CATEGORIES.map((category) => [category.id, category.name]),
@@ -33,9 +37,12 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
   const { property, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } = data
   const loan = property.loans[0]
 
-  const [costRows, availableCostTypes] = await Promise.all([
+  const [costRows, availableCostTypes, recurringRows, recurringTypes, rental] = await Promise.all([
     listPropertyCosts(propertyId),
     listAvailableCostTypes(),
+    listRecurringCosts(propertyId),
+    listRecurringCostTypes(),
+    getRental(propertyId),
   ])
 
   // A completed purchase reads its frozen snapshot. Everything else follows the
@@ -65,8 +72,6 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
     scheduleIdByGroup: activeSchedule ? { 'transfer-tax': activeSchedule.id } : {},
   })
 
-  // The dashboard shows the position as saved. The financing panel recalculates
-  // live from its own inputs while the user edits.
   const result = buildFinancing({
     purchasePrice: property.purchasePrice,
     estimatedMarketValue: property.estimatedMarketValue,
@@ -80,6 +85,22 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
     loanType: loan?.loanType ?? 'principalAndInterest',
     offsetBalance: loan?.offsetBalance ?? 0,
   })
+
+  // Year 1 interest and principal, not an average: interest falls over the life
+  // of a loan, so the first year is the worst case and the one worth planning
+  // against.
+  const isLet = property.intendedUse === 'investment' || property.intendedUse === 'mixed'
+  const ongoing = buildOngoing({
+    rows: recurringRows,
+    rental: isLet && rental ? rental : null,
+    propertyValue: result.propertyValue,
+    annualInterest: result.amortisation.interestYear1,
+    annualPrincipal: result.amortisation.principalYear1,
+    monthlyRepayment: result.amortisation.monthlyRepayment,
+  })
+
+  // The dashboard shows the position as saved. The financing panel recalculates
+  // live from its own inputs while the user edits.
 
   return (
     <div className="flex flex-col gap-6 px-5 py-5 lg:px-8 lg:py-7">
@@ -109,6 +130,11 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         currency={property.currency}
         upfrontCosts={costSummary.total}
         cashRequired={costSummary.cashRequired}
+        monthlyPropertyCosts={ongoing.recurring.monthly}
+        monthlyRentalIncome={
+          ongoing.cashFlow ? Math.round(ongoing.cashFlow.effectiveAnnualRent / 12) : null
+        }
+        monthlyCashFlow={ongoing.cashFlow?.monthlyCashFlow ?? null}
       />
 
       <section className="flex flex-col gap-3">
@@ -157,6 +183,40 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
           loanAmount={loan?.loanAmount ?? 0}
         />
       </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Ongoing costs</h2>
+          <p className="text-muted-foreground text-sm">
+            What it costs to hold, whatever cadence the bill arrives at. Everything is normalised to
+            monthly and annual figures.
+          </p>
+        </div>
+        <OngoingCosts
+          propertyId={property.id}
+          summary={ongoing.recurring}
+          costTypes={recurringTypes}
+          currency={property.currency}
+        />
+      </section>
+
+      {isLet ? (
+        <section className="flex flex-col gap-3">
+          <div>
+            <h2 className="font-semibold text-lg">Rental income</h2>
+            <p className="text-muted-foreground text-sm">
+              What it earns, after vacancy and management, and what that leaves once the holding
+              costs and the loan are paid.
+            </p>
+          </div>
+          <RentalIncome
+            propertyId={property.id}
+            rental={rental}
+            cashFlow={ongoing.cashFlow}
+            currency={property.currency}
+          />
+        </section>
+      ) : null}
     </div>
   )
 }

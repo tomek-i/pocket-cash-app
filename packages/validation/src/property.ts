@@ -1,4 +1,4 @@
-import { LOAN_TYPES } from '@repo/property'
+import { FREQUENCIES, LOAN_TYPES } from '@repo/property'
 import { PROPERTY_STATUSES, PROPERTY_TYPES, PROPERTY_USES } from '@repo/types'
 import { z } from 'zod'
 
@@ -186,4 +186,41 @@ export const propertyCostValueSchema = z.object({
 export const completePurchaseSchema = z.object({
   id: z.string().uuid(),
   scheduleId: z.string().uuid().nullable(),
+})
+
+// ── Ongoing costs and rental ─────────────────────────────────────────────────
+
+export const addRecurringCostSchema = z.object({
+  propertyId: z.string().uuid(),
+  /** Optional link back to the seeded catalogue entry this came from. */
+  costTypeId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  name: z.string().trim().min(1, 'Name is required').max(120),
+  category: z.string().trim().max(64).optional(),
+  amount: optionalMoneyMinor,
+  frequency: z.enum(FREQUENCIES),
+})
+
+export const updateRecurringCostSchema = z.object({
+  id: z.string().uuid(),
+  amount: optionalMoneyMinor,
+  frequency: z.enum(FREQUENCIES),
+})
+
+export const recurringCostIdSchema = z.object({ id: z.string().uuid() })
+
+export const toggleRecurringCostSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.enum(['true', 'false']),
+})
+
+export const rentalSchema = z.object({
+  propertyId: z.string().uuid(),
+  rent: optionalMoneyMinor,
+  rentFrequency: z.enum(FREQUENCIES),
+  vacancyRate: optionalPercentDecimal(100, 'Vacancy cannot exceed 100%'),
+  managementRate: optionalPercentDecimal(100, 'Management cannot exceed 100%'),
 })
