@@ -5,10 +5,9 @@ import type { FinancingResult } from '../../../_lib/planner'
 /**
  * The summary at the top of the planner.
  *
- * Upfront costs, the cash position and the ongoing figures come from parts of
- * the feature that are not built yet. Those cells say so rather than showing a
- * zero, because a confident zero next to a real number reads as a calculated
- * answer, and "your upfront costs are $0" is a worse lie than "not built yet".
+ * Available funds and the ongoing figures come from parts of the feature that
+ * are not built yet. Those cells show a dash rather than a zero, because a
+ * confident zero next to a real number reads as a calculated answer.
  */
 
 function Metric({
@@ -55,9 +54,15 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 export function PlannerDashboard({
   result,
   currency,
+  upfrontCosts,
+  cashRequired,
 }: {
   result: FinancingResult
   currency: string
+  /** Minor units. Total of the enabled upfront costs. */
+  upfrontCosts: number
+  /** Minor units. Deposit plus upfront costs. */
+  cashRequired: number
 }) {
   const { financing, amortisation } = result
 
@@ -65,9 +70,9 @@ export function PlannerDashboard({
     <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
       <Panel title="Purchase">
         <Metric label="Purchase price" value={formatMoney(financing.purchasePrice, currency)} />
-        <Metric label="Upfront costs" value="—" tone="muted" hint="Added next" />
+        <Metric label="Upfront costs" value={formatMoney(upfrontCosts, currency)} />
         <Metric label="Deposit" value={formatMoney(financing.deposit, currency)} />
-        <Metric label="Cash required" value="—" tone="muted" hint="Needs the costs" />
+        <Metric label="Cash required" value={formatMoney(cashRequired, currency)} />
       </Panel>
 
       <Panel title="Financing">
@@ -88,7 +93,7 @@ export function PlannerDashboard({
 
       <Panel title="Cash position">
         <Metric label="Available cash" value="—" tone="muted" hint="Added later" />
-        <Metric label="Cash required" value="—" tone="muted" hint="Added later" />
+        <Metric label="Cash required" value={formatMoney(cashRequired, currency)} />
         <Metric label="Remaining" value="—" tone="muted" hint="Added later" />
         <Metric
           label="Equity at settlement"

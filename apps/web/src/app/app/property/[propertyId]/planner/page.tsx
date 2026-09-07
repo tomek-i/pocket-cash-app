@@ -1,13 +1,27 @@
+import { DEFAULT_COST_CATEGORIES } from '@repo/property/defaults'
 import { Badge, Button } from '@repo/ui'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import {
+  buildCostContext,
+  snapshotToEngineSchedule,
+  summariseUpfrontCosts,
+  toEngineSchedule,
+} from '../../_lib/costs'
 import { PROPERTY_STATUS_LABELS, PROPERTY_USE_LABELS } from '../../_lib/labels'
 import { buildFinancing } from '../../_lib/planner'
 import { DetailsPanel } from './_components/details-panel'
 import { FinancingPanel } from './_components/financing-panel'
 import { PlannerDashboard } from './_components/planner-dashboard'
+import { PurchaseLock } from './_components/purchase-lock'
+import { UpfrontCosts } from './_components/upfront-costs'
 import { getPlannerData } from './actions'
+import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
+
+const CATEGORY_NAMES = Object.fromEntries(
+  DEFAULT_COST_CATEGORIES.map((category) => [category.id, category.name]),
+)
 
 export const metadata = { title: 'Purchase planner' }
 
@@ -18,6 +32,38 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
 
   const { property, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } = data
   const loan = property.loans[0]
+
+  const [costRows, availableCostTypes] = await Promise.all([
+    listPropertyCosts(propertyId),
+    listAvailableCostTypes(),
+  ])
+
+  // A completed purchase reads its frozen snapshot. Everything else follows the
+  // schedule in force on the purchase date. This is the one place that choice is
+  // made, so historical figures cannot drift.
+  const snapshot = property.completedAt ? property.rateScheduleSnapshot : null
+  const activeSchedule = snapshot
+    ? snapshotToEngineSchedule(
+        snapshot,
+        property.jurisdictionKey ?? '',
+        property.country,
+        property.region,
+      )
+    : transferTaxSchedule
+      ? toEngineSchedule(transferTaxSchedule, property.country, property.region)
+      : null
+
+  const costSummary = summariseUpfrontCosts({
+    rows: costRows,
+    context: buildCostContext({
+      purchasePrice: property.purchasePrice,
+      propertyValue: property.estimatedMarketValue ?? property.purchasePrice,
+      loanAmount: loan?.loanAmount ?? 0,
+      annualRate: loan?.annualRate ?? 0,
+    }),
+    schedules: activeSchedule ? [activeSchedule] : [],
+    scheduleIdByGroup: activeSchedule ? { 'transfer-tax': activeSchedule.id } : {},
+  })
 
   // The dashboard shows the position as saved. The financing panel recalculates
   // live from its own inputs while the user edits.
@@ -58,7 +104,12 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         </div>
       </div>
 
-      <PlannerDashboard result={result} currency={property.currency} />
+      <PlannerDashboard
+        result={result}
+        currency={property.currency}
+        upfrontCosts={costSummary.total}
+        cashRequired={costSummary.cashRequired}
+      />
 
       <section className="flex flex-col gap-3">
         <div>
@@ -85,11 +136,26 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         <div>
           <h2 className="font-semibold text-lg">Upfront costs</h2>
           <p className="text-muted-foreground text-sm">
-            {transferTaxSchedule
-              ? `${transferTaxLabel} and the other purchase costs are added in the next step. The schedule that applies here is "${transferTaxSchedule.name}".`
-              : `${transferTaxLabel} and the other purchase costs are added in the next step. No rate schedule is configured for this jurisdiction yet.`}
+            Everything payable to buy, on top of the price. {transferTaxLabel} is calculated from
+            the rate schedule for this jurisdiction; every cost can be overridden.
           </p>
         </div>
+        <PurchaseLock
+          propertyId={property.id}
+          scheduleId={transferTaxSchedule?.id ?? null}
+          scheduleName={transferTaxSchedule?.name ?? null}
+          completedAt={property.completedAt}
+          snapshotName={snapshot?.name ?? null}
+        />
+        <UpfrontCosts
+          propertyId={property.id}
+          summary={costSummary}
+          costTypes={availableCostTypes}
+          categoryNames={CATEGORY_NAMES}
+          currency={property.currency}
+          purchasePrice={property.purchasePrice}
+          loanAmount={loan?.loanAmount ?? 0}
+        />
       </section>
     </div>
   )
