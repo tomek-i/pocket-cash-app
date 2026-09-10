@@ -24,7 +24,6 @@ export function DeleteTransactionButton({ id, label }: { id: string; label: stri
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
-        nativeButton={false}
         render={
           <Button variant="outline" className="gap-2 text-destructive">
             <Trash2 className="size-4" />
