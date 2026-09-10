@@ -16,6 +16,7 @@ import {
 import { useActionState, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../../../banks/_components/form-field'
+import { DateField } from '../../../_components/date-field'
 import {
   PROPERTY_STATUS_LABELS,
   PROPERTY_TYPE_LABELS,
@@ -190,11 +191,10 @@ export function DetailsPanel({
               )}
               onValueChange={setStatus}
             />
-            <Field
+            <DateField
               label="Purchase date"
               name="purchaseDate"
               defaultValue={state?.values?.purchaseDate ?? property.purchaseDate ?? ''}
-              placeholder="2026-08-15"
               error={state?.errors?.purchaseDate}
             />
           </div>

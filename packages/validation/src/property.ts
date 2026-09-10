@@ -379,3 +379,25 @@ export const toggleRateScheduleSchema = z.object({
   id: z.string().uuid(),
   enabled: z.enum(['true', 'false']),
 })
+
+// ── Available funds ──────────────────────────────────────────────────────────
+
+/**
+ * Money the user can put towards a purchase.
+ *
+ * Typed in by hand. The planner never reads account balances: a balance here is
+ * `openingBalance + sum(imported transactions)`, which lags the last CSV import
+ * and is wrong for "do I have the deposit".
+ */
+export const availableFundSchema = z.object({
+  label: z.string().trim().min(1, 'Give it a name').max(80),
+  amount: optionalMoneyMinor,
+})
+
+export const createAvailableFundSchema = availableFundSchema
+export const updateAvailableFundSchema = availableFundSchema.extend({ id: z.string().uuid() })
+export const availableFundIdSchema = z.object({ id: z.string().uuid() })
+export const toggleAvailableFundSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.enum(['true', 'false']),
+})
