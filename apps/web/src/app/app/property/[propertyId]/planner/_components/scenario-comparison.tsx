@@ -56,7 +56,7 @@ interface ScenarioColumn extends ScenarioResult {
   /** Decimal ratio across the whole portfolio after buying. */
   portfolioLvr: number
   /** Minor units. Equity gained less the cash it took. */
-  equityForCash: number
+  equityForCash: number | null
 }
 
 interface MetricRow {

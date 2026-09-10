@@ -1,5 +1,5 @@
 import type { PortfolioInput, PortfolioTotals } from './portfolio'
-import { portfolioTotals } from './portfolio'
+import { ownedProperties, portfolioTotals } from './portfolio'
 
 /**
  * What a purchase does to everything else you own.
@@ -30,8 +30,14 @@ export interface PortfolioImpactInput {
   /** Every property except the one being planned. */
   others: PortfolioInput[]
   purchase: ProspectivePurchase
-  /** Minor units. Deposit plus upfront costs: what actually leaves the account. */
-  cashRequired: number
+  /**
+   * Minor units. Deposit plus upfront costs: what actually leaves the account.
+   *
+   * Optional because the portfolio list has no cheap way to know it. Evaluating
+   * every property's costs to render a list would be the wrong trade, so that
+   * page asks for the position without it and `equityForCash` comes back null.
+   */
+  cashRequired?: number
   /** Decimal. The portfolio LVR a lender will go to, from the calculation defaults. */
   maxLvr: number
 }
@@ -61,14 +67,15 @@ export interface PortfolioImpact {
   after: PortfolioTotals
   change: PortfolioChange
   /**
-   * Minor units. Equity gained less the cash it took to gain it.
+   * Minor units. Equity gained less the cash it took to gain it. Null when the
+   * cash required was not supplied.
    *
    * Usually negative, and the size of it is the point. Buying at valuation loses
    * you exactly the transfer duty and fees; buying above valuation loses you
    * that too. Buying under valuation by more than the costs is the only way this
    * comes out positive.
    */
-  equityForCash: number
+  equityForCash: number | null
   headroom: BorrowingHeadroom
 }
 
@@ -84,9 +91,9 @@ export function borrowingHeadroom(totals: PortfolioTotals, maxLvr: number): numb
 
 /** The whole before-and-after picture. */
 export function portfolioImpact(input: PortfolioImpactInput): PortfolioImpact {
-  // Only what is actually owned. A planned property is a proposal, not a holding,
-  // and another one being planned in parallel is not part of this decision.
-  const owned = input.others.filter((property) => property.status === 'existing')
+  // Another purchase being planned in parallel is not part of this decision
+  // either, which `ownedProperties` takes care of along with sold ones.
+  const owned = ownedProperties(input.others)
 
   // The purchase as though it had settled. `estimatedMarketValue` is what
   // `propertyValue` reads first here, so this is measured at what it is worth
@@ -116,7 +123,8 @@ export function portfolioImpact(input: PortfolioImpactInput): PortfolioImpact {
       equity: after.equity - now.equity,
       lvr: after.lvr - now.lvr,
     },
-    equityForCash: after.equity - now.equity - input.cashRequired,
+    equityForCash:
+      input.cashRequired === undefined ? null : after.equity - now.equity - input.cashRequired,
     headroom: {
       now: headroomNow,
       after: headroomAfter,

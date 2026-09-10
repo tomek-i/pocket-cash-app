@@ -30,17 +30,19 @@ packages/
   ui                design system + "Citron" theme (@repo/ui)
   database          pg-core schema + Drizzle, embedded PGlite (@repo/database)
   csv               pure CSV import engine (@repo/csv)
+  property          pure property calculation engine (@repo/property)
   validation        Zod finance schemas (@repo/validation)
   ai                opt-in, provider-agnostic AI, BYO key (@repo/ai)
   logger            zero-dep isomorphic logger (@repo/logger)
   desktop-contract  the desktop↔web IPC contract (@repo/desktop-contract)
   shared / types    utilities + shared types
-docs/               development, architecture, releasing
+docs/               development, architecture, property, releasing
 ```
 
 Architecture, key decisions and desktop specifics live in
 **[docs/architecture.md](docs/architecture.md)**. Running, testing and packaging
-live in **[docs/development.md](docs/development.md)**.
+live in **[docs/development.md](docs/development.md)**. The property model, rate
+schedules and snapshots live in **[docs/property.md](docs/property.md)**.
 
 ## Commands
 
