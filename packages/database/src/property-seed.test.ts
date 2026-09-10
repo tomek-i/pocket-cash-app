@@ -20,6 +20,7 @@ import { eq, sql } from 'drizzle-orm'
 import { drizzle, type PgliteDatabase } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { assertNotForeign, ForeignDatabaseError } from './embedded'
 import { seedPropertyDefaults, TRANSFER_TAX_GROUP } from './property-seed'
 import {
   banks,
@@ -473,6 +474,74 @@ describe('merging the value columns', () => {
     } finally {
       await client.close()
       rmSync(oldFolder, { recursive: true, force: true })
+    }
+  }, 60_000)
+})
+
+describe('a database this app did not build', () => {
+  /**
+   * The #18 path: a data directory holding a schema with no migration history,
+   * from a build predating the ledger or from something else entirely.
+   *
+   * Drizzle applies from its own ledger, so an empty one means "run everything",
+   * which fails on the first object that already exists. The guard turns that
+   * into a failure the UI can act on, before anything is attempted.
+   */
+  async function fresh() {
+    const client = new PGlite('memory://', { extensions: { pg_trgm, fuzzystrmatch } })
+    await client.waitReady
+    const db = drizzle(client, { schema })
+    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
+    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS fuzzystrmatch`)
+    return { client, db }
+  }
+
+  it('refuses a schema that has no migration history', async () => {
+    const { client, db } = await fresh()
+    try {
+      // The type name from the report, plus a table of its own.
+      await db.execute(sql`CREATE TYPE account_type AS ENUM ('checking', 'savings')`)
+      await db.execute(sql`CREATE TABLE legacy_rows (id serial PRIMARY KEY, note text)`)
+
+      await expect(assertNotForeign(db as never)).rejects.toThrow(ForeignDatabaseError)
+      await expect(assertNotForeign(db as never)).rejects.toThrow(/no migration history/)
+    } finally {
+      await client.close()
+    }
+  }, 60_000)
+
+  it('allows a genuinely empty data directory', async () => {
+    // The case it looks superficially like: a new database also has no history.
+    const { client, db } = await fresh()
+    try {
+      await expect(assertNotForeign(db as never)).resolves.toBeUndefined()
+    } finally {
+      await client.close()
+    }
+  }, 60_000)
+
+  it('allows a database this app did build', async () => {
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
+    const { client, db } = await fresh()
+    try {
+      await migrate(db, { migrationsFolder })
+      await expect(assertNotForeign(db as never)).resolves.toBeUndefined()
+    } finally {
+      await client.close()
+    }
+  }, 60_000)
+
+  it('refuses a migrated schema whose ledger has been emptied', async () => {
+    // Tables present, ledger table present but with no rows. We cannot tell what
+    // state that is in, so it is not something to migrate over.
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
+    const { client, db } = await fresh()
+    try {
+      await migrate(db, { migrationsFolder })
+      await db.execute(sql`DELETE FROM drizzle.__drizzle_migrations`)
+      await expect(assertNotForeign(db as never)).rejects.toThrow(ForeignDatabaseError)
+    } finally {
+      await client.close()
     }
   }, 60_000)
 })

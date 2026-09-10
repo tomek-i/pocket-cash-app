@@ -34,7 +34,14 @@ export async function prepareEmbeddedDatabase(): Promise<EmbeddedDbStatus> {
   } catch (error) {
     const detail = error instanceof Error ? (error.stack ?? error.message) : String(error)
     // Emscripten's fatal abort — a corrupt data directory that can't be booted.
-    const corrupt = /\baborted?\b|\bpanic\b|database cluster/i.test(detail)
+    // Deliberately NOT every migration failure: one against a database we did
+    // build is a bug in our SQL, and offering to delete the user's data to work
+    // around our own mistake would be the wrong trade. `assertNotForeign` refuses
+    // a database our migrations did not build before touching it, and a reset is
+    // the only thing that fixes that one.
+    const corrupt =
+      /\baborted?\b|\bpanic\b|database cluster/i.test(detail) ||
+      (error instanceof Error && error.name === 'ForeignDatabaseError')
     // The init/migration promises drop themselves from the global memo on failure,
     // so a post-reset relaunch re-attempts cleanly.
     return { ok: false, corrupt, detail }

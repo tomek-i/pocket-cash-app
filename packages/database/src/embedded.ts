@@ -33,6 +33,67 @@ const MIGRATIONS_KEY = Symbol.for('pocket-cash.embedded-migrations')
 type MigrationsGlobal = typeof globalThis & { [MIGRATIONS_KEY]?: Promise<Database> }
 
 /**
+ * Thrown when the data directory holds a database our migrations did not build.
+ *
+ * Recognised by the UI so it can offer a reset, which is the only thing that
+ * actually helps here. Distinct from a migration that fails on a database we DID
+ * build: that is a bug in the SQL, and offering to delete the user's data to work
+ * around our own mistake would be the wrong trade.
+ */
+export class ForeignDatabaseError extends Error {
+  readonly recoverable = true
+
+  constructor(tableCount: number) {
+    super(
+      `The database in this data directory was not created by this app: it holds ${tableCount} ` +
+        'table(s) but no migration history. Applying migrations to it would fail on the first ' +
+        'object that already exists. Reset the database to start clean.',
+    )
+    this.name = 'ForeignDatabaseError'
+  }
+}
+
+/**
+ * Refuse to migrate a database we did not build.
+ *
+ * Drizzle decides what to apply from its own ledger, so an empty ledger means
+ * "apply everything from the start". Against a data directory that already holds
+ * a schema, that fails on the first `CREATE TYPE` or `CREATE TABLE` for something
+ * already there. The whole run is one transaction, so nothing is left half
+ * applied, but the app then fails on every launch with a message about a type
+ * that already exists, which says nothing about what to do.
+ *
+ * Tables but no ledger is the signature of exactly that: a data directory from a
+ * build predating the migration history, or one belonging to something else.
+ */
+export async function assertNotForeign(db: Database): Promise<void> {
+  const [tables] = (
+    await db.execute(sql`
+    SELECT count(*)::int AS count FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+  `)
+  ).rows as unknown as [{ count: number }]
+
+  if (!tables || tables.count === 0) return
+
+  const [ledger] = (
+    await db.execute(sql`
+    SELECT count(*)::int AS count FROM information_schema.tables
+    WHERE table_schema = 'drizzle' AND table_name = '__drizzle_migrations'
+  `)
+  ).rows as unknown as [{ count: number }]
+
+  if (ledger && ledger.count > 0) {
+    const [applied] = (
+      await db.execute(sql`SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations`)
+    ).rows as unknown as [{ count: number }]
+    if (applied && applied.count > 0) return
+  }
+
+  throw new ForeignDatabaseError(tables.count)
+}
+
+/**
  * Bring an offline database up to date: open PGlite, enable the search
  * extensions, and apply all Drizzle migrations. Safe to call on every launch —
  * `CREATE EXTENSION IF NOT EXISTS` and Drizzle's journal make it idempotent, and
@@ -48,6 +109,8 @@ export async function runEmbeddedMigrations(
 
       await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
       await db.execute(sql`CREATE EXTENSION IF NOT EXISTS fuzzystrmatch`)
+
+      await assertNotForeign(db)
 
       const migrationsFolder =
         options.migrationsFolder ?? process.env.PGLITE_MIGRATIONS_DIR ?? defaultMigrationsFolder()
