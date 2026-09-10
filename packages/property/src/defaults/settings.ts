@@ -17,6 +17,12 @@ export interface PropertyCalculationSettings {
   defaultManagementRate: number
   /** Decimal annual rates shown in the interest rate sensitivity table. */
   sensitivityRates: number[]
+  /**
+   * Decimal. The portfolio LVR a lender is assumed to go to, used to report how
+   * much more could be borrowed. A lending rule rather than a law of nature, so
+   * it is a setting.
+   */
+  maxPortfolioLvr: number
 }
 
 export const DEFAULT_CALCULATION_SETTINGS: PropertyCalculationSettings = {
@@ -26,4 +32,5 @@ export const DEFAULT_CALCULATION_SETTINGS: PropertyCalculationSettings = {
   defaultVacancyRate: 0.02,
   defaultManagementRate: 0.07,
   sensitivityRates: [0.04, 0.05, 0.06, 0.07, 0.08],
+  maxPortfolioLvr: 0.8,
 }

@@ -1,3 +1,4 @@
+import type { Property } from '@repo/database'
 import { equity, lvr } from '@repo/property'
 import type { PropertyStatus } from '@repo/types'
 
@@ -48,6 +49,26 @@ export interface PropertyPosition {
   shareOfEquity: number
   /** Excluded from portfolio totals. */
   countsTowardsTotals: boolean
+}
+
+/**
+ * A stored property and its loans, reduced to what the portfolio maths needs.
+ *
+ * Loans are summed rather than taking the first: a property can carry more than
+ * one, and the debt against it is all of them.
+ */
+export function toPortfolioInput(
+  property: Property & { loans: { loanAmount: number }[] },
+): PortfolioInput {
+  return {
+    id: property.id,
+    status: property.status,
+    ownershipShare: property.ownershipShare,
+    currentValue: property.currentValue,
+    estimatedMarketValue: property.estimatedMarketValue,
+    purchasePrice: property.purchasePrice,
+    loanBalance: property.loans.reduce((total, loan) => total + loan.loanAmount, 0),
+  }
 }
 
 /**

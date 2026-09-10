@@ -56,6 +56,8 @@ export interface ScenarioContext {
 export interface ScenarioResult {
   /** Minor units. */
   purchasePrice: number
+  /** Minor units. What LVR and equity are measured against, not what was paid. */
+  propertyValue: number
   /** Minor units. */
   deposit: number
   /** Decimal share of the purchase price. */
@@ -179,6 +181,7 @@ export function evaluateScenario(
 
   return {
     purchasePrice: financing.purchasePrice,
+    propertyValue,
     deposit: financing.deposit,
     depositPercentage: financing.depositPercentage,
     loanAmount: financing.loanAmount,

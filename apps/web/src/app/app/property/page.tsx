@@ -8,23 +8,10 @@ import { PropertyCard } from './_components/property-card'
 import { PropertyDialog } from './_components/property-dialog'
 import { formatPercent } from './_lib/format'
 import { PROPERTY_STATUS_LABELS } from './_lib/labels'
-import { type PortfolioInput, portfolioTotals, propertyPosition } from './_lib/portfolio'
-import { listJurisdictions, listProperties, type PropertyWithLoans } from './actions'
+import { portfolioTotals, propertyPosition, toPortfolioInput } from './_lib/portfolio'
+import { listJurisdictions, listProperties } from './actions'
 
 export const metadata = { title: 'Property' }
-
-/** A property row plus its loans, reduced to what the portfolio maths needs. */
-function toPortfolioInput(property: PropertyWithLoans): PortfolioInput {
-  return {
-    id: property.id,
-    status: property.status,
-    ownershipShare: property.ownershipShare,
-    currentValue: property.currentValue,
-    estimatedMarketValue: property.estimatedMarketValue,
-    purchasePrice: property.purchasePrice,
-    loanBalance: property.loans.reduce((total, loan) => total + loan.loanAmount, 0),
-  }
-}
 
 function Summary({ label, value, tone }: { label: string; value: string; tone?: 'negative' }) {
   return (

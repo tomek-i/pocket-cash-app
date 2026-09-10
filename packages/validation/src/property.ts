@@ -297,6 +297,7 @@ export const propertyCalculationSettingsSchema = z.object({
   defaultDepositPercentage: optionalPercentDecimal(100, 'Deposit cannot exceed 100%'),
   defaultVacancyRate: optionalPercentDecimal(100, 'Vacancy cannot exceed 100%'),
   defaultManagementRate: optionalPercentDecimal(100, 'Management cannot exceed 100%'),
+  maxPortfolioLvr: optionalPercentDecimal(100, 'A portfolio LVR cannot exceed 100%'),
   /** Comma-separated percentages for the sensitivity table, e.g. "4, 5, 6, 7, 8". */
   sensitivityRates: z
     .string()
