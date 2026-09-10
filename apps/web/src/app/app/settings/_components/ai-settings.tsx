@@ -1,17 +1,7 @@
 'use client'
 
 import type { AiConfig } from '@repo/ai'
-import {
-  Button,
-  cn,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/ui'
+import { Button, cn, Input, Label, OptionSelect } from '@repo/ui'
 import { useActionState, useEffect, useState, useTransition } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import {
@@ -113,23 +103,20 @@ export function AiSettings({ config, keyStatus }: { config: AiConfig; keyStatus:
     <form onSubmit={onSubmit} className="grid max-w-lg gap-4">
       <div className="grid gap-1.5">
         <Label htmlFor="ai-mode">Provider</Label>
-        <Select
+        <OptionSelect
+          id="ai-mode"
           name="mode"
           value={mode}
-          onValueChange={(v) => setMode((v as AiConfig['mode']) ?? 'off')}
-        >
-          <SelectTrigger id="ai-mode">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="off">Off</SelectItem>
-            <SelectItem value="anthropic">Claude (cloud · your API key)</SelectItem>
-            <SelectItem value="ollama">Ollama (local · offline)</SelectItem>
-            {keyStatus.desktop ? (
-              <SelectItem value="claude-cli">Claude subscription (local CLI)</SelectItem>
-            ) : null}
-          </SelectContent>
-        </Select>
+          onValueChange={(v) => setMode(v as AiConfig['mode'])}
+          options={[
+            { value: 'off', label: 'Off' },
+            { value: 'anthropic', label: 'Claude (cloud · your API key)' },
+            { value: 'ollama', label: 'Ollama (local · offline)' },
+            ...(keyStatus.desktop
+              ? [{ value: 'claude-cli', label: 'Claude subscription (local CLI)' }]
+              : []),
+          ]}
+        />
       </div>
 
       {/* Fields stay mounted (hidden when inactive) so switching modes doesn't wipe them. */}

@@ -13,17 +13,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  OptionSelect,
 } from '@repo/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { CategoryIcon } from '../../../categories/_components/category-icon'
+import { TagSwatch } from '../../../tags/_components/tag-pill'
 import {
   bulkUpdateTransactions,
   findSimilarTransactions,
@@ -213,23 +210,24 @@ export function SimilarTransactions({
                     onChange={(e) => setNameValue(e.target.value)}
                   />
 
-                  <Select value={category} onValueChange={(v) => setCategory(v ?? 'nochange')}>
-                    <SelectTrigger className="h-8 w-44">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nochange">Category: no change</SelectItem>
-                      <SelectItem value="none">Uncategorise</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
+                  <OptionSelect
+                    className="h-8 w-44"
+                    value={category}
+                    onValueChange={setCategory}
+                    options={[
+                      { value: 'nochange', label: 'Category: no change' },
+                      { value: 'none', label: 'Uncategorise' },
+                      ...categories.map((c) => ({
+                        value: c.id,
+                        label: (
                           <span className="flex items-center gap-2">
                             <CategoryIcon name={c.icon} color={c.color} className="size-4" />
                             {c.name}
                           </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        ),
+                      })),
+                    ]}
+                  />
 
                   <DropdownMenu>
                     <DropdownMenuTrigger
@@ -253,7 +251,7 @@ export function SimilarTransactions({
                               closeOnClick={false}
                               onCheckedChange={() => toggleTag(t.id)}
                             >
-                              {t.name}
+                              <TagSwatch tag={t} />
                             </DropdownMenuCheckboxItem>
                           ))
                         )}

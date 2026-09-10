@@ -1,19 +1,12 @@
 'use client'
 
 import type { Category } from '@repo/database'
-import {
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/ui'
+import { Button, Input, OptionSelect } from '@repo/ui'
 import { Search, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import type { FormEvent } from 'react'
 import { CategoryIcon } from '../../categories/_components/category-icon'
+import { TagSwatch } from '../../tags/_components/tag-pill'
 
 export interface FilterAccount {
   id: string
@@ -23,6 +16,8 @@ export interface FilterAccount {
 export interface FilterTag {
   id: string
   name: string
+  /** Carried so the filter shows a tag the way the list does. */
+  color: string | null
 }
 
 type CategoryLite = Pick<Category, 'id' | 'name' | 'color' | 'icon'>
@@ -101,19 +96,16 @@ export function TransactionFilters({
           <label className="text-muted-foreground text-xs" htmlFor="filter-account">
             Account
           </label>
-          <Select name="accountId" defaultValue={current.accountId ?? 'all'}>
-            <SelectTrigger id="filter-account" className="w-52">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <OptionSelect
+            id="filter-account"
+            name="accountId"
+            className="w-52"
+            defaultValue={current.accountId ?? 'all'}
+            options={[
+              { value: 'all', label: 'All accounts' },
+              ...accounts.map((a) => ({ value: a.id, label: a.label })),
+            ]}
+          />
         </div>
       ) : null}
 
@@ -121,23 +113,25 @@ export function TransactionFilters({
         <label className="text-muted-foreground text-xs" htmlFor="filter-category">
           Category
         </label>
-        <Select name="category" defaultValue={current.category ?? 'all'}>
-          <SelectTrigger id="filter-category" className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            <SelectItem value="uncategorised">Uncategorised</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
+        <OptionSelect
+          id="filter-category"
+          name="category"
+          className="w-48"
+          defaultValue={current.category ?? 'all'}
+          options={[
+            { value: 'all', label: 'All categories' },
+            { value: 'uncategorised', label: 'Uncategorised' },
+            ...categories.map((c) => ({
+              value: c.id,
+              label: (
                 <span className="flex items-center gap-2">
                   <CategoryIcon name={c.icon} color={c.color} className="size-4" />
                   {c.name}
                 </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              ),
+            })),
+          ]}
+        />
       </div>
 
       {tags ? (
@@ -145,19 +139,16 @@ export function TransactionFilters({
           <label className="text-muted-foreground text-xs" htmlFor="filter-tag">
             Tag
           </label>
-          <Select name="tag" defaultValue={current.tag ?? 'all'}>
-            <SelectTrigger id="filter-tag" className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
-              {tags.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <OptionSelect
+            id="filter-tag"
+            name="tag"
+            className="w-44"
+            defaultValue={current.tag ?? 'all'}
+            options={[
+              { value: 'all', label: 'All tags' },
+              ...tags.map((t) => ({ value: t.id, label: <TagSwatch tag={t} /> })),
+            ]}
+          />
         </div>
       ) : null}
 

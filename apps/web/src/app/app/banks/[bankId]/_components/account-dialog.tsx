@@ -11,11 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  OptionSelect,
 } from '@repo/ui'
 import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import { Field } from '../../_components/form-field'
@@ -74,18 +70,15 @@ export function AccountDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="type">Type</Label>
-            <Select name="type" defaultValue={state?.values?.type ?? account?.type ?? 'checking'}>
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ACCOUNT_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {ACCOUNT_TYPE_LABELS[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <OptionSelect
+              id="type"
+              name="type"
+              defaultValue={state?.values?.type ?? account?.type ?? 'checking'}
+              options={ACCOUNT_TYPES.map((type) => ({
+                value: type,
+                label: ACCOUNT_TYPE_LABELS[type],
+              }))}
+            />
           </div>
 
           <Field
@@ -99,22 +92,15 @@ export function AccountDialog({
           {branches.length > 0 ? (
             <div className="grid gap-1.5">
               <Label htmlFor="branchId">Branch</Label>
-              <Select
+              <OptionSelect
+                id="branchId"
                 name="branchId"
                 defaultValue={state?.values?.branchId ?? account?.branchId ?? 'none'}
-              >
-                <SelectTrigger id="branchId">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No branch</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={[
+                  { value: 'none', label: 'No branch' },
+                  ...branches.map((branch) => ({ value: branch.id, label: branch.name })),
+                ]}
+              />
             </div>
           ) : null}
 

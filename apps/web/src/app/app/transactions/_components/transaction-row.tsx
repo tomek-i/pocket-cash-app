@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { CategoryIcon } from '../../categories/_components/category-icon'
+import { TagSwatch } from '../../tags/_components/tag-pill'
 import {
   deleteTransaction,
   setTransactionCategory,
@@ -155,7 +156,7 @@ export function TransactionRow({
                         run(() => toggleTransactionTag(tx.id, t.id, checked))
                       }
                     >
-                      {t.name}
+                      <TagSwatch tag={t} />
                     </DropdownMenuCheckboxItem>
                   ))
                 )}

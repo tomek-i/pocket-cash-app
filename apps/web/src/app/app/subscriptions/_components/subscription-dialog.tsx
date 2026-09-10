@@ -12,15 +12,12 @@ import {
   DialogTrigger,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  OptionSelect,
 } from '@repo/ui'
 import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../banks/_components/form-field'
+import { CategoryIcon } from '../../categories/_components/category-icon'
 import { createSubscription, type SubscriptionWithCategory, updateSubscription } from '../actions'
 
 export const CYCLE_LABELS: Record<BillingCycle, string> = {
@@ -36,7 +33,8 @@ export function SubscriptionDialog({
   defaultCurrency = 'USD',
   trigger,
 }: {
-  categories: Pick<Category, 'id' | 'name'>[]
+  // Icon and colour included, so the picker looks like the thing it picks.
+  categories: Pick<Category, 'id' | 'name' | 'icon' | 'color'>[]
   subscription?: SubscriptionWithCategory
   defaultCurrency?: string
   trigger: ReactElement
@@ -90,21 +88,15 @@ export function SubscriptionDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="cycle">Billing cycle</Label>
-              <Select
+              <OptionSelect
+                id="cycle"
                 name="cycle"
                 defaultValue={state?.values?.cycle ?? subscription?.cycle ?? 'monthly'}
-              >
-                <SelectTrigger id="cycle">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {BILLING_CYCLES.map((cycle) => (
-                    <SelectItem key={cycle} value={cycle}>
-                      {CYCLE_LABELS[cycle]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={BILLING_CYCLES.map((cycle) => ({
+                  value: cycle,
+                  label: CYCLE_LABELS[cycle],
+                }))}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="nextPaymentDate">Next payment</Label>
@@ -122,22 +114,23 @@ export function SubscriptionDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="categoryId">Category (optional)</Label>
-            <Select
+            <OptionSelect
+              id="categoryId"
               name="categoryId"
               defaultValue={state?.values?.categoryId ?? subscription?.categoryId ?? 'none'}
-            >
-              <SelectTrigger id="categoryId">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No category</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[
+                { value: 'none', label: 'No category' },
+                ...categories.map((c) => ({
+                  value: c.id,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      <CategoryIcon name={c.icon} color={c.color} className="size-4" />
+                      {c.name}
+                    </span>
+                  ),
+                })),
+              ]}
+            />
           </div>
 
           <Field

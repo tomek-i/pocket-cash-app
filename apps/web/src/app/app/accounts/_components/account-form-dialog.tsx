@@ -11,11 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  OptionSelect,
 } from '@repo/ui'
 import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import { Field } from '../../banks/_components/form-field'
@@ -70,18 +66,14 @@ export function AccountFormDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="bankId">Bank</Label>
-            <Select name="bankId" value={bankId} onValueChange={(v) => setBankId(v ?? '')}>
-              <SelectTrigger id="bankId">
-                <SelectValue placeholder="Select a bank" />
-              </SelectTrigger>
-              <SelectContent>
-                {banks.map((bank) => (
-                  <SelectItem key={bank.id} value={bank.id}>
-                    {bank.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <OptionSelect
+              id="bankId"
+              name="bankId"
+              value={bankId}
+              onValueChange={setBankId}
+              placeholder="Select a bank"
+              options={banks.map((bank) => ({ value: bank.id, label: bank.name }))}
+            />
             {state?.errors?.bankId?.[0] ? (
               <p className="text-destructive text-xs">{state.errors.bankId[0]}</p>
             ) : null}
@@ -97,18 +89,15 @@ export function AccountFormDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="type">Type</Label>
-            <Select name="type" defaultValue={state?.values?.type ?? account?.type ?? 'checking'}>
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ACCOUNT_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {ACCOUNT_TYPE_LABELS[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <OptionSelect
+              id="type"
+              name="type"
+              defaultValue={state?.values?.type ?? account?.type ?? 'checking'}
+              options={ACCOUNT_TYPES.map((type) => ({
+                value: type,
+                label: ACCOUNT_TYPE_LABELS[type],
+              }))}
+            />
           </div>
 
           <Field
@@ -123,19 +112,16 @@ export function AccountFormDialog({
             <div className="grid gap-1.5">
               <Label htmlFor="branchId">Branch</Label>
               {/* key resets the select to its default when the bank changes */}
-              <Select key={bankId} name="branchId" defaultValue={defaultBranchId}>
-                <SelectTrigger id="branchId">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No branch</SelectItem>
-                  {branchesForBank.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                key={bankId}
+                id="branchId"
+                name="branchId"
+                defaultValue={defaultBranchId}
+                options={[
+                  { value: 'none', label: 'No branch' },
+                  ...branchesForBank.map((branch) => ({ value: branch.id, label: branch.name })),
+                ]}
+              />
             </div>
           ) : null}
 
