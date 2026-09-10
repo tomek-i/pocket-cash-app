@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { CalculationSettings } from './_components/calculation-settings'
 import { CostTypesSection } from './_components/cost-types-section'
 import { JurisdictionsSection } from './_components/jurisdictions-section'
+import { RateSchedulesSection } from './_components/rate-schedules-section'
 import { getPropertySettings, listAllCostTypes, listAllJurisdictions } from './actions'
+import { listRateSchedules } from './schedules-actions'
 
 export const metadata = { title: 'Property settings' }
 
@@ -30,9 +32,10 @@ function Section({
 }
 
 export default async function PropertySettingsPage() {
-  const [costTypes, jurisdictions, propertySettings, appSettings] = await Promise.all([
+  const [costTypes, jurisdictions, schedules, propertySettings, appSettings] = await Promise.all([
     listAllCostTypes(),
     listAllJurisdictions(),
+    listRateSchedules(),
     getPropertySettings(),
     getAppSettings(),
   ])
@@ -71,6 +74,13 @@ export default async function PropertySettingsPage() {
         description="Places with their own rules. Each carries its own currency and its own name for the purchase tax, which is what keeps that terminology out of the calculation engine."
       >
         <JurisdictionsSection jurisdictions={jurisdictions} />
+      </Section>
+
+      <Section
+        title="Rate schedules"
+        description="Progressive rates, such as a transfer duty table. Each is dated, so a purchase always uses the rates that applied when it happened, and adding next year's rates leaves this year's alone."
+      >
+        <RateSchedulesSection schedules={schedules} jurisdictions={jurisdictions} />
       </Section>
 
       <Section
