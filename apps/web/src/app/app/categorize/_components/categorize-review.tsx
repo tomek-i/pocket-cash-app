@@ -1,17 +1,6 @@
 'use client'
 
-import {
-  Button,
-  Card,
-  CardContent,
-  cn,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/ui'
+import { Button, Card, CardContent, cn, Input, OptionSelect } from '@repo/ui'
 import { ChevronLeft, ChevronRight, Sparkles, Tags } from 'lucide-react'
 import { useEffect, useState, useTransition } from 'react'
 import { Empty } from '../../_components/empty'
@@ -227,25 +216,23 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
                       onChange={(e) => setName(g.key, e.target.value)}
                     />
 
-                    <Select
+                    <OptionSelect
+                      className="h-8 w-44"
                       value={effectiveCat(g)}
-                      onValueChange={(v) => setCat(g.key, v ?? NO_CATEGORY)}
-                    >
-                      <SelectTrigger className="h-8 w-44">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NO_CATEGORY}>No category</SelectItem>
-                        {(result?.categories ?? []).map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
+                      onValueChange={(v) => setCat(g.key, v)}
+                      options={[
+                        { value: NO_CATEGORY, label: 'No category' },
+                        ...(result?.categories ?? []).map((c) => ({
+                          value: c.id,
+                          label: (
                             <span className="flex items-center gap-2">
                               <CategoryIcon name={c.icon} color={c.color} className="size-4" />
                               {c.name}
                             </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          ),
+                        })),
+                      ]}
+                    />
                   </div>
                 )
               })}

@@ -17,11 +17,7 @@ import {
   cn,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  OptionSelect,
 } from '@repo/ui'
 import { CheckCircle2, FileUp, Upload } from 'lucide-react'
 import Link from 'next/link'
@@ -267,23 +263,17 @@ export function ImportWizard({
           {savedMappings.length > 0 ? (
             <div className="flex w-full max-w-xs flex-col gap-1.5 text-left">
               <Label className="text-muted-foreground text-xs">Mapping to apply</Label>
-              <Select
+              <OptionSelect
                 value={mappingId ?? 'new'}
-                onValueChange={(v) => setMappingId(!v || v === 'new' ? undefined : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New mapping (detect columns)</SelectItem>
-                  {savedMappings.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                      {m.isDefault ? ' (default)' : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={(v) => setMappingId(v === 'new' ? undefined : v)}
+                options={[
+                  { value: 'new', label: 'New mapping (detect columns)' },
+                  ...savedMappings.map((m) => ({
+                    value: m.id,
+                    label: `${m.name}${m.isDefault ? ' (default)' : ''}`,
+                  })),
+                ]}
+              />
             </div>
           ) : null}
 
@@ -305,25 +295,19 @@ export function ImportWizard({
         </div>
         <div className="flex items-center gap-2">
           {savedMappings.length > 0 ? (
-            <Select
+            <OptionSelect
+              className="w-48"
               value={mappingId ?? 'new'}
-              onValueChange={(v) => {
-                if (v) selectMapping(v)
-              }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Load a mapping" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">New mapping</SelectItem>
-                {savedMappings.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name}
-                    {m.isDefault ? ' (default)' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={selectMapping}
+              placeholder="Load a mapping"
+              options={[
+                { value: 'new', label: 'New mapping' },
+                ...savedMappings.map((m) => ({
+                  value: m.id,
+                  label: `${m.name}${m.isDefault ? ' (default)' : ''}`,
+                })),
+              ]}
+            />
           ) : null}
           <FilePicker onFile={onFile} label="Change file" variant="outline" />
         </div>
@@ -389,25 +373,15 @@ export function ImportWizard({
           <CardContent className="flex flex-col gap-5 p-5">
             <section className="grid gap-3 sm:grid-cols-3">
               <LabeledControl label="Delimiter">
-                <Select
+                <OptionSelect
                   value={config.file.delimiter}
                   onValueChange={(v) =>
                     update((d) => {
-                      d.file.delimiter = v ?? ''
+                      d.file.delimiter = v
                     })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DELIMITERS.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={DELIMITERS.map((d) => ({ value: d.value, label: d.label }))}
+                />
               </LabeledControl>
               <LabeledControl label="Skip rows">
                 <Input
@@ -542,43 +516,34 @@ export function ImportWizard({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <LabeledControl label="Decimal separator">
-                  <Select
+                  <OptionSelect
                     value={amount.decimal}
                     onValueChange={(v) =>
                       update((d) => {
-                        d.fields.amount.decimal = v ?? ''
+                        d.fields.amount.decimal = v
                       })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=".">Dot .</SelectItem>
-                      <SelectItem value=",">Comma ,</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: '.', label: 'Dot .' },
+                      { value: ',', label: 'Comma ,' },
+                    ]}
+                  />
                 </LabeledControl>
                 <LabeledControl label="Thousands separator">
-                  <Select
+                  <OptionSelect
                     value={amount.thousands || 'none'}
                     onValueChange={(v) =>
                       update((d) => {
-                        d.fields.amount.thousands =
-                          !v || v === 'none' ? '' : v === 'space' ? ' ' : v
+                        d.fields.amount.thousands = v === 'none' ? '' : v === 'space' ? ' ' : v
                       })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value=",">Comma ,</SelectItem>
-                      <SelectItem value=".">Dot .</SelectItem>
-                      <SelectItem value="space">Space</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: 'none', label: 'None' },
+                      { value: ',', label: 'Comma ,' },
+                      { value: '.', label: 'Dot .' },
+                      { value: 'space', label: 'Space' },
+                    ]}
+                  />
                 </LabeledControl>
               </div>
 
@@ -639,22 +604,18 @@ export function ImportWizard({
             <Separator />
 
             <LabeledControl label="Duplicate detection">
-              <Select
+              <OptionSelect
                 value={config.dedupe.strategy}
                 onValueChange={(v) =>
                   update((d) => {
                     if (v === 'fullRow' || v === 'fields') d.dedupe.strategy = v
                   })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fullRow">Whole row (recommended)</SelectItem>
-                  <SelectItem value="fields">Key fields only</SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  { value: 'fullRow', label: 'Whole row (recommended)' },
+                  { value: 'fields', label: 'Key fields only' },
+                ]}
+              />
               <p className="text-muted-foreground text-xs">
                 {config.dedupe.strategy === 'fullRow'
                   ? 'Two rows are duplicates only if every column matches — so same-day, same-amount transactions with a different running balance are kept.'
@@ -862,22 +823,15 @@ function ColumnField({
   }))
   return (
     <LabeledControl label={label}>
-      <Select
+      <OptionSelect
         value={strValue}
-        onValueChange={(v) => onChange(!v || v === 'none' ? undefined : hasHeader ? v : Number(v))}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select column" />
-        </SelectTrigger>
-        <SelectContent>
-          {allowNone ? <SelectItem value="none">None</SelectItem> : null}
-          {options.map((opt) => (
-            <SelectItem key={opt.id} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        onValueChange={(v) => onChange(v === 'none' ? undefined : hasHeader ? v : Number(v))}
+        placeholder="Select column"
+        options={[
+          ...(allowNone ? [{ value: 'none', label: 'None' }] : []),
+          ...options.map((opt) => ({ value: opt.value, label: opt.label })),
+        ]}
+      />
     </LabeledControl>
   )
 }

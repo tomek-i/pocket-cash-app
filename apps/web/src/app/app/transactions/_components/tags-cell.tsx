@@ -1,8 +1,6 @@
 'use client'
 
-import type { Tag } from '@repo/database'
 import {
-  Badge,
   Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,9 +12,11 @@ import {
 } from '@repo/ui'
 import { Plus } from 'lucide-react'
 import { useTransition } from 'react'
+import { type TagLike, TagPill, TagSwatch } from '../../tags/_components/tag-pill'
 import { toggleTransactionTag } from '../actions'
 
-type TagLite = Pick<Tag, 'id' | 'name' | 'color'>
+/** The tag fields this cell needs, which is what `TagPill` and `TagSwatch` take. */
+type TagLite = TagLike
 
 export function TagsCell({
   transactionId,
@@ -33,13 +33,7 @@ export function TagsCell({
   return (
     <div className="flex flex-wrap items-center gap-1">
       {tags.map((t) => (
-        <Badge
-          key={t.id}
-          variant="secondary"
-          style={t.color ? { borderColor: t.color, color: t.color } : undefined}
-        >
-          {t.name}
-        </Badge>
+        <TagPill key={t.id} tag={t} />
       ))}
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -67,7 +61,7 @@ export function TagsCell({
                     })
                   }
                 >
-                  {t.name}
+                  <TagSwatch tag={t} />
                 </DropdownMenuCheckboxItem>
               ))
             )}
