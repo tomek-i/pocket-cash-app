@@ -1,5 +1,4 @@
 import { relations } from 'drizzle-orm'
-import { accounts } from './accounts'
 import { costTypes } from './cost-types'
 import { jurisdictions } from './jurisdictions'
 import { properties } from './properties'
@@ -45,7 +44,6 @@ export const propertiesRelations = relations(properties, ({ one, many }) => ({
 
 export const propertyLoansRelations = relations(propertyLoans, ({ one }) => ({
   property: one(properties, { fields: [propertyLoans.propertyId], references: [properties.id] }),
-  account: one(accounts, { fields: [propertyLoans.accountId], references: [accounts.id] }),
 }))
 
 export const propertyCostsRelations = relations(propertyCosts, ({ one }) => ({
@@ -80,5 +78,4 @@ export const propertyAvailableFundsRelations = relations(propertyAvailableFunds,
     fields: [propertyAvailableFunds.propertyId],
     references: [properties.id],
   }),
-  account: one(accounts, { fields: [propertyAvailableFunds.accountId], references: [accounts.id] }),
 }))

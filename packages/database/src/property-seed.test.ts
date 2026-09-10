@@ -306,3 +306,80 @@ describe('upgrading an existing database', () => {
     }
   }, 60_000)
 })
+
+describe('dropping the account links', () => {
+  /**
+   * The path for anyone who already installed the release that shipped
+   * `account_id` on property loans and available funds. Those columns are gone
+   * now (the planner is deliberately standalone), and a DROP COLUMN on a table
+   * that already holds rows is exactly where an upgrade can lose data, so this
+   * migrates to the version that HAD them, writes a row, and then upgrades.
+   */
+  it('keeps existing property rows when the account columns are removed', async () => {
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
+    const journal = JSON.parse(
+      readFileSync(join(migrationsFolder, 'meta/_journal.json'), 'utf-8'),
+    ) as { entries: { idx: number; tag: string }[] }
+
+    // Everything up to and including the migration that introduced the columns.
+    const upTo = journal.entries.filter((entry) => entry.idx <= 1)
+    if (upTo.length < 2) throw new Error('expected at least two migrations in the journal')
+
+    const oldFolder = mkdtempSync(join(tmpdir(), 'pocket-cash-migrations-'))
+    const client = new PGlite('memory://', { extensions: { pg_trgm, fuzzystrmatch } })
+    try {
+      mkdirSync(join(oldFolder, 'meta'), { recursive: true })
+      for (const entry of upTo) {
+        copyFileSync(
+          join(migrationsFolder, `${entry.tag}.sql`),
+          join(oldFolder, `${entry.tag}.sql`),
+        )
+      }
+      writeFileSync(
+        join(oldFolder, 'meta/_journal.json'),
+        JSON.stringify({ ...journal, entries: upTo }),
+      )
+
+      await client.waitReady
+      const oldDb = drizzle(client, { schema })
+      await oldDb.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
+      await oldDb.execute(sql`CREATE EXTENSION IF NOT EXISTS fuzzystrmatch`)
+      await migrate(oldDb, { migrationsFolder: oldFolder })
+
+      // The columns exist at this point, so write through raw SQL: the compiled
+      // schema no longer knows about them.
+      await oldDb.execute(sql`
+        INSERT INTO properties (id, name, country, currency, purchase_price)
+        VALUES ('11111111-1111-1111-1111-111111111111', 'Legacy Property', 'AU', 'AUD', 100000000)
+      `)
+      await oldDb.execute(sql`
+        INSERT INTO property_loans (property_id, loan_amount, account_id)
+        VALUES ('11111111-1111-1111-1111-111111111111', 80000000, NULL)
+      `)
+      await oldDb.execute(sql`
+        INSERT INTO property_available_funds (label, amount, account_id)
+        VALUES ('Savings', 15000000, NULL)
+      `)
+
+      // The upgrade.
+      await migrate(oldDb, { migrationsFolder })
+
+      const loans = await oldDb.execute(sql`SELECT loan_amount FROM property_loans`)
+      const funds = await oldDb.execute(sql`SELECT label, amount FROM property_available_funds`)
+      expect(loans.rows).toHaveLength(1)
+      expect(funds.rows).toHaveLength(1)
+      expect((funds.rows[0] as { label: string }).label).toBe('Savings')
+
+      // And the coupling is genuinely gone, not just unused.
+      const columns = await oldDb.execute(sql`
+        SELECT table_name FROM information_schema.columns
+        WHERE column_name = 'account_id'
+          AND table_name IN ('property_loans', 'property_available_funds')
+      `)
+      expect(columns.rows).toHaveLength(0)
+    } finally {
+      await client.close()
+      rmSync(oldFolder, { recursive: true, force: true })
+    }
+  }, 60_000)
+})
