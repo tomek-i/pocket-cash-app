@@ -256,7 +256,7 @@ export function PropertyDialog({
                 <MoneyInput
                   label="Estimated market value"
                   name="estimatedMarketValue"
-                  help="What it is actually worth, when that differs from the price. LVR and equity are measured against this rather than the price, so buying under valuation shows the better position it really gives you. Leave it blank to use the purchase price."
+                  help="What it would sell for today, from a valuation, an agent appraisal or recent sales nearby. Not a forecast: nothing here projects future value. Deliberately not the price you are paying, because the gap between the two is what tells you whether you are overpaying. LVR and equity measure against this. Leave it blank to use the purchase price."
                   locale={locale}
                   defaultValue={
                     state?.values?.estimatedMarketValue ??
@@ -272,7 +272,7 @@ export function PropertyDialog({
                   <MoneyInput
                     label="Current value"
                     name="currentValue"
-                    help="Today's value, from a recent valuation or your own estimate. It wins over the market value and the purchase price everywhere a value is needed, so this is the one to keep up to date on a property you own."
+                    help="The same question as market value, asked about a property you already own: what it would sell for today, from a recent valuation. This one wins wherever a value is needed, so on a property you own keep this up to date rather than the market value above."
                     locale={locale}
                     defaultValue={
                       state?.values?.currentValue ?? toMajorInput(property?.currentValue)
