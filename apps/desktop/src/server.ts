@@ -10,11 +10,13 @@ import { logStartup } from './logging'
 // actions as the web app) inside this process. Nothing is rebuilt for desktop.
 export const HOST = '127.0.0.1'
 
-// The port isn't fixed: in production we bind an OS-assigned free port (see
+// The port is never fixed. In production we bind an OS-assigned free port (see
 // startNextServer) so the app never clashes with a dev server, another copy of
-// itself, or anything else already on 3000. In dev we attach to the running
-// `next dev` server, which is on 3000. `appUrl`/`startUrl` are derived from it
-// and updated once the port is known — everything downstream reads these.
+// itself, or anything else already running. In dev we attach to the `next dev`
+// server on the port `scripts/dev.mjs` chose and passed in through PORT, which
+// is why the fallback below is only a last resort. `appUrl`/`startUrl` are
+// derived from it and updated once the port is known, and everything downstream
+// reads those rather than a constant.
 let port = Number(process.env.PORT ?? 3000)
 let appUrl = `http://${HOST}:${port}`
 // The desktop shell runs fully local/offline with no auth, so it lands straight
