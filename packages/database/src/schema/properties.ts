@@ -63,14 +63,20 @@ export const properties = pgTable(
     intendedUse: propertyUseEnum('intended_use').notNull().default('ownerOccupied'),
     status: propertyStatusEnum('status').notNull().default('planned'),
 
-    /** Minor units. What is being paid, for a planned purchase. */
+    /** Minor units. What is being paid, or was paid for a property already owned. */
     purchasePrice: bigint('purchase_price', { mode: 'number' }).notNull().default(0),
-    /** Minor units. What it is thought to be worth. LVR is measured against this. */
-    estimatedMarketValue: bigint('estimated_market_value', { mode: 'number' }),
-    /** Minor units. Today's value of a property already owned. */
-    currentValue: bigint('current_value', { mode: 'number' }),
-    /** Minor units. What an already owned property originally cost. */
-    originalPurchasePrice: bigint('original_purchase_price', { mode: 'number' }),
+    /**
+     * Minor units. What it would sell for today. LVR and equity measure against
+     * this, falling back to the purchase price when it is not set.
+     *
+     * One field rather than the three this replaces. `estimatedMarketValue` and
+     * `currentValue` asked the same question at different stages of ownership and
+     * were told apart by the status flag, which meant nobody could say which to
+     * fill in; `originalPurchasePrice` duplicated `purchasePrice` for an owned
+     * property and was read by nothing. Never a forecast: nothing here projects
+     * future value.
+     */
+    marketValue: bigint('market_value', { mode: 'number' }),
     /** Decimal share owned, `1` being outright. */
     ownershipShare: doublePrecision('ownership_share').notNull().default(1),
 

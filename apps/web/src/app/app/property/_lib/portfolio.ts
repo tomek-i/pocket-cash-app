@@ -21,10 +21,8 @@ export interface PortfolioInput {
   status: PropertyStatus
   /** Decimal share owned, `1` being outright. */
   ownershipShare: number
-  /** Minor units. Today's value, for a property already owned. */
-  currentValue: number | null
-  /** Minor units. What it is thought to be worth. */
-  estimatedMarketValue: number | null
+  /** Minor units. What it would sell for today. */
+  marketValue: number | null
   /** Minor units. */
   purchasePrice: number
   /** Minor units. Total borrowed against it. */
@@ -64,8 +62,7 @@ export function toPortfolioInput(
     id: property.id,
     status: property.status,
     ownershipShare: property.ownershipShare,
-    currentValue: property.currentValue,
-    estimatedMarketValue: property.estimatedMarketValue,
+    marketValue: property.marketValue,
     purchasePrice: property.purchasePrice,
     loanBalance: property.loans.reduce((total, loan) => total + loan.loanAmount, 0),
   }
@@ -74,12 +71,12 @@ export function toPortfolioInput(
 /**
  * The value to measure a property by.
  *
- * Today's value first, then an estimate, then what was paid. An owned property
- * that has never been revalued still has to show something, and the price paid
- * is a better answer than zero.
+ * What it is worth, falling back to what was paid. A property that has never
+ * been valued still has to show something, and the price paid is a better answer
+ * than zero.
  */
 export function propertyValue(property: PortfolioInput): number {
-  return property.currentValue ?? property.estimatedMarketValue ?? property.purchasePrice
+  return property.marketValue ?? property.purchasePrice
 }
 
 /** One property's position. */

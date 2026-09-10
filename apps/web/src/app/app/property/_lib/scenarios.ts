@@ -23,9 +23,7 @@ export interface ScenarioBase {
   /** Minor units. */
   purchasePrice: number
   /** Minor units. */
-  estimatedMarketValue: number | null
-  /** Minor units. */
-  currentValue: number | null
+  marketValue: number | null
   /** Which of the three financing fields the others are derived from. */
   source: FinancingSource
   /** Minor units. */
@@ -99,9 +97,7 @@ export function applyOverrides(base: ScenarioBase, overrides: ScenarioOverrides)
   const next: ScenarioBase = { ...base }
 
   if (overrides.purchasePrice !== undefined) next.purchasePrice = overrides.purchasePrice
-  if (overrides.estimatedMarketValue !== undefined) {
-    next.estimatedMarketValue = overrides.estimatedMarketValue
-  }
+  if (overrides.marketValue !== undefined) next.marketValue = overrides.marketValue
   if (overrides.annualRate !== undefined) next.annualRate = overrides.annualRate
   if (overrides.termYears !== undefined) next.termYears = overrides.termYears
 
@@ -135,8 +131,7 @@ export function evaluateScenario(
 
   const { financing, amortisation, propertyValue } = buildFinancing({
     purchasePrice: input.purchasePrice,
-    estimatedMarketValue: input.estimatedMarketValue,
-    currentValue: input.currentValue,
+    marketValue: input.marketValue,
     source: input.source,
     deposit: input.deposit,
     depositPercentage: input.depositPercentage,

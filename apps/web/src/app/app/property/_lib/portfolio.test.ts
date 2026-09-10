@@ -12,8 +12,7 @@ function property(overrides: Partial<PortfolioInput> = {}): PortfolioInput {
     id: 'p1',
     status: 'existing',
     ownershipShare: 1,
-    currentValue: 1_000_000_00,
-    estimatedMarketValue: null,
+    marketValue: 1_000_000_00,
     purchasePrice: 900_000_00,
     loanBalance: 800_000_00,
     ...overrides,
@@ -21,24 +20,16 @@ function property(overrides: Partial<PortfolioInput> = {}): PortfolioInput {
 }
 
 describe('propertyValue', () => {
-  it('prefers the current value', () => {
+  it('measures by what it is worth', () => {
     expect(propertyValue(property())).toBe(1_000_000_00)
   })
 
-  it('falls back to the estimate when there is no current value', () => {
-    expect(
-      propertyValue(property({ currentValue: null, estimatedMarketValue: 1_100_000_00 })),
-    ).toBe(1_100_000_00)
-  })
-
   it('falls back to the purchase price rather than zero', () => {
-    expect(propertyValue(property({ currentValue: null, estimatedMarketValue: null }))).toBe(
-      900_000_00,
-    )
+    expect(propertyValue(property({ marketValue: null }))).toBe(900_000_00)
   })
 
-  it('treats a zero current value as a real value, not as missing', () => {
-    expect(propertyValue(property({ currentValue: 0 }))).toBe(0)
+  it('treats a zero value as a real value, not as missing', () => {
+    expect(propertyValue(property({ marketValue: 0 }))).toBe(0)
   })
 })
 
@@ -50,7 +41,7 @@ describe('propertyPosition', () => {
   })
 
   it('goes negative when the loan is underwater', () => {
-    const position = propertyPosition(property({ currentValue: 700_000_00 }))
+    const position = propertyPosition(property({ marketValue: 700_000_00 }))
     expect(position.equity).toBe(-100_000_00)
   })
 
@@ -72,9 +63,7 @@ describe('propertyPosition', () => {
   })
 
   it('reports no LVR for a property with no value rather than dividing by zero', () => {
-    const position = propertyPosition(
-      property({ currentValue: 0, estimatedMarketValue: null, purchasePrice: 0 }),
-    )
+    const position = propertyPosition(property({ marketValue: 0, purchasePrice: 0 }))
     expect(position.lvr).toBe(0)
   })
 })
@@ -87,7 +76,7 @@ describe('portfolioTotals', () => {
   it('sums value, debt and equity', () => {
     const totals = portfolioTotals([
       property({ id: 'a' }),
-      property({ id: 'b', currentValue: 500_000_00, loanBalance: 200_000_00 }),
+      property({ id: 'b', marketValue: 500_000_00, loanBalance: 200_000_00 }),
     ])
     expect(totals.value).toBe(1_500_000_00)
     expect(totals.debt).toBe(1_000_000_00)
@@ -98,7 +87,7 @@ describe('portfolioTotals', () => {
   it('excludes sold properties', () => {
     const totals = portfolioTotals([
       property({ id: 'a' }),
-      property({ id: 'b', status: 'sold', currentValue: 5_000_000_00, loanBalance: 0 }),
+      property({ id: 'b', status: 'sold', marketValue: 5_000_000_00, loanBalance: 0 }),
     ])
     expect(totals.value).toBe(1_000_000_00)
     expect(totals.count).toBe(1)
@@ -113,8 +102,7 @@ describe('portfolioTotals', () => {
       property({
         id: 'b',
         status: 'planned',
-        currentValue: null,
-        estimatedMarketValue: null,
+        marketValue: null,
         purchasePrice: 800_000_00,
         loanBalance: 640_000_00,
       }),
@@ -132,8 +120,8 @@ describe('portfolioTotals', () => {
 
   it('reports portfolio LVR across every counted property', () => {
     const totals = portfolioTotals([
-      property({ id: 'a', currentValue: 1_000_000_00, loanBalance: 800_000_00 }),
-      property({ id: 'b', currentValue: 1_000_000_00, loanBalance: 200_000_00 }),
+      property({ id: 'a', marketValue: 1_000_000_00, loanBalance: 800_000_00 }),
+      property({ id: 'b', marketValue: 1_000_000_00, loanBalance: 200_000_00 }),
     ])
     expect(totals.lvr).toBe(0.5)
   })

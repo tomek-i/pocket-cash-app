@@ -97,9 +97,8 @@ export const propertyFieldsSchema = z.object({
   status: z.enum(PROPERTY_STATUSES),
 
   purchasePrice: optionalMoneyMinor,
-  estimatedMarketValue: optionalMoneyMinor,
-  currentValue: optionalMoneyMinor,
-  originalPurchasePrice: optionalMoneyMinor,
+  /** What it would sell for today. One field, whatever stage of ownership. */
+  marketValue: optionalMoneyMinor,
   ownershipShare: optionalPercentDecimal(100, 'Ownership cannot exceed 100%'),
   purchaseDate: optionalIsoDate,
   notes: optionalText(2000),
@@ -130,7 +129,7 @@ export const plannerFinancingSchema = z.object({
   id: z.string().uuid(),
   source: z.enum(['deposit', 'depositPercentage', 'loanAmount']),
   purchasePrice: optionalMoneyMinor,
-  estimatedMarketValue: optionalMoneyMinor,
+  marketValue: optionalMoneyMinor,
   deposit: optionalMoneyMinor,
   depositPercentage: optionalPercentDecimal(100, 'Deposit cannot exceed 100%'),
   loanAmount: optionalMoneyMinor,
@@ -413,7 +412,7 @@ export const toggleAvailableFundSchema = z.object({
  */
 export const scenarioOverridesSchema = z.object({
   purchasePrice: optionalMoneyMinor,
-  estimatedMarketValue: optionalMoneyMinor,
+  marketValue: optionalMoneyMinor,
   deposit: optionalMoneyMinor,
   depositPercentage: optionalPercentDecimal(100, 'A deposit cannot exceed 100%'),
   loanAmount: optionalMoneyMinor,

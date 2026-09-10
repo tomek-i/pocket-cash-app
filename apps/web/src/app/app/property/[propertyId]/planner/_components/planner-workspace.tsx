@@ -92,8 +92,7 @@ export function PlannerWorkspace({
   const loan = property.loans[0]
   const inputs = usePlannerInputs({
     purchasePrice: property.purchasePrice,
-    estimatedMarketValue: property.estimatedMarketValue,
-    currentValue: property.currentValue,
+    marketValue: property.marketValue,
     loan,
   })
 
@@ -153,10 +152,7 @@ export function PlannerWorkspace({
   const scenarioBase: ScenarioBase = useMemo(
     () => ({
       purchasePrice: financing.purchasePrice,
-      estimatedMarketValue: inputs.values.marketValue
-        ? toMinorUnits(inputs.values.marketValue)
-        : null,
-      currentValue: property.currentValue,
+      marketValue: inputs.values.marketValue ? toMinorUnits(inputs.values.marketValue) : null,
       source: inputs.source,
       deposit: financing.deposit,
       depositPercentage: financing.depositPercentage,
@@ -166,7 +162,7 @@ export function PlannerWorkspace({
       loanType: inputs.loanType,
       offsetBalance: toMinorUnits(inputs.values.offsetBalance),
     }),
-    [financing, inputs, property.currentValue],
+    [financing, inputs],
   )
 
   const scenarioContext = useMemo<ScenarioContext>(

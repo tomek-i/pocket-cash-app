@@ -36,8 +36,7 @@ export type PlannerInputValues = Record<PlannerInputKey, string>
 /** The stored property and loan the working inputs start from. */
 export interface PlannerSeed {
   purchasePrice: number
-  estimatedMarketValue: number | null
-  currentValue: number | null
+  marketValue: number | null
   loan?: {
     loanAmount: number
     annualRate: number
@@ -67,7 +66,7 @@ export function usePlannerInputs(seed: PlannerSeed): PlannerInputs {
 
   const [values, setValues] = useState<PlannerInputValues>(() => ({
     purchasePrice: toMajorInput(seed.purchasePrice),
-    marketValue: toMajorInput(seed.estimatedMarketValue),
+    marketValue: toMajorInput(seed.marketValue),
     deposit: toMajorInput(Math.max(0, seed.purchasePrice - (loan?.loanAmount ?? 0))),
     depositPercentage: seed.purchasePrice
       ? toPercentInput((seed.purchasePrice - (loan?.loanAmount ?? 0)) / seed.purchasePrice)
@@ -99,8 +98,7 @@ export function usePlannerInputs(seed: PlannerSeed): PlannerInputs {
     () =>
       buildFinancing({
         purchasePrice: toMinorUnits(values.purchasePrice),
-        estimatedMarketValue: values.marketValue ? toMinorUnits(values.marketValue) : null,
-        currentValue: seed.currentValue,
+        marketValue: values.marketValue ? toMinorUnits(values.marketValue) : null,
         source,
         deposit: toMinorUnits(values.deposit),
         depositPercentage: toRateDecimal(values.depositPercentage),
@@ -110,7 +108,7 @@ export function usePlannerInputs(seed: PlannerSeed): PlannerInputs {
         loanType,
         offsetBalance: toMinorUnits(values.offsetBalance),
       }),
-    [values, loanType, source, seed.currentValue],
+    [values, loanType, source],
   )
 
   // The two fields the user is not editing follow the derived figures, so the

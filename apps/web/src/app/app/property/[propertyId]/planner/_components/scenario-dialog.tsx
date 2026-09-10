@@ -134,13 +134,13 @@ export function ScenarioDialog({
               error={errors?.purchasePrice}
             />
             <MoneyInput
-              name="estimatedMarketValue"
-              id="scenario-estimatedMarketValue"
+              name="marketValue"
+              id="scenario-marketValue"
               label="Market value"
               locale={locale}
-              defaultValue={toMajorInput(overrides.estimatedMarketValue ?? null)}
-              placeholder={(base.estimatedMarketValue ?? base.purchasePrice) / 100}
-              error={errors?.estimatedMarketValue}
+              defaultValue={toMajorInput(overrides.marketValue ?? null)}
+              placeholder={(base.marketValue ?? base.purchasePrice) / 100}
+              error={errors?.marketValue}
             />
           </div>
 
