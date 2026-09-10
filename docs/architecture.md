@@ -110,6 +110,17 @@ in `@repo/database`, kept out of the bundle via Next `serverExternalPackages`, a
 listed as a direct dependency of `apps/web` so the runtime import resolves from the
 standalone build.
 
+### Property: configuration, not code
+
+`@repo/property` is a pure calculation engine with no notion of a country, a
+state or a tax name. Jurisdictions, cost types and dated rate schedules are all
+data, so supporting a new jurisdiction is a configuration change rather than a
+code change. Completed purchases hold a frozen snapshot of the schedule they were
+calculated against, so later rate edits cannot rewrite history.
+
+See [property.md](property.md) for the model and how schedules, effective dates
+and snapshots interact.
+
 ---
 
 ## 4. Desktop specifics
@@ -144,4 +155,5 @@ existing user's data.
   to a `@repo/*` package. No API route, and no client-side data fetching layer.
 
 See [development.md](development.md) for running, testing and packaging the app,
-and [releasing.md](releasing.md) for how versions and builds are cut.
+[property.md](property.md) for the property model, and
+[releasing.md](releasing.md) for how versions and builds are cut.

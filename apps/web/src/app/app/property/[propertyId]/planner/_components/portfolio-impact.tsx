@@ -139,25 +139,27 @@ export function PortfolioImpactPanel({
           </table>
         </div>
 
-        <div className="border-t pt-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="font-semibold text-sm">Equity gained, less the cash it took</p>
-            <p
-              className={
-                equityForCash < 0
-                  ? 'font-semibold text-destructive tabular-nums'
-                  : 'font-semibold text-success tabular-nums'
-              }
-            >
-              {delta(equityForCash, currency)}
+        {equityForCash === null ? null : (
+          <div className="border-t pt-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="font-semibold text-sm">Equity gained, less the cash it took</p>
+              <p
+                className={
+                  equityForCash < 0
+                    ? 'font-semibold text-destructive tabular-nums'
+                    : 'font-semibold text-success tabular-nums'
+                }
+              >
+                {delta(equityForCash, currency)}
+              </p>
+            </div>
+            <p className="mt-1 text-muted-foreground text-xs">
+              {equityForCash < 0
+                ? 'What you hand over at settlement is more than the equity it buys. The gap is the upfront costs, plus anything paid above what the place is valued at.'
+                : 'The equity gained is more than the cash it took, which happens when the price is under the valuation by more than the upfront costs.'}
             </p>
           </div>
-          <p className="mt-1 text-muted-foreground text-xs">
-            {equityForCash < 0
-              ? 'What you hand over at settlement is more than the equity it buys. The gap is the upfront costs, plus anything paid above what the place is valued at.'
-              : 'The equity gained is more than the cash it took, which happens when the price is under the valuation by more than the upfront costs.'}
-          </p>
-        </div>
+        )}
       </CardContent>
     </Card>
   )

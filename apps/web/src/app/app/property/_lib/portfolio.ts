@@ -114,7 +114,19 @@ export interface PortfolioTotals {
   count: number
 }
 
-/** Totals across every property the user still holds. */
+/**
+ * Only what is held today.
+ *
+ * A planned purchase is a proposal rather than a holding, so it is not part of
+ * what you own and its loan is not money you owe. Keeping that distinction in
+ * one function is what stops the headline totals and the impact maths drifting
+ * apart on the answer.
+ */
+export function ownedProperties(properties: PortfolioInput[]): PortfolioInput[] {
+  return properties.filter((property) => property.status === 'existing')
+}
+
+/** Totals across every property counted, sold ones excluded. */
 export function portfolioTotals(properties: PortfolioInput[]): PortfolioTotals {
   const counted = properties.map(propertyPosition).filter((p) => p.countsTowardsTotals)
 

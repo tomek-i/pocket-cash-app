@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { type PortfolioInput, portfolioTotals, propertyPosition, propertyValue } from './portfolio'
+import {
+  ownedProperties,
+  type PortfolioInput,
+  portfolioTotals,
+  propertyPosition,
+  propertyValue,
+} from './portfolio'
 
 function property(overrides: Partial<PortfolioInput> = {}): PortfolioInput {
   return {
@@ -98,7 +104,10 @@ describe('portfolioTotals', () => {
     expect(totals.count).toBe(1)
   })
 
-  it('includes a planned purchase, so the effect on the portfolio is visible', () => {
+  // The totals exclude sold properties and nothing else. Deciding that a planned
+  // purchase is not part of what you hold is the caller's job, via
+  // `ownedProperties`, because the planner needs both readings.
+  it('counts a planned purchase, since sold is the only thing it drops', () => {
     const totals = portfolioTotals([
       property({ id: 'a' }),
       property({
@@ -127,5 +136,26 @@ describe('portfolioTotals', () => {
       property({ id: 'b', currentValue: 1_000_000_00, loanBalance: 200_000_00 }),
     ])
     expect(totals.lvr).toBe(0.5)
+  })
+})
+
+describe('ownedProperties', () => {
+  it('keeps only what is held today', () => {
+    const owned = ownedProperties([
+      property({ id: 'a' }),
+      property({ id: 'b', status: 'planned' }),
+      property({ id: 'c', status: 'sold' }),
+    ])
+    expect(owned.map((entry) => entry.id)).toEqual(['a'])
+  })
+
+  it('leaves the headline totals free of debt that has not been borrowed', () => {
+    const properties = [
+      property({ id: 'a', loanBalance: 640_000_00 }),
+      property({ id: 'b', status: 'planned', loanBalance: 850_000_00 }),
+    ]
+
+    expect(portfolioTotals(properties).debt).toBe(1_490_000_00)
+    expect(portfolioTotals(ownedProperties(properties)).debt).toBe(640_000_00)
   })
 })

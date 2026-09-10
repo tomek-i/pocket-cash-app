@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money'
 import { formatPercent } from '../_lib/format'
 import { PROPERTY_TYPE_LABELS, PROPERTY_USE_LABELS } from '../_lib/labels'
 import type { PropertyPosition } from '../_lib/portfolio'
+import type { PortfolioImpact } from '../_lib/portfolio-impact'
 import type { PropertyWithLoans } from '../actions'
 import { DeletePropertyDialog } from './delete-property-dialog'
 import { PropertyDialog } from './property-dialog'
@@ -23,16 +24,49 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'ne
   )
 }
 
+/**
+ * What buying this would do to the rest of the portfolio.
+ *
+ * One line rather than a table, because this is a list. The full before and
+ * after, and what the purchase costs in cash, is on the planner.
+ */
+function IfYouBuy({ impact, currency }: { impact: PortfolioImpact; currency: string }) {
+  const { change, now, after } = impact
+  const signed = (value: number) =>
+    `${value >= 0 ? '+' : '-'}${formatMoney(Math.abs(value), currency)}`
+
+  return (
+    <div className="border-t pt-3">
+      <p className="text-muted-foreground text-xs">If you buy this</p>
+      <p className="mt-1 text-sm">
+        <span className="tabular-nums">Debt {signed(change.debt)}</span>
+        <span className="text-muted-foreground"> · </span>
+        <span className={change.equity < 0 ? 'text-destructive tabular-nums' : 'tabular-nums'}>
+          Equity {signed(change.equity)}
+        </span>
+        <span className="text-muted-foreground"> · </span>
+        <span className="tabular-nums">
+          Portfolio LVR {now.value > 0 ? formatPercent(now.lvr) : '—'} to{' '}
+          {after.value > 0 ? formatPercent(after.lvr) : '—'}
+        </span>
+      </p>
+    </div>
+  )
+}
+
 export function PropertyCard({
   property,
   position,
   jurisdictions,
   locale,
+  impact,
 }: {
   property: PropertyWithLoans
   position: PropertyPosition
   jurisdictions: Jurisdiction[]
   locale: string
+  /** Present only for a planned purchase. */
+  impact?: PortfolioImpact
 }) {
   const place = [property.region, property.country].filter(Boolean).join(', ')
 
@@ -94,6 +128,8 @@ export function PropertyCard({
           />
           <Stat label="LVR" value={position.value > 0 ? formatPercent(position.lvr) : '—'} />
         </div>
+
+        {impact ? <IfYouBuy impact={impact} currency={property.currency} /> : null}
       </CardContent>
     </Card>
   )

@@ -159,3 +159,15 @@ describe('borrowingHeadroom', () => {
     expect(cheap.headroom.change).toBe(90_000_00)
   })
 })
+
+describe('without a cash figure', () => {
+  it('reports the position but not what the cash bought', () => {
+    // The portfolio list has no cheap way to know the upfront costs, so it asks
+    // for the position without them rather than guessing at zero.
+    const { cashRequired: _cash, ...rest } = input()
+    const impact = portfolioImpact(rest)
+
+    expect(impact.change.equity).toBe(200_000_00)
+    expect(impact.equityForCash).toBeNull()
+  })
+})
