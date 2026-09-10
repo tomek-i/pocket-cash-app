@@ -8,6 +8,7 @@ import { listCategories } from '../../categories/actions'
 import { listTags } from '../../tags/actions'
 import { CategoryCell } from '../_components/category-cell'
 import { TagsCell } from '../_components/tags-cell'
+import { parseOrigin } from '../_lib/origin'
 import { getTransaction } from '../actions'
 import { DeleteTransactionButton } from './_components/delete-transaction-button'
 import { DisplayNameField } from './_components/display-name-field'
@@ -17,10 +18,15 @@ export const metadata = { title: 'Transaction' }
 
 export default async function TransactionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ transactionId: string }>
+  searchParams: Promise<{ from?: string }>
 }) {
   const { transactionId } = await params
+  // Where this was opened from, so the back link returns to the same page of the
+  // same filtered list rather than resetting it.
+  const origin = parseOrigin((await searchParams).from)
   const [tx, categories, tags] = await Promise.all([
     getTransaction(transactionId),
     listCategories(),
@@ -34,11 +40,11 @@ export default async function TransactionDetailPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-5 lg:py-7">
       <Link
-        href="/app/transactions"
+        href={origin.href}
         className="flex w-fit items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
       >
         <ChevronLeft className="size-4" />
-        Transactions
+        {origin.label}
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
