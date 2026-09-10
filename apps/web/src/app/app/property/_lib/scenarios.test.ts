@@ -54,8 +54,7 @@ function costRow(overrides: Partial<PropertyCostRow> = {}): PropertyCostRow {
 
 const base: ScenarioBase = {
   purchasePrice: 1_000_000_00,
-  estimatedMarketValue: null,
-  currentValue: null,
+  marketValue: null,
   source: 'depositPercentage',
   deposit: 200_000_00,
   depositPercentage: 0.2,

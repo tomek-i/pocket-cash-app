@@ -107,7 +107,7 @@ export function FinancingPanel({
           <input type="hidden" name="id" value={property.id} />
           <input type="hidden" name="source" value={source} />
           <input type="hidden" name="purchasePrice" value={values.purchasePrice} />
-          <input type="hidden" name="estimatedMarketValue" value={values.marketValue} />
+          <input type="hidden" name="marketValue" value={values.marketValue} />
           <input type="hidden" name="deposit" value={shown.deposit} />
           <input type="hidden" name="depositPercentage" value={shown.depositPercentage} />
           <input type="hidden" name="loanAmount" value={shown.loanAmount} />

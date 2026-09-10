@@ -4,8 +4,7 @@ import { buildFinancing, type FinancingInputs, plannerPropertyValue } from './pl
 function inputs(overrides: Partial<FinancingInputs> = {}): FinancingInputs {
   return {
     purchasePrice: 1_000_000_00,
-    estimatedMarketValue: null,
-    currentValue: null,
+    marketValue: null,
     source: 'deposit',
     deposit: 200_000_00,
     depositPercentage: 0.2,
@@ -19,28 +18,22 @@ function inputs(overrides: Partial<FinancingInputs> = {}): FinancingInputs {
 }
 
 describe('plannerPropertyValue', () => {
-  it('prefers the current value, then the estimate, then the price paid', () => {
-    expect(
-      plannerPropertyValue({
-        currentValue: 1_200_000_00,
-        estimatedMarketValue: 1_100_000_00,
-        purchasePrice: 1_000_000_00,
-      }),
-    ).toBe(1_200_000_00)
-    expect(
-      plannerPropertyValue({
-        currentValue: null,
-        estimatedMarketValue: 1_100_000_00,
-        purchasePrice: 1_000_000_00,
-      }),
-    ).toBe(1_100_000_00)
-    expect(
-      plannerPropertyValue({
-        currentValue: null,
-        estimatedMarketValue: null,
-        purchasePrice: 1_000_000_00,
-      }),
-    ).toBe(1_000_000_00)
+  it('measures by what it is worth', () => {
+    expect(plannerPropertyValue({ marketValue: 1_100_000_00, purchasePrice: 1_000_000_00 })).toBe(
+      1_100_000_00,
+    )
+  })
+
+  it('falls back to the price when no value is recorded', () => {
+    expect(plannerPropertyValue({ marketValue: null, purchasePrice: 1_000_000_00 })).toBe(
+      1_000_000_00,
+    )
+  })
+
+  it('treats a zero value as recorded, not as missing', () => {
+    // A property genuinely worth nothing is a real, if grim, position. Falling
+    // back to the price there would quietly report the wrong LVR.
+    expect(plannerPropertyValue({ marketValue: 0, purchasePrice: 1_000_000_00 })).toBe(0)
   })
 })
 
@@ -72,7 +65,7 @@ describe('buildFinancing', () => {
   })
 
   it('measures LVR against the market value, so buying under valuation shows the better ratio', () => {
-    const result = buildFinancing(inputs({ estimatedMarketValue: 1_100_000_00 }))
+    const result = buildFinancing(inputs({ marketValue: 1_100_000_00 }))
     expect(result.propertyValue).toBe(1_100_000_00)
     expect(result.financing.lvr).toBeCloseTo(0.727, 3)
   })

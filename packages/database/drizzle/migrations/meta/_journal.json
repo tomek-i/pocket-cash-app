@@ -22,6 +22,20 @@
       "when": 1789001801400,
       "tag": "0002_property_standalone",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789019715478,
+      "tag": "0003_add_market_value",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789019738524,
+      "tag": "0004_drop_old_value_columns",
+      "breakpoints": true
     }
   ]
 }

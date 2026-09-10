@@ -51,7 +51,7 @@ function readForm(formData: FormData): Record<string, string> {
   return {
     name: String(formData.get('name') ?? ''),
     purchasePrice: String(formData.get('purchasePrice') ?? ''),
-    estimatedMarketValue: String(formData.get('estimatedMarketValue') ?? ''),
+    marketValue: String(formData.get('marketValue') ?? ''),
     deposit: String(formData.get('deposit') ?? ''),
     depositPercentage: String(formData.get('depositPercentage') ?? ''),
     loanAmount: String(formData.get('loanAmount') ?? ''),
