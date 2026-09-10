@@ -67,7 +67,7 @@ export function usePlannerInputs(seed: PlannerSeed): PlannerInputs {
   const [values, setValues] = useState<PlannerInputValues>(() => ({
     purchasePrice: toMajorInput(seed.purchasePrice),
     marketValue: toMajorInput(seed.marketValue),
-    deposit: toMajorInput(Math.max(0, seed.purchasePrice - (loan?.loanAmount ?? 0))),
+    deposit: toMajorInput(seed.purchasePrice - (loan?.loanAmount ?? 0)),
     depositPercentage: seed.purchasePrice
       ? toPercentInput((seed.purchasePrice - (loan?.loanAmount ?? 0)) / seed.purchasePrice)
       : '20',
@@ -78,7 +78,20 @@ export function usePlannerInputs(seed: PlannerSeed): PlannerInputs {
     otherCosts: toMajorInput(loan?.otherFinancingCosts ?? 0),
   }))
   const [loanType, setLoanType] = useState<LoanType>(loan?.loanType ?? 'principalAndInterest')
-  const [source, setSource] = useState<FinancingSource>('deposit')
+  /**
+   * A property that already has a loan is driven by that loan, not by a deposit.
+   *
+   * This used to always start from the deposit, which the seed clamped at zero.
+   * A loan bigger than the recorded purchase price, normal on a property owned
+   * for a while and refinanced since, clamped to a zero deposit and then had its
+   * loan recomputed as the whole purchase price. The real loan was read to seed
+   * the fields and then thrown away, so the planner and the portfolio reported
+   * different LVRs for the same property.
+   *
+   * Modelling a purchase that has no loan yet still starts from a deposit, which
+   * is the figure someone planning one actually has in mind.
+   */
+  const [source, setSource] = useState<FinancingSource>(loan ? 'loanAmount' : 'deposit')
 
   const setValue = (key: PlannerInputKey, value: string) =>
     setValues((current) => ({ ...current, [key]: value }))

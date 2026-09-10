@@ -130,3 +130,47 @@ describe('buildFinancing', () => {
     expect(result.financing.loanAmount).toBe(0)
   })
 })
+
+/**
+ * The regression for #99.
+ *
+ * A property owned for a while can carry a loan bigger than the price recorded
+ * against it: the price is historic, and the loan has been drawn against what it
+ * is worth now. Deriving from the deposit clamped that to zero and then handed
+ * back the purchase price as the loan, so the planner and the portfolio reported
+ * different LVRs for one property.
+ */
+describe('a loan larger than the purchase price', () => {
+  const owned = {
+    purchasePrice: 450_000_00,
+    marketValue: 900_000_00,
+    loanAmount: 640_000_00,
+    annualRate: 0.06,
+    termYears: 30,
+    loanType: 'principalAndInterest' as const,
+    offsetBalance: 0,
+    depositPercentage: 0,
+    deposit: 0,
+  }
+
+  it('keeps the real loan when it is the field derived from', () => {
+    const result = buildFinancing({ ...owned, source: 'loanAmount' })
+
+    expect(result.financing.loanAmount).toBe(640_000_00)
+    // Against the market value, matching what the portfolio card reports.
+    expect(result.financing.lvr).toBeCloseTo(0.7111, 4)
+  })
+
+  it('reports the overshoot as a negative deposit rather than hiding it', () => {
+    const result = buildFinancing({ ...owned, source: 'loanAmount' })
+    expect(result.financing.deposit).toBe(-190_000_00)
+  })
+
+  it('is the figure the old deposit-derived path threw away', () => {
+    // What the planner used to show: deposit clamped to 0, loan recomputed as
+    // the whole purchase price, LVR half of the truth.
+    const asBefore = buildFinancing({ ...owned, source: 'deposit', deposit: 0 })
+    expect(asBefore.financing.loanAmount).toBe(450_000_00)
+    expect(asBefore.financing.lvr).toBeCloseTo(0.5, 4)
+  })
+})
