@@ -81,7 +81,10 @@ mockups live in `pocket-cash-theme.html`.
 The desktop loads the *same* Next.js app, so every page and server action is
 reused.
 
-- **Dev.** Electron loads the running `next dev` at `http://127.0.0.1:3000`.
+- **Dev.** `apps/desktop/scripts/dev.mjs` picks the port once, keeping 3000 when
+  it is free, and passes it to `next dev`, to `wait-on` and to Electron. Nothing
+  hard-codes a port, because `next dev` silently moves to 3001 when 3000 is taken
+  and Electron would otherwise load whatever was already sitting there.
 - **Prod.** `electron-builder` ships the Next **standalone** build as an unpacked
   resource. The main process boots it in-process on a free port the OS assigns,
   then loads it locally.
