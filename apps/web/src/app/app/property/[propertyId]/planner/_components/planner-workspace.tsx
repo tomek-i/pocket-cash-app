@@ -1,11 +1,13 @@
 'use client'
 
-import type { CostType, Jurisdiction, PropertyRental } from '@repo/database'
+import type { CostType, Jurisdiction, PropertyRental, PropertyScenario } from '@repo/database'
 import type { RateSchedule } from '@repo/property'
 import { useMemo } from 'react'
 import { buildCostContext, type PropertyCostRow, summariseUpfrontCosts } from '../../../_lib/costs'
+import { toMinorUnits } from '../../../_lib/format'
 import { type AvailableFundRow, summariseFunds } from '../../../_lib/funds'
 import { buildOngoing, type RecurringCostRow } from '../../../_lib/ongoing'
+import type { ScenarioBase, ScenarioContext } from '../../../_lib/scenarios'
 import { usePlannerInputs } from '../../../_lib/use-planner-inputs'
 import type { PlannerProperty } from '../actions'
 import { AvailableFunds } from './available-funds'
@@ -16,6 +18,7 @@ import { PlannerDashboard } from './planner-dashboard'
 import { PurchaseLock } from './purchase-lock'
 import { RateSensitivity } from './rate-sensitivity'
 import { RentalIncome } from './rental-income'
+import { ScenarioComparison } from './scenario-comparison'
 import { UpfrontCosts } from './upfront-costs'
 
 /**
@@ -46,6 +49,7 @@ export function PlannerWorkspace({
   rental,
   isLet,
   funds,
+  scenarios,
   sensitivityRates,
   locale,
   purchaseLock,
@@ -63,6 +67,7 @@ export function PlannerWorkspace({
   rental: PropertyRental | undefined
   isLet: boolean
   funds: AvailableFundRow[]
+  scenarios: PropertyScenario[]
   /** Decimal annual rates for the sensitivity table, from the calculation defaults. */
   sensitivityRates: number[]
   locale: string
@@ -85,6 +90,15 @@ export function PlannerWorkspace({
 
   const { financing } = inputs.result
 
+  // Resolved once and shared by the live costs and every scenario column. A fresh
+  // object each render would defeat the memos below.
+  const schedules = useMemo(() => (activeSchedule ? [activeSchedule] : []), [activeSchedule])
+  const scheduleIdByGroup = useMemo(() => {
+    const map: Record<string, string> = {}
+    if (activeSchedule) map['transfer-tax'] = activeSchedule.id
+    return map
+  }, [activeSchedule])
+
   // The costs follow the working price and loan, not the saved ones.
   const costSummary = useMemo(
     () =>
@@ -96,10 +110,10 @@ export function PlannerWorkspace({
           loanAmount: financing.loanAmount,
           annualRate: inputs.result.terms.annualRate,
         }),
-        schedules: activeSchedule ? [activeSchedule] : [],
-        scheduleIdByGroup: activeSchedule ? { 'transfer-tax': activeSchedule.id } : {},
+        schedules,
+        scheduleIdByGroup,
       }),
-    [costRows, activeSchedule, financing, inputs.result],
+    [costRows, schedules, scheduleIdByGroup, financing, inputs.result],
   )
 
   const fundsSummary = useMemo(
@@ -121,6 +135,41 @@ export function PlannerWorkspace({
         monthlyRepayment: inputs.result.amortisation.monthlyRepayment,
       }),
     [recurringRows, rental, isLet, inputs.result],
+  )
+
+  // Scenarios start from the *working* inputs, not the saved property, so a
+  // comparison built while modelling compares against what is on screen. The
+  // financing trio comes back resolved from the engine, so whichever of the
+  // three the user is editing, all three agree.
+  const scenarioBase: ScenarioBase = useMemo(
+    () => ({
+      purchasePrice: financing.purchasePrice,
+      estimatedMarketValue: inputs.values.marketValue
+        ? toMinorUnits(inputs.values.marketValue)
+        : null,
+      currentValue: property.currentValue,
+      source: inputs.source,
+      deposit: financing.deposit,
+      depositPercentage: financing.depositPercentage,
+      loanAmount: financing.loanAmount,
+      annualRate: inputs.result.terms.annualRate,
+      termYears: inputs.result.terms.termYears,
+      loanType: inputs.loanType,
+      offsetBalance: toMinorUnits(inputs.values.offsetBalance),
+    }),
+    [financing, inputs, property.currentValue],
+  )
+
+  const scenarioContext = useMemo<ScenarioContext>(
+    () => ({
+      costRows,
+      schedules,
+      scheduleIdByGroup,
+      recurringRows,
+      rental: isLet && rental ? rental : null,
+      funds,
+    }),
+    [costRows, schedules, scheduleIdByGroup, recurringRows, rental, isLet, funds],
   )
 
   return (
@@ -249,6 +298,26 @@ export function PlannerWorkspace({
           />
         </section>
       ) : null}
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Scenarios</h2>
+          <p className="text-muted-foreground text-sm">
+            The same property at a different price, deposit or rate, side by side. A scenario stores
+            only what it changes, so everything above still flows into it.
+          </p>
+        </div>
+        <ScenarioComparison
+          propertyId={property.id}
+          scenarios={scenarios}
+          base={scenarioBase}
+          context={scenarioContext}
+          currency={property.currency}
+          locale={locale}
+          isLet={isLet}
+          baseRent={rental?.rent ?? null}
+        />
+      </section>
     </>
   )
 }

@@ -13,6 +13,7 @@ import { getPlannerData } from './actions'
 import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
 import { listAvailableFunds } from './funds-actions'
 import { getRental, listRecurringCosts, listRecurringCostTypes } from './ongoing-actions'
+import { listScenarios } from './scenarios-actions'
 
 const CATEGORY_NAMES = Object.fromEntries(
   DEFAULT_COST_CATEGORIES.map((category) => [category.id, category.name]),
@@ -34,6 +35,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
     recurringTypes,
     rental,
     funds,
+    scenarios,
     propertySettings,
     appSettings,
   ] = await Promise.all([
@@ -43,6 +45,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
     listRecurringCostTypes(),
     getRental(propertyId),
     listAvailableFunds(),
+    listScenarios(propertyId),
     getPropertySettings(),
     getAppSettings(),
   ])
@@ -102,6 +105,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         rental={rental}
         isLet={isLet}
         funds={funds}
+        scenarios={scenarios}
         sensitivityRates={propertySettings.sensitivityRates}
         locale={locale}
         purchaseLock={{

@@ -401,3 +401,34 @@ export const toggleAvailableFundSchema = z.object({
   id: z.string().uuid(),
   enabled: z.enum(['true', 'false']),
 })
+
+/**
+ * A named what-if over one property.
+ *
+ * Every override is optional and an empty field means "no override", not zero.
+ * That is what makes a scenario an override set rather than a copy: a scenario
+ * that only names a different deposit keeps following the base property for the
+ * price, the rate and everything else.
+ */
+export const scenarioOverridesSchema = z.object({
+  purchasePrice: optionalMoneyMinor,
+  estimatedMarketValue: optionalMoneyMinor,
+  deposit: optionalMoneyMinor,
+  depositPercentage: optionalPercentDecimal(100, 'A deposit cannot exceed 100%'),
+  loanAmount: optionalMoneyMinor,
+  annualRate: optionalPercentDecimal(100, 'Enter a rate like 6.25'),
+  termYears: optionalYears,
+  rent: optionalMoneyMinor,
+})
+
+export const scenarioSchema = scenarioOverridesSchema.extend({
+  name: z.string().trim().min(1, 'Give it a name').max(80),
+})
+
+export const createScenarioSchema = scenarioSchema.extend({
+  propertyId: z.string().uuid(),
+})
+export const updateScenarioSchema = scenarioSchema.extend({ id: z.string().uuid() })
+export const scenarioIdSchema = z.object({ id: z.string().uuid() })
+
+export type ScenarioFormInput = z.infer<typeof scenarioSchema>
