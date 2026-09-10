@@ -59,9 +59,11 @@ function DeleteScheduleDialog({ schedule }: { schedule: RateScheduleRow }) {
 function ScheduleRow({
   schedule,
   jurisdictions,
+  locale,
 }: {
   schedule: RateScheduleRow
   jurisdictions: Jurisdiction[]
+  locale: string
 }) {
   const [, toggleAction] = useActionState(toggleRateSchedule, null)
   const [, duplicateAction] = useActionState(duplicateRateSchedule, null)
@@ -126,6 +128,7 @@ function ScheduleRow({
         <ScheduleEditor
           schedule={schedule}
           jurisdictions={jurisdictions}
+          locale={locale}
           trigger={
             <Button variant="ghost" size="icon" aria-label={`Edit ${schedule.name}`}>
               <Pencil className="size-4" />
@@ -142,9 +145,11 @@ function ScheduleRow({
 export function RateSchedulesSection({
   schedules,
   jurisdictions,
+  locale,
 }: {
   schedules: RateScheduleRow[]
   jurisdictions: Jurisdiction[]
+  locale: string
 }) {
   const byJurisdiction = schedules.reduce<Record<string, RateScheduleRow[]>>((groups, schedule) => {
     groups[schedule.jurisdictionKey] = groups[schedule.jurisdictionKey] ?? []
@@ -164,6 +169,7 @@ export function RateSchedulesSection({
           </p>
           <ScheduleEditor
             jurisdictions={jurisdictions}
+            locale={locale}
             trigger={
               <Button
                 variant="outline"
@@ -192,6 +198,7 @@ export function RateSchedulesSection({
                     key={schedule.id}
                     schedule={schedule}
                     jurisdictions={jurisdictions}
+                    locale={locale}
                   />
                 ))}
               </div>

@@ -4,11 +4,8 @@ import { formatPercent } from '../../../_lib/format'
 import type { FinancingResult } from '../../../_lib/planner'
 
 /**
- * The summary at the top of the planner.
- *
- * Available funds and the ongoing figures come from parts of the feature that
- * are not built yet. Those cells show a dash rather than a zero, because a
- * confident zero next to a real number reads as a calculated answer.
+ * The summary at the top of the planner. Every figure here is derived from the
+ * working inputs, so it moves as the user types.
  */
 
 function Metric({
@@ -60,6 +57,8 @@ export function PlannerDashboard({
   monthlyPropertyCosts,
   monthlyRentalIncome,
   monthlyCashFlow,
+  availableCash,
+  remainingCash,
 }: {
   result: FinancingResult
   currency: string
@@ -73,6 +72,10 @@ export function PlannerDashboard({
   monthlyRentalIncome: number | null
   /** Minor units per month, after every cost including principal. Null when not let. */
   monthlyCashFlow: number | null
+  /** Minor units. Total of the enabled funds. */
+  availableCash: number
+  /** Minor units. Negative means the purchase is short. */
+  remainingCash: number
 }) {
   const { financing, amortisation } = result
 
@@ -99,9 +102,13 @@ export function PlannerDashboard({
       </Panel>
 
       <Panel title="Cash position">
-        <Metric label="Available cash" value="—" tone="muted" hint="Added later" />
+        <Metric label="Available cash" value={formatMoney(availableCash, currency)} />
         <Metric label="Cash required" value={formatMoney(cashRequired, currency)} />
-        <Metric label="Remaining" value="—" tone="muted" hint="Added later" />
+        <Metric
+          label="Remaining"
+          value={formatMoney(remainingCash, currency)}
+          tone={remainingCash < 0 ? 'negative' : undefined}
+        />
         <Metric
           label="Equity at settlement"
           value={formatMoney(result.propertyValue - financing.loanAmount, currency)}

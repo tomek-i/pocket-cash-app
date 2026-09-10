@@ -24,6 +24,7 @@ import {
  */
 export function MoneyInput({
   label,
+  hideLabel = false,
   name,
   defaultValue = '',
   value,
@@ -34,6 +35,8 @@ export function MoneyInput({
   id,
 }: {
   label?: string
+  /** Keep the label for screen readers but do not draw it, e.g. in a table row. */
+  hideLabel?: boolean
   name?: string
   /** Canonical, e.g. `450000.50`. Uncontrolled: only the initial value. */
   defaultValue?: string
@@ -86,7 +89,7 @@ export function MoneyInput({
 
   return (
     <div className="grid gap-1.5">
-      {label ? <Label htmlFor={fieldId}>{label}</Label> : null}
+      {label && !hideLabel ? <Label htmlFor={fieldId}>{label}</Label> : null}
       <Input
         id={fieldId}
         ref={inputRef}
@@ -95,7 +98,7 @@ export function MoneyInput({
         onChange={handleChange}
         placeholder={placeholder === undefined ? undefined : formatPlaceholder(placeholder, locale)}
         aria-invalid={error ? true : undefined}
-        aria-label={label ? undefined : name}
+        aria-label={hideLabel ? label : label ? undefined : name}
       />
       {/* What the form actually posts. */}
       {name ? <input type="hidden" name={name} value={toCanonicalAmount(display, locale)} /> : null}

@@ -29,6 +29,9 @@ import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { type ReactElement, useActionState, useEffect, useMemo, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { formatMoney } from '@/lib/money'
+import { toCanonicalAmount } from '@/lib/number-format'
+import { DateField } from '../../../property/_components/date-field'
+import { MoneyInput } from '../../../property/_components/money-input'
 import {
   toMajorInput,
   toMinorUnits,
@@ -90,10 +93,12 @@ const EMPTY_BRACKET: DraftBracket = {
 export function ScheduleEditor({
   schedule,
   jurisdictions,
+  locale,
   trigger,
 }: {
   schedule?: RateScheduleRow
   jurisdictions: Jurisdiction[]
+  locale: string
   trigger: ReactElement
 }) {
   const action = schedule ? updateRateSchedule : createRateSchedule
@@ -235,30 +240,20 @@ export function ScheduleEditor({
                 <p className="text-destructive text-xs">{state.errors.groupKey[0]}</p>
               ) : null}
             </div>
+            <DateField
+              label="Effective from"
+              name="effectiveFrom"
+              defaultValue={state?.values?.effectiveFrom ?? schedule?.effectiveFrom ?? ''}
+              error={state?.errors?.effectiveFrom}
+            />
             <div className="grid gap-1.5">
-              <Label htmlFor="effectiveFrom">Effective from</Label>
-              <Input
-                id="effectiveFrom"
-                name="effectiveFrom"
-                defaultValue={state?.values?.effectiveFrom ?? schedule?.effectiveFrom ?? ''}
-                placeholder="2027-07-01"
-              />
-              {state?.errors?.effectiveFrom?.[0] ? (
-                <p className="text-destructive text-xs">{state.errors.effectiveFrom[0]}</p>
-              ) : null}
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="effectiveTo">Effective to</Label>
-              <Input
-                id="effectiveTo"
+              <DateField
+                label="Effective to"
                 name="effectiveTo"
                 defaultValue={state?.values?.effectiveTo ?? schedule?.effectiveTo ?? ''}
-                placeholder="2028-06-30"
+                error={state?.errors?.effectiveTo}
               />
               <p className="text-muted-foreground text-xs">Leave empty for open ended.</p>
-              {state?.errors?.effectiveTo?.[0] ? (
-                <p className="text-destructive text-xs">{state.errors.effectiveTo[0]}</p>
-              ) : null}
             </div>
           </div>
 
@@ -296,31 +291,33 @@ export function ScheduleEditor({
                     // biome-ignore lint/suspicious/noArrayIndexKey: a bracket is identified by its position
                     <tr key={index} className="border-t">
                       <td className="py-1.5 pr-2">
-                        <Input
-                          value={bracket.minimum}
-                          onChange={(e) => update(index, { minimum: e.target.value })}
-                          inputMode="decimal"
-                          className="h-8"
-                          aria-label={`Bracket ${index + 1} from`}
+                        <MoneyInput
+                          locale={locale}
+                          value={toCanonicalAmount(bracket.minimum, locale)}
+                          onCanonicalChange={(next) => update(index, { minimum: next })}
+                          id={`bracket-${index}-minimum`}
+                          label={`Bracket ${index + 1} from`}
+                          hideLabel
                         />
                       </td>
                       <td className="py-1.5 pr-2">
-                        <Input
-                          value={bracket.maximum}
-                          onChange={(e) => update(index, { maximum: e.target.value })}
-                          inputMode="decimal"
-                          placeholder="Unlimited"
-                          className="h-8"
-                          aria-label={`Bracket ${index + 1} to`}
+                        <MoneyInput
+                          locale={locale}
+                          value={toCanonicalAmount(bracket.maximum, locale)}
+                          onCanonicalChange={(next) => update(index, { maximum: next })}
+                          id={`bracket-${index}-maximum`}
+                          label={`Bracket ${index + 1} to`}
+                          hideLabel
                         />
                       </td>
                       <td className="py-1.5 pr-2">
-                        <Input
-                          value={bracket.baseAmount}
-                          onChange={(e) => update(index, { baseAmount: e.target.value })}
-                          inputMode="decimal"
-                          className="h-8"
-                          aria-label={`Bracket ${index + 1} base`}
+                        <MoneyInput
+                          locale={locale}
+                          value={toCanonicalAmount(bracket.baseAmount, locale)}
+                          onCanonicalChange={(next) => update(index, { baseAmount: next })}
+                          id={`bracket-${index}-baseAmount`}
+                          label={`Bracket ${index + 1} base`}
+                          hideLabel
                         />
                       </td>
                       <td className="py-1.5 pr-2">

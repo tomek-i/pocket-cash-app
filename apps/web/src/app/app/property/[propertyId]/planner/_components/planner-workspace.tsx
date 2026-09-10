@@ -4,14 +4,17 @@ import type { CostType, Jurisdiction, PropertyRental } from '@repo/database'
 import type { RateSchedule } from '@repo/property'
 import { useMemo } from 'react'
 import { buildCostContext, type PropertyCostRow, summariseUpfrontCosts } from '../../../_lib/costs'
+import { type AvailableFundRow, summariseFunds } from '../../../_lib/funds'
 import { buildOngoing, type RecurringCostRow } from '../../../_lib/ongoing'
 import { usePlannerInputs } from '../../../_lib/use-planner-inputs'
 import type { PlannerProperty } from '../actions'
+import { AvailableFunds } from './available-funds'
 import { DetailsPanel } from './details-panel'
 import { FinancingPanel } from './financing-panel'
 import { OngoingCosts } from './ongoing-costs'
 import { PlannerDashboard } from './planner-dashboard'
 import { PurchaseLock } from './purchase-lock'
+import { RateSensitivity } from './rate-sensitivity'
 import { RentalIncome } from './rental-income'
 import { UpfrontCosts } from './upfront-costs'
 
@@ -42,6 +45,8 @@ export function PlannerWorkspace({
   recurringTypes,
   rental,
   isLet,
+  funds,
+  sensitivityRates,
   locale,
   purchaseLock,
 }: {
@@ -57,6 +62,9 @@ export function PlannerWorkspace({
   recurringTypes: CostType[]
   rental: PropertyRental | undefined
   isLet: boolean
+  funds: AvailableFundRow[]
+  /** Decimal annual rates for the sensitivity table, from the calculation defaults. */
+  sensitivityRates: number[]
   locale: string
   /** Locking is not part of the live model, but PurchaseLock is a client
    * component, so it is rendered here rather than passed down as an element. */
@@ -94,6 +102,11 @@ export function PlannerWorkspace({
     [costRows, activeSchedule, financing, inputs.result],
   )
 
+  const fundsSummary = useMemo(
+    () => summariseFunds(funds, costSummary.cashRequired),
+    [funds, costSummary.cashRequired],
+  )
+
   // Year 1 interest and principal, not an average: interest falls over the life
   // of a loan, so the first year is the worst case and the one worth planning
   // against.
@@ -122,6 +135,8 @@ export function PlannerWorkspace({
           ongoing.cashFlow ? Math.round(ongoing.cashFlow.effectiveAnnualRent / 12) : null
         }
         monthlyCashFlow={ongoing.cashFlow?.monthlyCashFlow ?? null}
+        availableCash={fundsSummary.total}
+        remainingCash={fundsSummary.position.remaining}
       />
 
       <section className="flex flex-col gap-3">
@@ -170,6 +185,32 @@ export function PlannerWorkspace({
           currency={property.currency}
           purchasePrice={financing.purchasePrice}
           loanAmount={financing.loanAmount}
+        />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Available funds</h2>
+          <p className="text-muted-foreground text-sm">
+            What you can put towards this, entered by hand. Everything above recalculates as you
+            type, so a shortfall is something to push against rather than just read.
+          </p>
+        </div>
+        <AvailableFunds summary={fundsSummary} currency={property.currency} locale={locale} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">If rates change</h2>
+          <p className="text-muted-foreground text-sm">
+            The repayment at other rates. Edit the bands in Settings, Property, calculation
+            defaults.
+          </p>
+        </div>
+        <RateSensitivity
+          terms={inputs.result.terms}
+          rates={sensitivityRates}
+          currency={property.currency}
         />
       </section>
 

@@ -82,7 +82,7 @@ export default async function PropertySettingsPage() {
         title="Rate schedules"
         description="Progressive rates, such as a transfer duty table. Each is dated, so a purchase always uses the rates that applied when it happened, and adding next year's rates leaves this year's alone."
       >
-        <RateSchedulesSection schedules={schedules} jurisdictions={jurisdictions} />
+        <RateSchedulesSection schedules={schedules} jurisdictions={jurisdictions} locale={locale} />
       </Section>
 
       <Section

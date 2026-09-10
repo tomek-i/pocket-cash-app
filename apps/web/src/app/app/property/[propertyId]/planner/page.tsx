@@ -5,11 +5,13 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { resolveNumberLocale } from '@/lib/number-format'
+import { getPropertySettings } from '../../../settings/property/actions'
 import { snapshotToEngineSchedule, toEngineSchedule } from '../../_lib/costs'
 import { PROPERTY_STATUS_LABELS, PROPERTY_USE_LABELS } from '../../_lib/labels'
 import { PlannerWorkspace } from './_components/planner-workspace'
 import { getPlannerData } from './actions'
 import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
+import { listAvailableFunds } from './funds-actions'
 import { getRental, listRecurringCosts, listRecurringCostTypes } from './ongoing-actions'
 
 const CATEGORY_NAMES = Object.fromEntries(
@@ -25,15 +27,25 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
 
   const { property, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } = data
 
-  const [costRows, availableCostTypes, recurringRows, recurringTypes, rental, appSettings] =
-    await Promise.all([
-      listPropertyCosts(propertyId),
-      listAvailableCostTypes(),
-      listRecurringCosts(propertyId),
-      listRecurringCostTypes(),
-      getRental(propertyId),
-      getAppSettings(),
-    ])
+  const [
+    costRows,
+    availableCostTypes,
+    recurringRows,
+    recurringTypes,
+    rental,
+    funds,
+    propertySettings,
+    appSettings,
+  ] = await Promise.all([
+    listPropertyCosts(propertyId),
+    listAvailableCostTypes(),
+    listRecurringCosts(propertyId),
+    listRecurringCostTypes(),
+    getRental(propertyId),
+    listAvailableFunds(),
+    getPropertySettings(),
+    getAppSettings(),
+  ])
 
   const locale = resolveNumberLocale(appSettings.numberLocale)
 
@@ -89,6 +101,8 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         recurringTypes={recurringTypes}
         rental={rental}
         isLet={isLet}
+        funds={funds}
+        sensitivityRates={propertySettings.sensitivityRates}
         locale={locale}
         purchaseLock={{
           scheduleId: transferTaxSchedule?.id ?? null,
