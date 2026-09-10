@@ -116,7 +116,6 @@ export function TransactionRow({
                 <MoreVertical className="size-4" />
               </Button>
             }
-            nativeButton={false}
           />
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuSub>

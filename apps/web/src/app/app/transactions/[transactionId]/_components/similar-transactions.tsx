@@ -231,7 +231,6 @@ export function SimilarTransactions({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger
-                      nativeButton={false}
                       render={
                         <Button variant="outline" size="sm" className="h-8">
                           Add tags{addTags.size ? ` (${addTags.size})` : ''}
