@@ -1,6 +1,6 @@
 'use client'
 
-import { type FinancingSource, LOAN_TYPES, type LoanType } from '@repo/property'
+import { LOAN_TYPES, type LoanType } from '@repo/property'
 import {
   Button,
   Card,
@@ -13,13 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui'
-import { useActionState, useMemo, useState } from 'react'
+import { useActionState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { formatMoney } from '@/lib/money'
 import { MoneyInput } from '../../../_components/money-input'
-import { formatPercent, toMajorInput, toMinorUnits, toRateDecimal } from '../../../_lib/format'
+import { formatPercent } from '../../../_lib/format'
 import { LOAN_TYPE_LABELS } from '../../../_lib/labels'
-import { buildFinancing } from '../../../_lib/planner'
+import type { PlannerInputs } from '../../../_lib/use-planner-inputs'
 import { type PlannerProperty, savePlannerFinancing } from '../actions'
 
 /** A labelled input for the values that are not money: percentages and years. */
@@ -81,77 +81,22 @@ function Figure({
 export function FinancingPanel({
   property,
   locale,
+  inputs,
 }: {
   property: PlannerProperty
   locale: string
+  /** Held by the workspace, so the upfront costs see the same numbers. */
+  inputs: PlannerInputs
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     savePlannerFinancing,
     null,
   )
 
-  const loan = property.loans[0]
-
-  const [purchasePrice, setPurchasePrice] = useState(toMajorInput(property.purchasePrice))
-  const [marketValue, setMarketValue] = useState(toMajorInput(property.estimatedMarketValue))
-  const [deposit, setDeposit] = useState(
-    toMajorInput(Math.max(0, property.purchasePrice - (loan?.loanAmount ?? 0))),
-  )
-  const [depositPercentage, setDepositPercentage] = useState(() => {
-    if (!property.purchasePrice) return '20'
-    const value = (property.purchasePrice - (loan?.loanAmount ?? 0)) / property.purchasePrice
-    return (value * 100).toFixed(2)
-  })
-  const [loanAmount, setLoanAmount] = useState(toMajorInput(loan?.loanAmount ?? 0))
-  const [source, setSource] = useState<FinancingSource>('deposit')
-
-  const [interestRate, setInterestRate] = useState(loan ? (loan.annualRate * 100).toString() : '6')
-  const [termYears, setTermYears] = useState(loan ? String(loan.termYears) : '30')
-  const [loanType, setLoanType] = useState<LoanType>(loan?.loanType ?? 'principalAndInterest')
-  const [offsetBalance, setOffsetBalance] = useState(toMajorInput(loan?.offsetBalance ?? 0))
-  const [otherCosts, setOtherCosts] = useState(toMajorInput(loan?.otherFinancingCosts ?? 0))
-
-  const result = useMemo(
-    () =>
-      buildFinancing({
-        purchasePrice: toMinorUnits(purchasePrice),
-        estimatedMarketValue: marketValue ? toMinorUnits(marketValue) : null,
-        currentValue: property.currentValue,
-        source,
-        deposit: toMinorUnits(deposit),
-        depositPercentage: toRateDecimal(depositPercentage),
-        loanAmount: toMinorUnits(loanAmount),
-        annualRate: toRateDecimal(interestRate),
-        termYears: Number.parseInt(termYears, 10) || 0,
-        loanType,
-        offsetBalance: toMinorUnits(offsetBalance),
-      }),
-    [
-      purchasePrice,
-      marketValue,
-      property.currentValue,
-      source,
-      deposit,
-      depositPercentage,
-      loanAmount,
-      interestRate,
-      termYears,
-      loanType,
-      offsetBalance,
-    ],
-  )
-
+  const { values, loanType, source, setValue, setLoanType, setFinancingValue, shown } = inputs
+  const result = inputs.result
   const currency = property.currency
   const { financing, amortisation } = result
-
-  // The two fields the user is not editing follow the derived figures, so the
-  // panel always shows a consistent set of three.
-  const shownDeposit = source === 'deposit' ? deposit : toMajorInput(financing.deposit)
-  const shownDepositPercentage =
-    source === 'depositPercentage'
-      ? depositPercentage
-      : (financing.depositPercentage * 100).toFixed(2)
-  const shownLoanAmount = source === 'loanAmount' ? loanAmount : toMajorInput(financing.loanAmount)
 
   const hasOffset = result.effectiveLoanBalance !== financing.loanAmount
 
@@ -161,32 +106,32 @@ export function FinancingPanel({
         <form action={formAction} className="flex flex-col gap-6">
           <input type="hidden" name="id" value={property.id} />
           <input type="hidden" name="source" value={source} />
-          <input type="hidden" name="purchasePrice" value={purchasePrice} />
-          <input type="hidden" name="estimatedMarketValue" value={marketValue} />
-          <input type="hidden" name="deposit" value={shownDeposit} />
-          <input type="hidden" name="depositPercentage" value={shownDepositPercentage} />
-          <input type="hidden" name="loanAmount" value={shownLoanAmount} />
-          <input type="hidden" name="interestRate" value={interestRate} />
-          <input type="hidden" name="loanTermYears" value={termYears} />
+          <input type="hidden" name="purchasePrice" value={values.purchasePrice} />
+          <input type="hidden" name="estimatedMarketValue" value={values.marketValue} />
+          <input type="hidden" name="deposit" value={shown.deposit} />
+          <input type="hidden" name="depositPercentage" value={shown.depositPercentage} />
+          <input type="hidden" name="loanAmount" value={shown.loanAmount} />
+          <input type="hidden" name="interestRate" value={values.interestRate} />
+          <input type="hidden" name="loanTermYears" value={values.termYears} />
           <input type="hidden" name="loanType" value={loanType} />
-          <input type="hidden" name="offsetBalance" value={offsetBalance} />
-          <input type="hidden" name="otherFinancingCosts" value={otherCosts} />
+          <input type="hidden" name="offsetBalance" value={values.offsetBalance} />
+          <input type="hidden" name="otherFinancingCosts" value={values.otherCosts} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <MoneyInput
               label="Purchase price"
               id="purchasePrice"
               locale={locale}
-              value={purchasePrice}
-              onCanonicalChange={setPurchasePrice}
+              value={values.purchasePrice}
+              onCanonicalChange={(next) => setValue('purchasePrice', next)}
               placeholder={950000}
             />
             <MoneyInput
               label="Estimated market value"
               id="marketValue"
               locale={locale}
-              value={marketValue}
-              onCanonicalChange={setMarketValue}
+              value={values.marketValue}
+              onCanonicalChange={(next) => setValue('marketValue', next)}
               placeholder={980000}
             />
           </div>
@@ -196,31 +141,22 @@ export function FinancingPanel({
               label="Deposit"
               id="deposit"
               locale={locale}
-              value={shownDeposit}
-              onCanonicalChange={(next) => {
-                setSource('deposit')
-                setDeposit(next)
-              }}
+              value={shown.deposit}
+              onCanonicalChange={(next) => setFinancingValue('deposit', next)}
               placeholder={200000}
             />
             <PlainField
               label="Deposit (%)"
               id="depositPercentage"
-              value={shownDepositPercentage}
-              onChange={(next) => {
-                setSource('depositPercentage')
-                setDepositPercentage(next)
-              }}
+              value={shown.depositPercentage}
+              onChange={(next) => setFinancingValue('depositPercentage', next)}
             />
             <MoneyInput
               label="Loan amount"
               id="loanAmount"
               locale={locale}
-              value={shownLoanAmount}
-              onCanonicalChange={(next) => {
-                setSource('loanAmount')
-                setLoanAmount(next)
-              }}
+              value={shown.loanAmount}
+              onCanonicalChange={(next) => setFinancingValue('loanAmount', next)}
               placeholder={760000}
             />
           </div>
@@ -235,14 +171,14 @@ export function FinancingPanel({
             <PlainField
               label="Interest rate (%)"
               id="interestRate"
-              value={interestRate}
-              onChange={setInterestRate}
+              value={values.interestRate}
+              onChange={(next) => setValue('interestRate', next)}
             />
             <PlainField
               label="Term (years)"
               id="termYears"
-              value={termYears}
-              onChange={setTermYears}
+              value={values.termYears}
+              onChange={(next) => setValue('termYears', next)}
             />
             <div className="grid gap-1.5">
               <Label htmlFor="loanType">Loan type</Label>
@@ -268,8 +204,8 @@ export function FinancingPanel({
               label="Offset balance"
               id="offsetBalance"
               locale={locale}
-              value={offsetBalance}
-              onCanonicalChange={setOffsetBalance}
+              value={values.offsetBalance}
+              onCanonicalChange={(next) => setValue('offsetBalance', next)}
               placeholder={0}
             />
           </div>
@@ -279,8 +215,8 @@ export function FinancingPanel({
               label="Other financing costs"
               id="otherCosts"
               locale={locale}
-              value={otherCosts}
-              onCanonicalChange={setOtherCosts}
+              value={values.otherCosts}
+              onCanonicalChange={(next) => setValue('otherCosts', next)}
               placeholder={0}
             />
           </div>
@@ -317,7 +253,7 @@ export function FinancingPanel({
           <Figure
             label="Total interest"
             value={formatMoney(amortisation.totalInterest, currency)}
-            hint={`over ${termYears || 0} years`}
+            hint={`over ${values.termYears || 0} years`}
           />
           <Figure
             label="Year 1 principal"
