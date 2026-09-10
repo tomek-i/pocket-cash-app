@@ -23,6 +23,7 @@ import {
 import { Plus, Trash2 } from 'lucide-react'
 import { useActionState, useEffect, useState } from 'react'
 import { formatMoney } from '@/lib/money'
+import { MoneyInput } from '../../../_components/money-input'
 import { toMajorInput } from '../../../_lib/format'
 import type { NormalisedRecurringCost, RecurringCostsSummary } from '../../../_lib/ongoing'
 import {
@@ -78,9 +79,11 @@ function FrequencySelect({
 function AddRecurringCostDialog({
   propertyId,
   costTypes,
+  locale,
 }: {
   propertyId: string
   costTypes: CostType[]
+  locale: string
 }) {
   const [state, formAction, pending] = useActionState(addRecurringCost, null)
   const [open, setOpen] = useState(false)
@@ -144,18 +147,13 @@ function AddRecurringCostDialog({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                name="amount"
-                inputMode="decimal"
-                defaultValue={toMajorInput(selected?.defaultValue)}
-              />
-              {state?.errors?.amount?.[0] ? (
-                <p className="text-destructive text-xs">{state.errors.amount[0]}</p>
-              ) : null}
-            </div>
+            <MoneyInput
+              label="Amount"
+              name="amount"
+              locale={locale}
+              defaultValue={toMajorInput(selected?.defaultValue)}
+              error={state?.errors?.amount}
+            />
             <div className="grid gap-1.5">
               <Label htmlFor="frequency">Frequency</Label>
               <FrequencySelect
@@ -177,7 +175,15 @@ function AddRecurringCostDialog({
   )
 }
 
-function RecurringCostRow({ cost, currency }: { cost: NormalisedRecurringCost; currency: string }) {
+function RecurringCostRow({
+  cost,
+  currency,
+  locale,
+}: {
+  cost: NormalisedRecurringCost
+  currency: string
+  locale: string
+}) {
   const { row } = cost
   const [, updateAction, updating] = useActionState(updateRecurringCost, null)
   const [, toggleAction] = useActionState(toggleRecurringCost, null)
@@ -214,14 +220,15 @@ function RecurringCostRow({ cost, currency }: { cost: NormalisedRecurringCost; c
         <div className="flex flex-wrap items-center gap-2">
           <form action={updateAction} className="flex items-center gap-2">
             <input type="hidden" name="id" value={row.id} />
-            <Input
-              name="amount"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              inputMode="decimal"
-              className="h-8 w-28"
-              aria-label={`${row.name} amount`}
-            />
+            <div className="w-32">
+              <MoneyInput
+                name="amount"
+                locale={locale}
+                defaultValue={amount}
+                onCanonicalChange={setAmount}
+                id={`amount-${row.id}`}
+              />
+            </div>
             <div className="w-36">
               <FrequencySelect
                 id={`frequency-${row.id}`}
@@ -256,11 +263,13 @@ export function OngoingCosts({
   summary,
   costTypes,
   currency,
+  locale,
 }: {
   propertyId: string
   summary: RecurringCostsSummary
   costTypes: CostType[]
   currency: string
+  locale: string
 }) {
   return (
     <Card>
@@ -269,7 +278,7 @@ export function OngoingCosts({
           <p className="text-muted-foreground text-sm">
             {summary.costs.length} cost{summary.costs.length === 1 ? '' : 's'}
           </p>
-          <AddRecurringCostDialog propertyId={propertyId} costTypes={costTypes} />
+          <AddRecurringCostDialog propertyId={propertyId} costTypes={costTypes} locale={locale} />
         </div>
 
         {summary.costs.length === 0 ? (
@@ -280,7 +289,7 @@ export function OngoingCosts({
         ) : (
           <div className="flex flex-col border-t">
             {summary.costs.map((cost) => (
-              <RecurringCostRow key={cost.row.id} cost={cost} currency={currency} />
+              <RecurringCostRow key={cost.row.id} cost={cost} currency={currency} locale={locale} />
             ))}
           </div>
         )}

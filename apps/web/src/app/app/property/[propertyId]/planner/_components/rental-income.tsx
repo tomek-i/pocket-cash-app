@@ -18,6 +18,7 @@ import {
 import { useActionState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { formatMoney } from '@/lib/money'
+import { MoneyInput } from '../../../_components/money-input'
 import { toMajorInput, toPercentInput } from '../../../_lib/format'
 import { saveRental } from '../ongoing-actions'
 import { FREQUENCY_LABELS } from './ongoing-costs'
@@ -59,11 +60,13 @@ export function RentalIncome({
   rental,
   cashFlow,
   currency,
+  locale,
 }: {
   propertyId: string
   rental: PropertyRental | undefined
   cashFlow: PropertyCashFlow | null
   currency: string
+  locale: string
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(saveRental, null)
 
@@ -73,19 +76,14 @@ export function RentalIncome({
         <form action={formAction} className="grid gap-4 sm:grid-cols-4">
           <input type="hidden" name="propertyId" value={propertyId} />
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="rent">Expected rent</Label>
-            <Input
-              id="rent"
-              name="rent"
-              inputMode="decimal"
-              defaultValue={state?.values?.rent ?? toMajorInput(rental?.rent)}
-              placeholder="600"
-            />
-            {state?.errors?.rent?.[0] ? (
-              <p className="text-destructive text-xs">{state.errors.rent[0]}</p>
-            ) : null}
-          </div>
+          <MoneyInput
+            label="Expected rent"
+            name="rent"
+            locale={locale}
+            defaultValue={state?.values?.rent ?? toMajorInput(rental?.rent)}
+            placeholder={600}
+            error={state?.errors?.rent}
+          />
 
           <div className="grid gap-1.5">
             <Label htmlFor="rentFrequency">Per</Label>

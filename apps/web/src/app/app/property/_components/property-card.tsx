@@ -27,10 +27,12 @@ export function PropertyCard({
   property,
   position,
   jurisdictions,
+  locale,
 }: {
   property: PropertyWithLoans
   position: PropertyPosition
   jurisdictions: Jurisdiction[]
+  locale: string
 }) {
   const place = [property.region, property.country].filter(Boolean).join(', ')
 
@@ -55,6 +57,7 @@ export function PropertyCard({
           <PropertyDialog
             property={property}
             jurisdictions={jurisdictions}
+            locale={locale}
             trigger={
               <Button variant="ghost" size="icon" aria-label="Edit property">
                 <Pencil className="size-4" />

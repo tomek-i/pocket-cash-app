@@ -128,6 +128,7 @@ export function UpfrontCosts({
   costTypes,
   categoryNames,
   currency,
+  locale,
   purchasePrice,
   loanAmount,
 }: {
@@ -136,6 +137,7 @@ export function UpfrontCosts({
   costTypes: CostType[]
   categoryNames: Record<string, string>
   currency: string
+  locale: string
   purchasePrice: number
   loanAmount: number
 }) {
@@ -163,7 +165,7 @@ export function UpfrontCosts({
         ) : (
           <div className="flex flex-col border-t">
             {summary.costs.map((entry) => (
-              <CostRow key={entry.row.id} entry={entry} currency={currency} />
+              <CostRow key={entry.row.id} entry={entry} currency={currency} locale={locale} />
             ))}
           </div>
         )}

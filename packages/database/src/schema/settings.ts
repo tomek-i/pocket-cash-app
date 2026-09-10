@@ -40,6 +40,13 @@ export interface PropertySettings {
 /** The app's persisted settings blob — one row for this single-user install. */
 export interface AppSettings {
   defaultCurrency?: string
+  /**
+   * BCP-47 tag deciding how amounts are grouped and where the decimal point
+   * goes, e.g. `de-DE` for `450.000,50`. Unset means follow the machine, which
+   * is what almost everyone wants: Pocket Cash runs on the user's own computer,
+   * so its locale is theirs.
+   */
+  numberLocale?: string
   ai?: AiSettings
   aiInsights?: Record<string, CachedInsight>
   /** Set once the first-run welcome tour is finished. Unset/false = show it. */

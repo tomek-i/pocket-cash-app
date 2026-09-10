@@ -2,6 +2,7 @@ import { getAppSettings } from '@repo/database'
 import { Button } from '@repo/ui'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { resolveNumberLocale } from '@/lib/number-format'
 import { CalculationSettings } from './_components/calculation-settings'
 import { CostTypesSection } from './_components/cost-types-section'
 import { JurisdictionsSection } from './_components/jurisdictions-section'
@@ -41,6 +42,7 @@ export default async function PropertySettingsPage() {
   ])
 
   const currency = appSettings.defaultCurrency ?? jurisdictions[0]?.currency ?? 'USD'
+  const locale = resolveNumberLocale(appSettings.numberLocale)
 
   return (
     <div className="flex flex-col gap-8 px-5 py-5 lg:px-8 lg:py-7">
@@ -66,7 +68,7 @@ export default async function PropertySettingsPage() {
         title="Cost types"
         description="What the Add Cost lists offer. A name and a default value is enough; the rest is optional."
       >
-        <CostTypesSection costTypes={costTypes} currency={currency} />
+        <CostTypesSection costTypes={costTypes} currency={currency} locale={locale} />
       </Section>
 
       <Section

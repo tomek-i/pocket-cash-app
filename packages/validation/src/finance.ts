@@ -140,5 +140,13 @@ export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>
 
 export const updateSettingsSchema = z.object({
   defaultCurrency: z.string().trim().length(3, 'Use a 3-letter currency code').toUpperCase(),
+  /** BCP-47 tag, or empty to follow the machine's own locale. */
+  numberLocale: z
+    .string()
+    .trim()
+    .max(35)
+    .regex(/^[A-Za-z0-9-]*$/, 'Use a language tag like en-AU')
+    .optional()
+    .transform((value) => (value ? value : undefined)),
 })
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>

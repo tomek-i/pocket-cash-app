@@ -16,23 +16,23 @@ import {
 import { useActionState, useMemo, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { formatMoney } from '@/lib/money'
+import { MoneyInput } from '../../../_components/money-input'
 import { formatPercent, toMajorInput, toMinorUnits, toRateDecimal } from '../../../_lib/format'
 import { LOAN_TYPE_LABELS } from '../../../_lib/labels'
 import { buildFinancing } from '../../../_lib/planner'
 import { type PlannerProperty, savePlannerFinancing } from '../actions'
 
-function MoneyField({
+/** A labelled input for the values that are not money: percentages and years. */
+function PlainField({
   label,
   id,
   value,
   onChange,
-  hint,
 }: {
   label: string
   id: string
   value: string
   onChange: (value: string) => void
-  hint?: string
 }) {
   return (
     <div className="grid gap-1.5">
@@ -43,7 +43,6 @@ function MoneyField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
     </div>
   )
 }
@@ -79,7 +78,13 @@ function Figure({
  * amount was edited last; the other two follow from it. Without that the three
  * fields overwrite each other while being typed into.
  */
-export function FinancingPanel({ property }: { property: PlannerProperty }) {
+export function FinancingPanel({
+  property,
+  locale,
+}: {
+  property: PlannerProperty
+  locale: string
+}) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     savePlannerFinancing,
     null,
@@ -168,49 +173,55 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
           <input type="hidden" name="otherFinancingCosts" value={otherCosts} />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <MoneyField
+            <MoneyInput
               label="Purchase price"
               id="purchasePrice"
+              locale={locale}
               value={purchasePrice}
-              onChange={setPurchasePrice}
+              onCanonicalChange={setPurchasePrice}
+              placeholder={950000}
             />
-            <MoneyField
+            <MoneyInput
               label="Estimated market value"
               id="marketValue"
+              locale={locale}
               value={marketValue}
-              onChange={setMarketValue}
-              hint="LVR is measured against this when set."
+              onCanonicalChange={setMarketValue}
+              placeholder={980000}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <MoneyField
+            <MoneyInput
               label="Deposit"
               id="deposit"
+              locale={locale}
               value={shownDeposit}
-              onChange={(value) => {
+              onCanonicalChange={(next) => {
                 setSource('deposit')
-                setDeposit(value)
+                setDeposit(next)
               }}
+              placeholder={200000}
             />
-            <MoneyField
+            <PlainField
               label="Deposit (%)"
               id="depositPercentage"
               value={shownDepositPercentage}
-              onChange={(value) => {
+              onChange={(next) => {
                 setSource('depositPercentage')
-                setDepositPercentage(value)
+                setDepositPercentage(next)
               }}
             />
-            <MoneyField
+            <MoneyInput
               label="Loan amount"
               id="loanAmount"
+              locale={locale}
               value={shownLoanAmount}
-              onChange={(value) => {
+              onCanonicalChange={(next) => {
                 setSource('loanAmount')
-                setLoanAmount(value)
+                setLoanAmount(next)
               }}
-              hint="Enter any one of these three."
+              placeholder={760000}
             />
           </div>
 
@@ -221,13 +232,13 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-4">
-            <MoneyField
+            <PlainField
               label="Interest rate (%)"
               id="interestRate"
               value={interestRate}
               onChange={setInterestRate}
             />
-            <MoneyField
+            <PlainField
               label="Term (years)"
               id="termYears"
               value={termYears}
@@ -253,21 +264,24 @@ export function FinancingPanel({ property }: { property: PlannerProperty }) {
                 </SelectContent>
               </Select>
             </div>
-            <MoneyField
+            <MoneyInput
               label="Offset balance"
               id="offsetBalance"
+              locale={locale}
               value={offsetBalance}
-              onChange={setOffsetBalance}
+              onCanonicalChange={setOffsetBalance}
+              placeholder={0}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <MoneyField
+            <MoneyInput
               label="Other financing costs"
               id="otherCosts"
+              locale={locale}
               value={otherCosts}
-              onChange={setOtherCosts}
-              hint="Lender fees not covered by the upfront costs list."
+              onCanonicalChange={setOtherCosts}
+              placeholder={0}
             />
           </div>
 
