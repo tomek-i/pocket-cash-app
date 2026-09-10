@@ -258,7 +258,12 @@ export default async function FyReportPage({
           />
         </Card>
       ) : (
-        <TransactionsTable rows={data.rows} categories={categories} tags={tags} />
+        <TransactionsTable
+          rows={data.rows}
+          categories={categories}
+          tags={tags}
+          backHref={buildHref(fy, sp, page)}
+        />
       )}
 
       <Pagination

@@ -30,6 +30,7 @@ import { useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { CategoryIcon } from '../../categories/_components/category-icon'
 import { TagSwatch } from '../../tags/_components/tag-pill'
+import { withOrigin } from '../_lib/origin'
 import {
   deleteTransaction,
   setTransactionCategory,
@@ -46,10 +47,13 @@ export function TransactionRow({
   tx,
   categories,
   tags,
+  backHref,
 }: {
   tx: TxRow
   categories: CategoryLite[]
   tags: TagLite[]
+  /** The list URL this row was rendered from, carried to the detail page. */
+  backHref: string
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -61,7 +65,7 @@ export function TransactionRow({
   return (
     <tr
       className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
-      onClick={() => router.push(`/app/transactions/${tx.id}`)}
+      onClick={() => router.push(withOrigin(`/app/transactions/${tx.id}`, backHref))}
     >
       <td className="whitespace-nowrap p-3 align-top text-muted-foreground text-xs">{tx.date}</td>
       <td className="max-w-[22rem] p-3 align-top">

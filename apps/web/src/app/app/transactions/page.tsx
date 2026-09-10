@@ -106,7 +106,12 @@ export default async function TransactionsPage({
           />
         </Card>
       ) : (
-        <TransactionsTable rows={data.rows} categories={categories} tags={tags} />
+        <TransactionsTable
+          rows={data.rows}
+          categories={categories}
+          tags={tags}
+          backHref={buildHref(params, page)}
+        />
       )}
 
       <Pagination

@@ -8,10 +8,16 @@ export function TransactionsTable({
   rows,
   categories,
   tags,
+  backHref,
 }: {
   rows: TxRow[]
   categories: Pick<Category, 'id' | 'name' | 'color' | 'icon'>[]
   tags: Pick<Tag, 'id' | 'name' | 'color'>[]
+  /**
+   * This page's own URL, filters and page number included, so a row can carry it
+   * to the detail page and the back link can return to exactly here.
+   */
+  backHref: string
 }) {
   return (
     <Card className="overflow-hidden p-0">
@@ -31,7 +37,13 @@ export function TransactionsTable({
           </thead>
           <tbody>
             {rows.map((tx) => (
-              <TransactionRow key={tx.id} tx={tx} categories={categories} tags={tags} />
+              <TransactionRow
+                key={tx.id}
+                tx={tx}
+                categories={categories}
+                tags={tags}
+                backHref={backHref}
+              />
             ))}
           </tbody>
         </table>
