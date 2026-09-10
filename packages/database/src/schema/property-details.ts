@@ -146,8 +146,8 @@ export const propertyRentals = pgTable(
 export interface ScenarioOverrides {
   /** Minor units. */
   purchasePrice?: number
-  /** Minor units. */
-  estimatedMarketValue?: number
+  /** Minor units. What it would sell for today. */
+  marketValue?: number
   /** Minor units. */
   deposit?: number
   /** Decimal share of the purchase price. */

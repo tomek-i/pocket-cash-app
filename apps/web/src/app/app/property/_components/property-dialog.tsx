@@ -106,7 +106,6 @@ export function PropertyDialog({
     (property ? (property.jurisdictionKey ?? OTHER) : (jurisdictions[0]?.key ?? OTHER))
   const [jurisdictionKey, setJurisdictionKey] = useState(initialJurisdiction)
   const initialStatus = state?.values?.status ?? property?.status ?? 'planned'
-  const [status, setStatus] = useState<string>(initialStatus)
 
   useEffect(() => {
     if (state?.ok) setOpen(false)
@@ -233,7 +232,6 @@ export function PropertyDialog({
                   label="Status"
                   name="status"
                   defaultValue={initialStatus}
-                  onValueChange={setStatus}
                   options={PROPERTY_STATUSES.map((value) => ({
                     value,
                     label: PROPERTY_STATUS_LABELS[value],
@@ -245,6 +243,7 @@ export function PropertyDialog({
                 <MoneyInput
                   label="Purchase price"
                   name="purchasePrice"
+                  help="What you are paying, or what you paid for a property you already own. Transfer duty and the other government charges are calculated from this figure, so on a planned purchase it drives the cash you need at settlement."
                   locale={locale}
                   defaultValue={
                     state?.values?.purchasePrice ?? toMajorInput(property?.purchasePrice)
@@ -253,48 +252,21 @@ export function PropertyDialog({
                   error={state?.errors?.purchasePrice}
                 />
                 <MoneyInput
-                  label="Estimated market value"
-                  name="estimatedMarketValue"
+                  label="Market value"
+                  name="marketValue"
+                  help="What it would sell for today, from a valuation, an agent appraisal or recent sales nearby. Not a forecast: nothing here projects future value. Deliberately not the price you are paying, because the gap between the two is what tells you whether you are overpaying, and LVR and equity measure against this. Leave it blank to use the purchase price."
                   locale={locale}
-                  defaultValue={
-                    state?.values?.estimatedMarketValue ??
-                    toMajorInput(property?.estimatedMarketValue)
-                  }
+                  defaultValue={state?.values?.marketValue ?? toMajorInput(property?.marketValue)}
                   placeholder={980000}
-                  error={state?.errors?.estimatedMarketValue}
+                  error={state?.errors?.marketValue}
                 />
               </div>
-
-              {status === 'existing' || status === 'sold' ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <MoneyInput
-                    label="Current value"
-                    name="currentValue"
-                    locale={locale}
-                    defaultValue={
-                      state?.values?.currentValue ?? toMajorInput(property?.currentValue)
-                    }
-                    placeholder={1050000}
-                    error={state?.errors?.currentValue}
-                  />
-                  <MoneyInput
-                    label="Original purchase price"
-                    name="originalPurchasePrice"
-                    locale={locale}
-                    defaultValue={
-                      state?.values?.originalPurchasePrice ??
-                      toMajorInput(property?.originalPurchasePrice)
-                    }
-                    placeholder={820000}
-                    error={state?.errors?.originalPurchasePrice}
-                  />
-                </div>
-              ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field
                   label="Ownership share (%)"
                   name="ownershipShare"
+                  help="The share of it you own. Portfolio totals count value, debt and equity at this share, so a half share of a $1,000,000 property with an $800,000 loan counts as $500,000 of value and $400,000 of debt. LVR is unaffected, since the share applies to both sides."
                   defaultValue={
                     state?.values?.ownershipShare ?? toPercentInput(property?.ownershipShare ?? 1)
                   }

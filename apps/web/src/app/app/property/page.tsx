@@ -1,5 +1,5 @@
 import { getAppSettings } from '@repo/database'
-import { Button, Card, CardContent } from '@repo/ui'
+import { Button, Card, CardContent, HelpTip } from '@repo/ui'
 import { Building2, Plus } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { resolveNumberLocale } from '@/lib/number-format'
@@ -8,7 +8,7 @@ import { getPropertySettings } from '../settings/property/actions'
 import { PropertyCard } from './_components/property-card'
 import { PropertyDialog } from './_components/property-dialog'
 import { formatPercent } from './_lib/format'
-import { PROPERTY_STATUS_LABELS } from './_lib/labels'
+import { PROPERTY_STATUS_LABELS, portfolioLvrHelp } from './_lib/labels'
 import {
   ownedProperties,
   portfolioTotals,
@@ -20,10 +20,23 @@ import { listJurisdictions, listProperties } from './actions'
 
 export const metadata = { title: 'Property' }
 
-function Summary({ label, value, tone }: { label: string; value: string; tone?: 'negative' }) {
+function Summary({
+  label,
+  value,
+  tone,
+  help,
+}: {
+  label: string
+  value: string
+  tone?: 'negative'
+  help?: string
+}) {
   return (
     <div>
-      <p className="text-muted-foreground text-sm">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-muted-foreground text-sm">{label}</p>
+        {help ? <HelpTip label={`What is ${label.toLowerCase()}?`}>{help}</HelpTip> : null}
+      </div>
       <p
         className={
           tone === 'negative'
@@ -120,6 +133,7 @@ export default async function PropertyPage() {
                 <Summary
                   label="Portfolio LVR"
                   value={totals.value > 0 ? formatPercent(totals.lvr) : '—'}
+                  help={portfolioLvrHelp(propertySettings.maxPortfolioLvr)}
                 />
               </div>
               <p className="text-muted-foreground text-xs">

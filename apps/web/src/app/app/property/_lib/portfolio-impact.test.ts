@@ -13,8 +13,7 @@ const harbourView: PortfolioInput = {
   id: 'harbour-view',
   status: 'existing',
   ownershipShare: 1,
-  currentValue: 1_400_000_00,
-  estimatedMarketValue: null,
+  marketValue: 1_400_000_00,
   purchasePrice: 1_200_000_00,
   loanBalance: 640_000_00,
 }
@@ -83,8 +82,7 @@ describe('portfolioImpact', () => {
       id: 'other-plan',
       status: 'planned',
       ownershipShare: 1,
-      currentValue: null,
-      estimatedMarketValue: 900_000_00,
+      marketValue: 900_000_00,
       purchasePrice: 900_000_00,
       loanBalance: 700_000_00,
     }

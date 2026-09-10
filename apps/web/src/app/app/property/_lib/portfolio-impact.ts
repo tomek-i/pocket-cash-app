@@ -95,15 +95,13 @@ export function portfolioImpact(input: PortfolioImpactInput): PortfolioImpact {
   // either, which `ownedProperties` takes care of along with sold ones.
   const owned = ownedProperties(input.others)
 
-  // The purchase as though it had settled. `estimatedMarketValue` is what
-  // `propertyValue` reads first here, so this is measured at what it is worth
-  // rather than at what was paid for it.
+  // The purchase as though it had settled, measured at what it is worth rather
+  // than at what is being paid for it.
   const asOwned: PortfolioInput = {
     id: 'prospective',
     status: 'existing',
     ownershipShare: input.purchase.ownershipShare,
-    currentValue: null,
-    estimatedMarketValue: input.purchase.value,
+    marketValue: input.purchase.value,
     purchasePrice: input.purchase.value,
     loanBalance: input.purchase.debt,
   }

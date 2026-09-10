@@ -169,7 +169,7 @@ export async function savePlannerDetails(
 const FINANCING_FIELDS = [
   'source',
   'purchasePrice',
-  'estimatedMarketValue',
+  'marketValue',
   'deposit',
   'depositPercentage',
   'loanAmount',
@@ -207,7 +207,7 @@ export async function savePlannerFinancing(
       .update(properties)
       .set({
         purchasePrice,
-        estimatedMarketValue: data.estimatedMarketValue ?? null,
+        marketValue: data.marketValue ?? null,
         updatedAt: new Date(),
       })
       .where(eq(properties.id, data.id))

@@ -383,3 +383,96 @@ describe('dropping the account links', () => {
     }
   }, 60_000)
 })
+
+describe('merging the value columns', () => {
+  /**
+   * The upgrade path for anyone who already recorded a property. Three columns
+   * become one, and the merge happens in SQL rather than in the app, so it has
+   * to be proven against a database that actually holds rows: a bad COALESCE
+   * silently rewrites what every property is worth.
+   */
+  it('keeps what each property is worth when the value columns merge', async () => {
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
+    const journal = JSON.parse(
+      readFileSync(join(migrationsFolder, 'meta/_journal.json'), 'utf-8'),
+    ) as { entries: { idx: number; tag: string }[] }
+
+    // Everything up to the last migration that still had the three columns.
+    const upTo = journal.entries.filter((entry) => entry.idx <= 2)
+    if (upTo.length < 3) throw new Error('expected the pre-merge migrations in the journal')
+
+    const oldFolder = mkdtempSync(join(tmpdir(), 'pocket-cash-migrations-'))
+    const client = new PGlite('memory://', { extensions: { pg_trgm, fuzzystrmatch } })
+    try {
+      mkdirSync(join(oldFolder, 'meta'), { recursive: true })
+      for (const entry of upTo) {
+        copyFileSync(
+          join(migrationsFolder, `${entry.tag}.sql`),
+          join(oldFolder, `${entry.tag}.sql`),
+        )
+      }
+      writeFileSync(
+        join(oldFolder, 'meta/_journal.json'),
+        JSON.stringify({ ...journal, entries: upTo }),
+      )
+
+      await client.waitReady
+      const oldDb = drizzle(client, { schema })
+      await oldDb.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
+      await oldDb.execute(sql`CREATE EXTENSION IF NOT EXISTS fuzzystrmatch`)
+      await migrate(oldDb, { migrationsFolder: oldFolder })
+
+      // Raw SQL, because the compiled schema no longer knows these columns.
+      await oldDb.execute(sql`
+        INSERT INTO properties
+          (id, name, country, currency, purchase_price, current_value, estimated_market_value, original_purchase_price)
+        VALUES
+          -- Both recorded: current value wins, the order the app already used.
+          ('11111111-1111-1111-1111-111111111111', 'Both', 'AU', 'AUD', 100000000, 140000000, 120000000, NULL),
+          -- Only the estimate.
+          ('22222222-2222-2222-2222-222222222222', 'Estimate only', 'AU', 'AUD', 100000000, NULL, 105000000, NULL),
+          -- Neither: stays null and falls back to the price at read time.
+          ('33333333-3333-3333-3333-333333333333', 'Neither', 'AU', 'AUD', 100000000, NULL, NULL, NULL),
+          -- The price was never filled in, so the original has to survive as it.
+          ('44444444-4444-4444-4444-444444444444', 'Original only', 'AU', 'AUD', 0, NULL, NULL, 82000000)
+      `)
+      await oldDb.execute(sql`
+        INSERT INTO property_scenarios (property_id, name, overrides)
+        VALUES ('11111111-1111-1111-1111-111111111111', 'Stretch',
+          '{"purchasePrice": 120000000, "estimatedMarketValue": 118000000}'::jsonb)
+      `)
+
+      // The upgrade.
+      await migrate(oldDb, { migrationsFolder })
+
+      const rows = await oldDb.execute(sql`
+        SELECT name, purchase_price, market_value FROM properties ORDER BY name
+      `)
+      expect(rows.rows).toEqual([
+        { name: 'Both', purchase_price: 100000000, market_value: 140000000 },
+        { name: 'Estimate only', purchase_price: 100000000, market_value: 105000000 },
+        { name: 'Neither', purchase_price: 100000000, market_value: null },
+        { name: 'Original only', purchase_price: 82000000, market_value: null },
+      ])
+
+      // The renamed key has to travel with the jsonb, or the scenario silently
+      // stops overriding what it used to.
+      const scenarios = await oldDb.execute(sql`SELECT overrides FROM property_scenarios`)
+      expect((scenarios.rows[0] as { overrides: Record<string, number> }).overrides).toEqual({
+        purchasePrice: 120000000,
+        marketValue: 118000000,
+      })
+
+      // And the old columns are genuinely gone, not merely unused.
+      const columns = await oldDb.execute(sql`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'properties'
+          AND column_name IN ('current_value', 'estimated_market_value', 'original_purchase_price')
+      `)
+      expect(columns.rows).toHaveLength(0)
+    } finally {
+      await client.close()
+      rmSync(oldFolder, { recursive: true, force: true })
+    }
+  }, 60_000)
+})

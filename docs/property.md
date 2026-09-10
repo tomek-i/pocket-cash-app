@@ -59,13 +59,39 @@ appear in the box.
 
 | Table | What it holds |
 | --- | --- |
-| `properties` | The place, its jurisdiction, price, values, status, and the frozen `rate_schedule_snapshot` once a purchase is locked |
+| `properties` | The place, its jurisdiction, price, market value, status, and the frozen `rate_schedule_snapshot` once a purchase is locked |
 | `property_loans` | Amount, rate, term, type, offset balance |
 | `property_costs` | Which cost types apply to **this** property, and any overrides |
 | `property_recurring_costs` | Holding costs, at whatever cadence the bill arrives |
 | `property_rentals` | Rent, frequency, vacancy and management rates |
 | `property_scenarios` | Named override sets, for comparison |
 | `property_available_funds` | Money towards a purchase, typed in by hand |
+
+### What a property is worth
+
+Two money fields, and only two:
+
+| Field | Means |
+| --- | --- |
+| `purchasePrice` | What is being paid, or what was paid for a property already owned |
+| `marketValue` | What it would sell for **today** |
+
+`propertyValue` is `marketValue ?? purchasePrice`, and LVR and equity measure
+against that. Measuring against the value rather than the price is deliberate:
+buying under valuation should show the better position it genuinely gives, and
+the gap between the two is what portfolio impact reports as the amount that does
+not come back as equity.
+
+**Neither is a forecast.** Nothing in the app projects future value, so there is
+no time dimension to either field. A value comes from a lender's valuation, an
+appraisal, or comparable sales.
+
+This replaced three fields. `estimatedMarketValue` and `currentValue` asked the
+same question at two stages of ownership and were told apart by the status flag,
+which left nobody able to say which one to fill in; `originalPurchasePrice`
+duplicated `purchasePrice` for an owned property and was read by nothing at all.
+The merge is in migrations `0003`/`0004`, keeping `currentValue` over the
+estimate because that was the order the app already resolved them in.
 
 ### Definition versus instance
 

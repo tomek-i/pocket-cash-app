@@ -1,6 +1,7 @@
-import { Card, CardContent } from '@repo/ui'
+import { Card, CardContent, HelpTip } from '@repo/ui'
 import { formatMoney } from '@/lib/money'
 import { formatPercent } from '../../../_lib/format'
+import { lvrHelp } from '../../../_lib/labels'
 import type { FinancingResult } from '../../../_lib/planner'
 
 /**
@@ -13,15 +14,20 @@ function Metric({
   value,
   hint,
   tone,
+  help,
 }: {
   label: string
   value: string
   hint?: string
   tone?: 'muted' | 'negative'
+  help?: string
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-muted-foreground text-xs">{label}</p>
+        {help ? <HelpTip label={`What is ${label.toLowerCase()}?`}>{help}</HelpTip> : null}
+      </div>
       <p
         className={
           tone === 'muted'
@@ -59,6 +65,7 @@ export function PlannerDashboard({
   monthlyCashFlow,
   availableCash,
   remainingCash,
+  maxPortfolioLvr,
 }: {
   result: FinancingResult
   currency: string
@@ -76,6 +83,8 @@ export function PlannerDashboard({
   availableCash: number
   /** Minor units. Negative means the purchase is short. */
   remainingCash: number
+  /** Decimal. The configured LVR ceiling, quoted in the LVR explanation. */
+  maxPortfolioLvr: number
 }) {
   const { financing, amortisation } = result
 
@@ -90,7 +99,11 @@ export function PlannerDashboard({
 
       <Panel title="Financing">
         <Metric label="Loan amount" value={formatMoney(financing.loanAmount, currency)} />
-        <Metric label="LVR" value={result.propertyValue > 0 ? formatPercent(financing.lvr) : '—'} />
+        <Metric
+          label="LVR"
+          value={result.propertyValue > 0 ? formatPercent(financing.lvr) : '—'}
+          help={lvrHelp(maxPortfolioLvr)}
+        />
         <Metric
           label="Monthly repayment"
           value={formatMoney(amortisation.monthlyRepayment, currency)}

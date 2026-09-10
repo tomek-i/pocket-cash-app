@@ -1,4 +1,5 @@
-import { Input, Label } from '@repo/ui'
+import { HelpTip, Input, Label } from '@repo/ui'
+import type { ReactNode } from 'react'
 
 /** Labelled text input with an inline validation error. Shared by the finance dialogs. */
 export function Field({
@@ -7,16 +8,22 @@ export function Field({
   defaultValue,
   placeholder,
   error,
+  help,
 }: {
   label: string
   name: string
   defaultValue?: string
   placeholder?: string
   error?: string[]
+  /** Explains what the field means, behind a "?" beside the label. */
+  help?: ReactNode
 }) {
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={name}>{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={name}>{label}</Label>
+        {help ? <HelpTip label={`What is ${label.toLowerCase()}?`}>{help}</HelpTip> : null}
+      </div>
       <Input
         id={name}
         name={name}

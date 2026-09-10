@@ -20,10 +20,8 @@ import {
 export interface FinancingInputs {
   /** Minor units. */
   purchasePrice: number
-  /** Minor units. `null` when it has not been estimated separately. */
-  estimatedMarketValue: number | null
-  /** Minor units. Today's value of a property already owned. */
-  currentValue: number | null
+  /** Minor units. What it would sell for today. `null` when not recorded. */
+  marketValue: number | null
   /** Which field the user edited last. The other two are derived from it. */
   source: FinancingSource
   /** Minor units. Read when `source` is `deposit`. */
@@ -59,16 +57,15 @@ export interface FinancingResult {
 /**
  * The value the property is measured by.
  *
- * Today's value first, then an estimate, then the price being paid. Measuring
- * LVR against the market value rather than the purchase price is deliberate:
- * buying under valuation should show the better ratio it genuinely gives.
+ * What it is worth, falling back to what is being paid. Measuring LVR against
+ * the market value rather than the purchase price is deliberate: buying under
+ * valuation should show the better ratio it genuinely gives.
  */
 export function plannerPropertyValue(input: {
-  currentValue: number | null
-  estimatedMarketValue: number | null
+  marketValue: number | null
   purchasePrice: number
 }): number {
-  return input.currentValue ?? input.estimatedMarketValue ?? input.purchasePrice
+  return input.marketValue ?? input.purchasePrice
 }
 
 /** Everything the financing panel and the dashboard need. */
