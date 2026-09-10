@@ -219,6 +219,7 @@ export function PlannerWorkspace({
         monthlyCashFlow={ongoing.cashFlow?.monthlyCashFlow ?? null}
         availableCash={fundsSummary.total}
         remainingCash={fundsSummary.position.remaining}
+        maxPortfolioLvr={maxPortfolioLvr}
       />
 
       <section className="flex flex-col gap-3">

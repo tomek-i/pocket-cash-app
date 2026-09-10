@@ -245,6 +245,7 @@ export function PropertyDialog({
                 <MoneyInput
                   label="Purchase price"
                   name="purchasePrice"
+                  help="What you are paying for it. Transfer duty and the other government charges are calculated from this figure, so it drives the cash you need at settlement."
                   locale={locale}
                   defaultValue={
                     state?.values?.purchasePrice ?? toMajorInput(property?.purchasePrice)
@@ -255,6 +256,7 @@ export function PropertyDialog({
                 <MoneyInput
                   label="Estimated market value"
                   name="estimatedMarketValue"
+                  help="What it is actually worth, when that differs from the price. LVR and equity are measured against this rather than the price, so buying under valuation shows the better position it really gives you. Leave it blank to use the purchase price."
                   locale={locale}
                   defaultValue={
                     state?.values?.estimatedMarketValue ??
@@ -270,6 +272,7 @@ export function PropertyDialog({
                   <MoneyInput
                     label="Current value"
                     name="currentValue"
+                    help="Today's value, from a recent valuation or your own estimate. It wins over the market value and the purchase price everywhere a value is needed, so this is the one to keep up to date on a property you own."
                     locale={locale}
                     defaultValue={
                       state?.values?.currentValue ?? toMajorInput(property?.currentValue)
@@ -280,6 +283,7 @@ export function PropertyDialog({
                   <MoneyInput
                     label="Original purchase price"
                     name="originalPurchasePrice"
+                    help="What you paid when you bought it. Recorded for your reference only: nothing is calculated from it yet, and it does not affect equity or LVR."
                     locale={locale}
                     defaultValue={
                       state?.values?.originalPurchasePrice ??
@@ -295,6 +299,7 @@ export function PropertyDialog({
                 <Field
                   label="Ownership share (%)"
                   name="ownershipShare"
+                  help="The share of it you own. Portfolio totals count value, debt and equity at this share, so a half share of a $1,000,000 property with an $800,000 loan counts as $500,000 of value and $400,000 of debt. LVR is unaffected, since the share applies to both sides."
                   defaultValue={
                     state?.values?.ownershipShare ?? toPercentInput(property?.ownershipShare ?? 1)
                   }

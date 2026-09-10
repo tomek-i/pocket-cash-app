@@ -1,7 +1,7 @@
 'use client'
 
-import { Input, Label } from '@repo/ui'
-import { type ChangeEvent, useEffect, useId, useRef, useState } from 'react'
+import { HelpTip, Input, Label } from '@repo/ui'
+import { type ChangeEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import {
   caretAfterDigits,
   digitsBefore,
@@ -31,6 +31,7 @@ export function MoneyInput({
   placeholder,
   locale,
   error,
+  help,
   onCanonicalChange,
   id,
 }: {
@@ -50,6 +51,8 @@ export function MoneyInput({
   placeholder?: number
   locale: string
   error?: string[]
+  /** Explains what the field means, behind a "?" beside the label. */
+  help?: ReactNode
   /** Called with the canonical value, for panels that recalculate live. */
   onCanonicalChange?: (value: string) => void
   id?: string
@@ -89,7 +92,12 @@ export function MoneyInput({
 
   return (
     <div className="grid gap-1.5">
-      {label && !hideLabel ? <Label htmlFor={fieldId}>{label}</Label> : null}
+      {label && !hideLabel ? (
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor={fieldId}>{label}</Label>
+          {help ? <HelpTip label={`What is ${label.toLowerCase()}?`}>{help}</HelpTip> : null}
+        </div>
+      ) : null}
       <Input
         id={fieldId}
         ref={inputRef}
