@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, dialog, shell } from 'electron'
 import { logFile, logStartup } from '../logging'
 import { getAppUrl, getStartUrl } from '../server'
+import { appIcon } from './icon'
 import { closeSplash } from './splash'
 
 // Startup failed (server never booted, or the window couldn't load the app).
@@ -42,6 +43,9 @@ export function createWindow(): void {
     height: 832,
     minWidth: 960,
     minHeight: 640,
+    // Without this the window wears Electron's own logo: electron-builder brands
+    // the packaged exe, but never the window itself.
+    icon: appIcon(),
     backgroundColor: '#0a0a08', // Citron theme canvas — avoids white flash on load
     // The app is a dark single-window shell: hide the (white) native menu bar —
     // Alt still reveals it, and copy/paste shortcuts keep working.
