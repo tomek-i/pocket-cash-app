@@ -7,6 +7,7 @@ import {
   type Jurisdiction,
   jurisdictions,
   lte,
+  ne,
   type Property,
   type PropertyLoan,
   properties,
@@ -24,6 +25,8 @@ export type PlannerProperty = Property & { loans: PropertyLoan[] }
 
 export interface PlannerData {
   property: PlannerProperty
+  /** Every other property, for the portfolio impact panel. */
+  others: PlannerProperty[]
   jurisdiction: Jurisdiction | null
   jurisdictions: Jurisdiction[]
   /** What this jurisdiction calls its purchase tax. Never hard-coded. */
@@ -40,6 +43,13 @@ export async function getPlannerData(propertyId: string): Promise<PlannerData | 
   })
   if (!property) return null
 
+  // What else the user holds, so the planner can say where this purchase leaves
+  // the portfolio rather than only what it costs.
+  const others = await db.query.properties.findMany({
+    where: ne(properties.id, propertyId),
+    with: { loans: true },
+  })
+
   const allJurisdictions = await db
     .select()
     .from(jurisdictions)
@@ -50,6 +60,7 @@ export async function getPlannerData(propertyId: string): Promise<PlannerData | 
 
   return {
     property,
+    others,
     jurisdiction,
     jurisdictions: allJurisdictions,
     transferTaxLabel: jurisdiction?.transferTaxLabel ?? GENERIC_TRANSFER_TAX_LABEL,

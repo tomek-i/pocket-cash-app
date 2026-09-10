@@ -71,6 +71,14 @@ export function CalculationSettings({ settings }: { settings: Required<PropertyS
               error={state?.errors?.defaultManagementRate}
             />
             <Field
+              label="Max portfolio LVR (%)"
+              name="maxPortfolioLvr"
+              defaultValue={
+                state?.values?.maxPortfolioLvr ?? toPercentInput(settings.maxPortfolioLvr)
+              }
+              error={state?.errors?.maxPortfolioLvr}
+            />
+            <Field
               label="Sensitivity rates (%)"
               name="sensitivityRates"
               defaultValue={

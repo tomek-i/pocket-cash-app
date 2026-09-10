@@ -17,9 +17,11 @@ import {
   CardContent,
 } from '@repo/ui'
 import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useActionState, useMemo } from 'react'
+import { useActionState, useCallback, useMemo } from 'react'
 import { formatMoney } from '@/lib/money'
 import { formatPercent } from '../../../_lib/format'
+import type { PortfolioInput } from '../../../_lib/portfolio'
+import { portfolioImpact } from '../../../_lib/portfolio-impact'
 import {
   evaluateScenario,
   isEmptyOverrides,
@@ -42,10 +44,25 @@ import { ScenarioDialog } from './scenario-dialog'
  * price around in the panels above moves the whole comparison with it.
  */
 
+/** What a scenario leaves the portfolio at, alongside the property's own figures. */
+export interface ScenarioPortfolio {
+  others: PortfolioInput[]
+  ownershipShare: number
+  maxLvr: number
+}
+
+/** A scenario's result, plus where it leaves everything else. */
+interface ScenarioColumn extends ScenarioResult {
+  /** Decimal ratio across the whole portfolio after buying. */
+  portfolioLvr: number
+  /** Minor units. Equity gained less the cash it took. */
+  equityForCash: number
+}
+
 interface MetricRow {
   key: string
   label: string
-  read: (result: ScenarioResult) => number | null
+  read: (result: ScenarioColumn) => number | null
   kind: 'money' | 'percent'
   /** Drawn heavier: the two figures the planner exists to answer. */
   emphasis?: boolean
@@ -96,6 +113,19 @@ const METRICS: MetricRow[] = [
     key: 'remainingCash',
     label: 'Cash left over',
     read: (r) => r.remainingCash,
+    kind: 'money',
+    emphasis: true,
+  },
+  {
+    key: 'portfolioLvr',
+    label: 'Portfolio LVR after',
+    read: (r) => r.portfolioLvr,
+    kind: 'percent',
+  },
+  {
+    key: 'equityForCash',
+    label: 'Equity less cash',
+    read: (r) => r.equityForCash,
     kind: 'money',
     emphasis: true,
   },
@@ -210,6 +240,7 @@ export function ScenarioComparison({
   locale,
   isLet,
   baseRent,
+  portfolio,
 }: {
   propertyId: string
   scenarios: PropertyScenario[]
@@ -221,18 +252,41 @@ export function ScenarioComparison({
   isLet: boolean
   /** Minor units, at the property's rent frequency. */
   baseRent: number | null
+  portfolio: ScenarioPortfolio
 }) {
+  // Each column carries where it leaves the portfolio, so a scenario that looks
+  // cheaper month to month can still show that it costs borrowing capacity.
+  const withPortfolio = useCallback(
+    (result: ScenarioResult): ScenarioColumn => {
+      const impact = portfolioImpact({
+        others: portfolio.others,
+        purchase: {
+          value: result.propertyValue,
+          debt: result.loanAmount,
+          ownershipShare: portfolio.ownershipShare,
+        },
+        cashRequired: result.cashRequired,
+        maxLvr: portfolio.maxLvr,
+      })
+      return { ...result, portfolioLvr: impact.after.lvr, equityForCash: impact.equityForCash }
+    },
+    [portfolio],
+  )
+
   // The base column is the scenario that overrides nothing, so it goes through
   // exactly the same evaluation as the others. No second code path, no chance of
   // the comparison disagreeing with the panels above.
-  const baseResult = useMemo(() => evaluateScenario(base, {}, context), [base, context])
+  const baseResult = useMemo(
+    () => withPortfolio(evaluateScenario(base, {}, context)),
+    [base, context, withPortfolio],
+  )
   const columns = useMemo(
     () =>
       scenarios.map((scenario) => ({
         scenario,
-        result: evaluateScenario(base, scenario.overrides, context),
+        result: withPortfolio(evaluateScenario(base, scenario.overrides, context)),
       })),
-    [scenarios, base, context],
+    [scenarios, base, context, withPortfolio],
   )
 
   const rows = METRICS.filter((metric) => isLet || !metric.rentalOnly)

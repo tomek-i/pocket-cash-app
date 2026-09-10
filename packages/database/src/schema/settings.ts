@@ -35,6 +35,8 @@ export interface PropertySettings {
   defaultManagementRate?: number
   /** Decimal annual rates shown in the sensitivity table. */
   sensitivityRates?: number[]
+  /** Decimal. The portfolio LVR a lender is assumed to go to. */
+  maxPortfolioLvr?: number
 }
 
 /** The app's persisted settings blob — one row for this single-user install. */

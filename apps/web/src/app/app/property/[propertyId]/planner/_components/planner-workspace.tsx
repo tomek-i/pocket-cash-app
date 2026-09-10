@@ -7,6 +7,8 @@ import { buildCostContext, type PropertyCostRow, summariseUpfrontCosts } from '.
 import { toMinorUnits } from '../../../_lib/format'
 import { type AvailableFundRow, summariseFunds } from '../../../_lib/funds'
 import { buildOngoing, type RecurringCostRow } from '../../../_lib/ongoing'
+import type { PortfolioInput } from '../../../_lib/portfolio'
+import { portfolioImpact } from '../../../_lib/portfolio-impact'
 import type { ScenarioBase, ScenarioContext } from '../../../_lib/scenarios'
 import { usePlannerInputs } from '../../../_lib/use-planner-inputs'
 import type { PlannerProperty } from '../actions'
@@ -15,6 +17,7 @@ import { DetailsPanel } from './details-panel'
 import { FinancingPanel } from './financing-panel'
 import { OngoingCosts } from './ongoing-costs'
 import { PlannerDashboard } from './planner-dashboard'
+import { PortfolioImpactPanel } from './portfolio-impact'
 import { PurchaseLock } from './purchase-lock'
 import { RateSensitivity } from './rate-sensitivity'
 import { RentalIncome } from './rental-income'
@@ -50,7 +53,9 @@ export function PlannerWorkspace({
   isLet,
   funds,
   scenarios,
+  others,
   sensitivityRates,
+  maxPortfolioLvr,
   locale,
   purchaseLock,
 }: {
@@ -68,8 +73,12 @@ export function PlannerWorkspace({
   isLet: boolean
   funds: AvailableFundRow[]
   scenarios: PropertyScenario[]
+  /** Every other property, for the portfolio impact panel. */
+  others: PortfolioInput[]
   /** Decimal annual rates for the sensitivity table, from the calculation defaults. */
   sensitivityRates: number[]
+  /** Decimal. The portfolio LVR a lender is assumed to go to. */
+  maxPortfolioLvr: number
   locale: string
   /** Locking is not part of the live model, but PurchaseLock is a client
    * component, so it is rendered here rather than passed down as an element. */
@@ -172,6 +181,30 @@ export function PlannerWorkspace({
     [costRows, schedules, scheduleIdByGroup, recurringRows, rental, isLet, funds],
   )
 
+  const impact = useMemo(
+    () =>
+      portfolioImpact({
+        others,
+        purchase: {
+          // Measured at what it will be worth, not at what is being paid. Paying
+          // over the valuation is a real loss and has to show as one.
+          value: inputs.result.propertyValue,
+          debt: financing.loanAmount,
+          ownershipShare: property.ownershipShare,
+        },
+        cashRequired: costSummary.cashRequired,
+        maxLvr: maxPortfolioLvr,
+      }),
+    [
+      others,
+      inputs.result.propertyValue,
+      financing.loanAmount,
+      property.ownershipShare,
+      costSummary.cashRequired,
+      maxPortfolioLvr,
+    ],
+  )
+
   return (
     <>
       <PlannerDashboard
@@ -187,6 +220,21 @@ export function PlannerWorkspace({
         availableCash={fundsSummary.total}
         remainingCash={fundsSummary.position.remaining}
       />
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Portfolio impact</h2>
+          <p className="text-muted-foreground text-sm">
+            Where this purchase leaves everything else you own. Only properties you already hold
+            count as Now, so a purchase you are still thinking about is not counted on both sides.
+          </p>
+        </div>
+        <PortfolioImpactPanel
+          impact={impact}
+          currency={property.currency}
+          maxLvr={maxPortfolioLvr}
+        />
+      </section>
 
       <section className="flex flex-col gap-3">
         <div>
@@ -316,6 +364,7 @@ export function PlannerWorkspace({
           locale={locale}
           isLet={isLet}
           baseRent={rental?.rent ?? null}
+          portfolio={{ others, ownershipShare: property.ownershipShare, maxLvr: maxPortfolioLvr }}
         />
       </section>
     </>

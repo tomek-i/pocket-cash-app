@@ -336,6 +336,7 @@ export async function getPropertySettings(): Promise<Required<PropertySettings>>
     defaultManagementRate:
       stored.defaultManagementRate ?? DEFAULT_CALCULATION_SETTINGS.defaultManagementRate,
     sensitivityRates: stored.sensitivityRates ?? DEFAULT_CALCULATION_SETTINGS.sensitivityRates,
+    maxPortfolioLvr: stored.maxPortfolioLvr ?? DEFAULT_CALCULATION_SETTINGS.maxPortfolioLvr,
   }
 }
 
@@ -350,6 +351,7 @@ export async function savePropertySettings(
     defaultVacancyRate: String(formData.get('defaultVacancyRate') ?? ''),
     defaultManagementRate: String(formData.get('defaultManagementRate') ?? ''),
     sensitivityRates: String(formData.get('sensitivityRates') ?? ''),
+    maxPortfolioLvr: String(formData.get('maxPortfolioLvr') ?? ''),
   }
   const parsed = propertyCalculationSettingsSchema.safeParse(values)
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors, values }

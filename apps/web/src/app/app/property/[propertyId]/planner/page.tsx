@@ -8,6 +8,7 @@ import { resolveNumberLocale } from '@/lib/number-format'
 import { getPropertySettings } from '../../../settings/property/actions'
 import { snapshotToEngineSchedule, toEngineSchedule } from '../../_lib/costs'
 import { PROPERTY_STATUS_LABELS, PROPERTY_USE_LABELS } from '../../_lib/labels'
+import { toPortfolioInput } from '../../_lib/portfolio'
 import { PlannerWorkspace } from './_components/planner-workspace'
 import { getPlannerData } from './actions'
 import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
@@ -26,7 +27,8 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
   const data = await getPlannerData(propertyId)
   if (!data) notFound()
 
-  const { property, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } = data
+  const { property, others, jurisdiction, jurisdictions, transferTaxLabel, transferTaxSchedule } =
+    data
 
   const [
     costRows,
@@ -106,7 +108,9 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
         isLet={isLet}
         funds={funds}
         scenarios={scenarios}
+        others={others.map(toPortfolioInput)}
         sensitivityRates={propertySettings.sensitivityRates}
+        maxPortfolioLvr={propertySettings.maxPortfolioLvr}
         locale={locale}
         purchaseLock={{
           scheduleId: transferTaxSchedule?.id ?? null,
