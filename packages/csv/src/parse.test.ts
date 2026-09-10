@@ -143,3 +143,52 @@ describe('parseCsv — missing mapped column', () => {
     expect(result.problems).toContain('column "Amount" not found in header')
   })
 })
+
+/**
+ * The regression for #41.
+ *
+ * A debit/credit mapping pointed at the date and the narrative used to report
+ * every row as ok, having read `12/08/2026` as 12082026 and
+ * `WOOLWORTHS 3021 NEWTOWN` as 3021 and subtracted one from the other. It has to
+ * fail the rows instead.
+ */
+describe('parseCsv — debit/credit columns pointed at the wrong columns', () => {
+  const csv = [
+    'Transaction Date,Narrative,Debit Amount,Credit Amount,Balance',
+    '12/08/2026,WOOLWORTHS 3021 NEWTOWN,84.50,,9127.65',
+    '11/08/2026,SALARY ACME PTY LTD,,3300.00,9212.15',
+  ].join('\n')
+
+  function run(debitColumn: string, creditColumn: string) {
+    return parseCsv(
+      csv,
+      parseConfig({
+        minorUnitDigits: 2,
+        currency: 'AUD',
+        file: { delimiter: ',', hasHeader: true },
+        fields: {
+          date: { column: 'Transaction Date', format: 'DD/MM/YYYY' },
+          description: { columns: ['Narrative'] },
+          amount: { mode: 'split', debitColumn, creditColumn, decimal: '.', thousands: ',' },
+        },
+      }),
+    )
+  }
+
+  it('fails every row rather than inventing amounts', () => {
+    const result = run('Transaction Date', 'Narrative')
+
+    expect(result.okCount).toBe(0)
+    expect(result.errorCount).toBe(2)
+    expect(result.rows[0]?.errors).toContain('missing or invalid amount')
+  })
+
+  it('reads the right columns correctly', () => {
+    const result = run('Debit Amount', 'Credit Amount')
+
+    expect(result.okCount).toBe(2)
+    expect(result.errorCount).toBe(0)
+    expect(result.rows[0]?.transaction?.amount).toBe(-8450)
+    expect(result.rows[1]?.transaction?.amount).toBe(330000)
+  })
+})

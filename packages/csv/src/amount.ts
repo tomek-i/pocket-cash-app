@@ -13,9 +13,28 @@ export interface NumberFormat {
 }
 
 /**
- * Parse a single numeric cell to signed minor units. Sign comes from a `-` or,
- * when `parensNegative`, from wrapping parentheses. Returns `null` for an empty
- * or non-numeric cell (caller decides whether that's an error).
+ * Decoration that can surround a number without changing it. `\s` covers the
+ * non-breaking space banks like to emit, `\p{Sc}` covers currency symbols in any
+ * script, and the apostrophe is grouping in some locales.
+ */
+const DECORATION = /[\s']|\p{Sc}/gu
+
+/**
+ * What has to be left once the decoration and the separators are gone.
+ *
+ * This is the guard. The parser used to strip every character that was not a
+ * digit or a dot, which meant a date or a narrative was not rejected but
+ * *salvaged*: `12/08/2026` became `12082026` and `WOOLWORTHS 3021 NEWTOWN`
+ * became `3021`, and the result passed validation. In a finance app, importing a
+ * confident wrong number is worse than refusing the row.
+ */
+const NUMERIC = /^(?:\d+(?:\.\d*)?|\.\d+)$/
+
+/**
+ * Parse a single numeric cell to signed minor units. Sign comes from a leading
+ * or trailing `-`, or when `parensNegative`, from wrapping parentheses. Returns
+ * `null` for an empty cell and for anything that is not a well-formed number
+ * (caller decides whether that's an error).
  */
 export function parseSignedDecimal(raw: string, fmt: NumberFormat): number | null {
   let s = raw.trim()
@@ -31,11 +50,22 @@ export function parseSignedDecimal(raw: string, fmt: NumberFormat): number | nul
   if (fmt.thousands) s = s.split(fmt.thousands).join('')
   if (fmt.decimal !== '.') s = s.split(fmt.decimal).join('.')
 
-  if (s.includes('-')) negative = true
+  s = s.replace(DECORATION, '')
 
-  // Keep only digits and decimal points.
-  s = s.replace(/[^0-9.]/g, '')
-  if (s === '' || s === '.') return null
+  // Any comma still here cannot be the decimal point, since that was normalised
+  // above, so it can only be grouping. Tolerating it keeps "1,234.50" working
+  // under the default mapping, which does not configure a thousands separator.
+  s = s.split(',').join('')
+
+  // A sign is allowed at either end and nowhere else. `1-2` is not a number.
+  if (s.startsWith('-') || s.endsWith('-')) {
+    negative = true
+    s = s.startsWith('-') ? s.slice(1) : s.slice(0, -1)
+  } else if (s.startsWith('+') || s.endsWith('+')) {
+    s = s.startsWith('+') ? s.slice(1) : s.slice(0, -1)
+  }
+
+  if (!NUMERIC.test(s)) return null
 
   const lastDot = s.lastIndexOf('.')
   const intStr = (lastDot === -1 ? s : s.slice(0, lastDot)).replace(/\./g, '')
@@ -63,20 +93,28 @@ export function parseSingleAmount(
 
 /**
  * Separate debit/credit columns → one signed value: `credit - debit` (credit is
- * money in, debit money out). Magnitudes are taken absolute. Returns `null` only
- * when BOTH cells are empty/non-numeric; an empty side counts as 0.
+ * money in, debit money out). Magnitudes are taken absolute.
+ *
+ * Empty and unparseable are different things here, which they were not before.
+ * A blank side is a real 0, because a statement puts the amount in one column
+ * and leaves the other empty. A side that holds something which is *not* a
+ * number is a mapping pointed at the wrong column, and treating that as 0 is how
+ * a date minus a narrative used to import as an amount. Both cases return
+ * `null`, so the caller raises a row error.
  */
 export function parseSplitAmount(
   debitRaw: string,
   creditRaw: string,
   fmt: NumberFormat & { flipSign: boolean },
 ): number | null {
-  const debit = parseSignedDecimal(debitRaw, fmt)
-  const credit = parseSignedDecimal(creditRaw, fmt)
-  if (debit === null && credit === null) return null
+  const debitBlank = debitRaw.trim() === ''
+  const creditBlank = creditRaw.trim() === ''
+  if (debitBlank && creditBlank) return null
 
-  const out = Math.abs(debit ?? 0)
-  const inn = Math.abs(credit ?? 0)
-  const amount = inn - out
+  const debit = debitBlank ? 0 : parseSignedDecimal(debitRaw, fmt)
+  const credit = creditBlank ? 0 : parseSignedDecimal(creditRaw, fmt)
+  if (debit === null || credit === null) return null
+
+  const amount = Math.abs(credit) - Math.abs(debit)
   return fmt.flipSign ? -amount : amount
 }

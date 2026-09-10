@@ -57,6 +57,38 @@ function guess(headers: string[], re: RegExp): string {
   return headers.find((h) => re.test(h)) ?? ''
 }
 
+/**
+ * Header patterns, in one place so the initial mapping and the amount mode
+ * switch cannot disagree about which column is which.
+ *
+ * Note that a column called "Debit Amount" matches `AMOUNT_RE` too, which is why
+ * a file with separate columns has to be recognised as such before the single
+ * column reading is tried.
+ */
+const AMOUNT_RE = /amount|value|betrag/i
+const DEBIT_RE = /debit|withdraw|paid out|money out/i
+const CREDIT_RE = /credit|deposit|paid in|money in/i
+
+/**
+ * How the amount is carried in this file.
+ *
+ * A file with both a debit and a credit column is mapped as split from the
+ * start. Reading it as a single column picks whichever of the two matches
+ * "amount" first and leaves every row from the other column without a value, so
+ * half the statement fails to import.
+ */
+function detectAmount(headers: string[]) {
+  const base = { decimal: '.', thousands: '', flipSign: false }
+  const debitColumn = guess(headers, DEBIT_RE)
+  const creditColumn = guess(headers, CREDIT_RE)
+
+  if (debitColumn && creditColumn && debitColumn !== creditColumn) {
+    return { mode: 'split', debitColumn, creditColumn, ...base }
+  }
+
+  return { mode: 'single', column: guess(headers, AMOUNT_RE) || '', parensNegative: false, ...base }
+}
+
 function buildDefaultConfig(
   headers: string[],
   delimiter: string,
@@ -79,14 +111,7 @@ function buildDefaultConfig(
             '',
         ],
       },
-      amount: {
-        mode: 'single',
-        column: guess(headers, /amount|value|betrag/i) || '',
-        decimal: '.',
-        thousands: '',
-        parensNegative: false,
-        flipSign: false,
-      },
+      amount: detectAmount(headers),
       ...(guess(headers, /reference|ref|txn|transaction id/i)
         ? { reference: { column: guess(headers, /reference|ref|txn|transaction id/i) } }
         : {}),
@@ -884,6 +909,16 @@ function FilePicker({
   )
 }
 
+/**
+ * Switch between a single signed amount column and separate debit/credit ones.
+ *
+ * Columns are detected from the headers the same way the initial mapping does,
+ * and an undetected column is left **unset** rather than falling back to the
+ * first columns in the file. Defaulting to columns 1 and 2 silently pointed the
+ * amount at the date and the narrative, which is how #41 imported a date minus a
+ * shop name as an amount. An empty column is a row error, which is the right
+ * outcome: it asks the user to choose rather than choosing wrongly for them.
+ */
 function setAmountMode(
   update: (fn: (d: CsvMappingConfig) => void) => void,
   headers: string[],
@@ -898,8 +933,13 @@ function setAmountMode(
     }
     d.fields.amount =
       mode === 'single'
-        ? { mode: 'single', column: headers[0] ?? '', parensNegative: false, ...base }
-        : { mode: 'split', debitColumn: headers[0] ?? '', creditColumn: headers[1] ?? '', ...base }
+        ? { mode: 'single', column: guess(headers, AMOUNT_RE), parensNegative: false, ...base }
+        : {
+            mode: 'split',
+            debitColumn: guess(headers, DEBIT_RE),
+            creditColumn: guess(headers, CREDIT_RE),
+            ...base,
+          }
   })
 }
 
