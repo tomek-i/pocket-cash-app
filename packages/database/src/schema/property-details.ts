@@ -11,7 +11,6 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
-import { accounts } from './accounts'
 import { costTypes } from './cost-types'
 import { properties } from './properties'
 import { loanTypeEnum, recurrenceFrequencyEnum } from './property-enums'
@@ -38,8 +37,6 @@ export const propertyLoans = pgTable(
     offsetBalance: bigint('offset_balance', { mode: 'number' }).notNull().default(0),
     /** Minor units. Establishment and other one-off financing costs. */
     otherFinancingCosts: bigint('other_financing_costs', { mode: 'number' }).notNull().default(0),
-    /** Optional link to the real mortgage account in Pocket Cash. */
-    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -182,12 +179,14 @@ export const propertyScenarios = pgTable(
 )
 
 /**
- * Money the user can put towards a purchase.
+ * Money the user can put towards a purchase, entered by hand.
  *
- * A row is either linked to an existing Pocket Cash account, in which case the
- * balance is read from there, or a plain manual amount. Linking rather than
- * copying is the point: the planner should not become a second place where
- * account balances are typed in and drift.
+ * Deliberately NOT read from Pocket Cash accounts. A balance in this app is
+ * `openingBalance + sum(imported transactions)`, so it is only as current as the
+ * last CSV import, silently low when `openingBalance` was never set, and absent
+ * for an account that was never imported. That is fine for reviewing spending
+ * and wrong for "do I have the deposit", where a confidently wrong number is
+ * worse than an empty field. The planner is a modelling tool and stands alone.
  *
  * `propertyId` is null for funds available to any purchase, which is the usual
  * case, and set when the user earmarks money for one property.
@@ -198,16 +197,12 @@ export const propertyAvailableFunds = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     propertyId: uuid('property_id').references(() => properties.id, { onDelete: 'cascade' }),
     label: text('label').notNull(),
-    /** Minor units. Used when `accountId` is null. */
+    /** Minor units. */
     amount: bigint('amount', { mode: 'number' }).notNull().default(0),
-    accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
     enabled: boolean('enabled').notNull().default(true),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    index('property_available_funds_property_idx').on(table.propertyId),
-    index('property_available_funds_account_idx').on(table.accountId),
-  ],
+  (table) => [index('property_available_funds_property_idx').on(table.propertyId)],
 )
