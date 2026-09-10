@@ -167,6 +167,15 @@ export function FinancingPanel({
             </p>
           ) : null}
 
+          {financing.deposit < 0 ? (
+            <p className="text-muted-foreground text-sm">
+              The loan is {formatMoney(Math.abs(financing.deposit), currency)} more than the
+              purchase price, which is why the deposit reads as a negative. That is normal on a
+              property owned for a while: the price is what was paid, and the loan has been drawn
+              against what it is worth now.
+            </p>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-4">
             <PlainField
               label="Interest rate (%)"
