@@ -15,6 +15,7 @@ function property(overrides: Partial<PortfolioInput> = {}): PortfolioInput {
     marketValue: 1_000_000_00,
     purchasePrice: 900_000_00,
     loanBalance: 800_000_00,
+    offsetBalance: 0,
     ...overrides,
   }
 }
@@ -105,6 +106,7 @@ describe('portfolioTotals', () => {
         marketValue: null,
         purchasePrice: 800_000_00,
         loanBalance: 640_000_00,
+        offsetBalance: 0,
       }),
     ])
     expect(totals.value).toBe(1_800_000_00)
@@ -145,5 +147,46 @@ describe('ownedProperties', () => {
 
     expect(portfolioTotals(properties).debt).toBe(1_490_000_00)
     expect(portfolioTotals(ownedProperties(properties)).debt).toBe(640_000_00)
+  })
+})
+
+describe('an offset account', () => {
+  it('leaves the debt, equity and LVR a lender reads alone', () => {
+    // You still owe the full loan, and a lender still measures against it, so
+    // netting the offset into these would overstate what is left to borrow.
+    const position = propertyPosition(
+      property({ marketValue: 1_000_000_00, loanBalance: 800_000_00, offsetBalance: 120_000_00 }),
+    )
+    expect(position.debt).toBe(800_000_00)
+    expect(position.equity).toBe(200_000_00)
+    expect(position.lvr).toBeCloseTo(0.8, 10)
+  })
+
+  it('reports where the offset actually leaves you, separately', () => {
+    const position = propertyPosition(
+      property({ marketValue: 1_000_000_00, loanBalance: 800_000_00, offsetBalance: 120_000_00 }),
+    )
+    expect(position.offset).toBe(120_000_00)
+    expect(position.netDebt).toBe(680_000_00)
+    expect(position.netEquity).toBe(320_000_00)
+  })
+
+  it('sums the offsets across several loans', () => {
+    const position = propertyPosition({
+      ...property({ loanBalance: 0, offsetBalance: 0 }),
+      loanBalance: 500_000_00,
+      offsetBalance: 30_000_00 + 20_000_00,
+    })
+    expect(position.netDebt).toBe(450_000_00)
+  })
+
+  it('clears the debt rather than going negative when the offset is larger', () => {
+    // The surplus is just cash, so it belongs in the position, not in a negative
+    // debt that would then subtract twice.
+    const position = propertyPosition(
+      property({ marketValue: 1_000_000_00, loanBalance: 100_000_00, offsetBalance: 150_000_00 }),
+    )
+    expect(position.netDebt).toBe(0)
+    expect(position.netEquity).toBe(1_050_000_00)
   })
 })

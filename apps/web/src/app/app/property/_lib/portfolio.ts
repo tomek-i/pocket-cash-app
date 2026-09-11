@@ -27,6 +27,8 @@ export interface PortfolioInput {
   purchasePrice: number
   /** Minor units. Total borrowed against it. */
   loanBalance: number
+  /** Minor units. Cash sitting in accounts offsetting those loans. */
+  offsetBalance: number
 }
 
 export interface PropertyPosition {
@@ -45,6 +47,25 @@ export interface PropertyPosition {
   shareOfDebt: number
   /** Minor units, the user's share of the equity. */
   shareOfEquity: number
+  /** Minor units, before the ownership share is applied. */
+  offset: number
+  /**
+   * Minor units. What would still be owed if the offset were used to pay the
+   * loan down. Never negative: an offset larger than the loan clears it and the
+   * rest is simply cash, which lands in `netEquity` instead.
+   */
+  netDebt: number
+  /**
+   * Minor units. The position including the offset cash, `value - debt + offset`.
+   *
+   * Kept separate from `equity` rather than replacing it, because the two answer
+   * different questions. `equity` is how much of the property is yours, which is
+   * what a lender measures and what LVR is built on. `netEquity` is where you
+   * actually stand, which is what you want when deciding whether you are ahead.
+   * Quietly merging them would also double count: the same cash can sit in
+   * available funds or an account balance.
+   */
+  netEquity: number
   /** Excluded from portfolio totals. */
   countsTowardsTotals: boolean
 }
@@ -56,7 +77,7 @@ export interface PropertyPosition {
  * one, and the debt against it is all of them.
  */
 export function toPortfolioInput(
-  property: Property & { loans: { loanAmount: number }[] },
+  property: Property & { loans: { loanAmount: number; offsetBalance: number }[] },
 ): PortfolioInput {
   return {
     id: property.id,
@@ -65,6 +86,7 @@ export function toPortfolioInput(
     marketValue: property.marketValue,
     purchasePrice: property.purchasePrice,
     loanBalance: property.loans.reduce((total, loan) => total + loan.loanAmount, 0),
+    offsetBalance: property.loans.reduce((total, loan) => total + loan.offsetBalance, 0),
   }
 }
 
@@ -83,6 +105,7 @@ export function propertyValue(property: PortfolioInput): number {
 export function propertyPosition(property: PortfolioInput): PropertyPosition {
   const value = propertyValue(property)
   const debt = property.loanBalance
+  const offset = property.offsetBalance
   const share = property.ownershipShare
 
   return {
@@ -90,7 +113,13 @@ export function propertyPosition(property: PortfolioInput): PropertyPosition {
     value,
     debt,
     equity: equity(value, debt),
+    // On the full loan, deliberately. An offset does not reduce what is owed, and
+    // a lender reads this ratio gross, so netting it here would overstate what is
+    // left to borrow everywhere borrowing headroom is worked out.
     lvr: lvr(debt, value),
+    offset,
+    netDebt: Math.max(0, debt - offset),
+    netEquity: equity(value, debt) + offset,
     shareOfValue: Math.round(value * share),
     shareOfDebt: Math.round(debt * share),
     shareOfEquity: Math.round(equity(value, debt) * share),

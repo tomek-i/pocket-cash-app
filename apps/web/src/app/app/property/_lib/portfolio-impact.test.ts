@@ -16,6 +16,7 @@ const harbourView: PortfolioInput = {
   marketValue: 1_400_000_00,
   purchasePrice: 1_200_000_00,
   loanBalance: 640_000_00,
+  offsetBalance: 0,
 }
 
 function input(overrides: Partial<PortfolioImpactInput> = {}): PortfolioImpactInput {
@@ -85,6 +86,7 @@ describe('portfolioImpact', () => {
       marketValue: 900_000_00,
       purchasePrice: 900_000_00,
       loanBalance: 700_000_00,
+      offsetBalance: 0,
     }
 
     const impact = portfolioImpact(input({ others: [harbourView, alsoPlanned] }))

@@ -104,6 +104,8 @@ export function portfolioImpact(input: PortfolioImpactInput): PortfolioImpact {
     marketValue: input.purchase.value,
     purchasePrice: input.purchase.value,
     loanBalance: input.purchase.debt,
+    // A purchase being modelled has no offset account yet.
+    offsetBalance: 0,
   }
 
   const now = portfolioTotals(owned)
