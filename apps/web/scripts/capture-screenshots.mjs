@@ -78,7 +78,14 @@ async function shot(page, name) {
 async function seedDemoData(page) {
   console.log('· seeding demo data')
   await page.goto(`${BASE_URL}/app/settings`, { waitUntil: 'domcontentloaded', timeout: 180_000 })
+  // Wait for hydration before clicking, for the same reason the CSV picker below
+  // does: the trigger is real markup from the first paint, but its handler is
+  // attached during hydration. Click too early and the dialog never opens, and
+  // this fails further down on a missing confirm box, which points at the wrong
+  // thing entirely.
+  await page.waitForLoadState('networkidle').catch(() => {})
   await page.getByRole('button', { name: 'Reset & load demo' }).click()
+  await page.getByRole('alertdialog').waitFor({ state: 'visible' })
   await page.getByRole('textbox', { name: /confirm/i }).fill('DEMO')
   // The dialog's confirm button shares its label with the trigger behind it.
   await page.getByRole('alertdialog').getByRole('button', { name: 'Reset & load demo' }).click()
