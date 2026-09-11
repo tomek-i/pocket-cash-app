@@ -68,6 +68,7 @@ function readValues(formData: FormData): Record<string, string> {
     'loanAmount',
     'interestRate',
     'loanTermYears',
+    'offsetBalance',
     'loanType',
   ]
   return Object.fromEntries(fields.map((field) => [field, String(formData.get(field) ?? '')]))
@@ -126,11 +127,15 @@ function hasLoanInput(parsed: {
   loanAmount?: number
   interestRate?: number
   loanTermYears?: number
+  offsetBalance?: number
 }): boolean {
   return (
     parsed.loanAmount !== undefined ||
     parsed.interestRate !== undefined ||
-    parsed.loanTermYears !== undefined
+    parsed.loanTermYears !== undefined ||
+    // An offset with no loan is not much of a loan, but silently dropping a
+    // figure the user typed is worse than creating a row they can correct.
+    parsed.offsetBalance !== undefined
   )
 }
 
@@ -197,6 +202,7 @@ export async function createProperty(_prev: ActionState, formData: FormData): Pr
         annualRate: data.interestRate ?? 0,
         termYears: data.loanTermYears ?? 30,
         loanType: data.loanType ?? 'principalAndInterest',
+        offsetBalance: data.offsetBalance ?? 0,
       })
     }
 
@@ -249,6 +255,8 @@ export async function updateProperty(_prev: ActionState, formData: FormData): Pr
           annualRate: data.interestRate ?? 0,
           termYears: data.loanTermYears ?? existing.termYears,
           loanType: data.loanType ?? existing.loanType,
+          // Cleared means zero, the same reading the loan amount above takes.
+          offsetBalance: data.offsetBalance ?? 0,
           updatedAt: new Date(),
         })
         .where(eq(propertyLoans.id, existing.id))
@@ -259,6 +267,7 @@ export async function updateProperty(_prev: ActionState, formData: FormData): Pr
         annualRate: data.interestRate ?? 0,
         termYears: data.loanTermYears ?? 30,
         loanType: data.loanType ?? 'principalAndInterest',
+        offsetBalance: data.offsetBalance ?? 0,
       })
     }
   })

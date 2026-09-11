@@ -109,6 +109,8 @@ export const propertyFieldsSchema = z.object({
   interestRate: optionalPercentDecimal(100, 'Enter a rate like 6.25'),
   loanTermYears: optionalYears,
   loanType: z.enum(LOAN_TYPES).optional(),
+  /** Money in an account offsetting this loan. Reduces interest, not the debt. */
+  offsetBalance: optionalMoneyMinor,
 })
 
 export const createPropertySchema = propertyFieldsSchema

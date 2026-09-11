@@ -309,12 +309,25 @@ export function PropertyDialog({
                     error={state?.errors?.loanTermYears}
                   />
                 </div>
-                <LabelledSelect
-                  label="Loan type"
-                  name="loanType"
-                  defaultValue={state?.values?.loanType ?? loan?.loanType ?? 'principalAndInterest'}
-                  options={LOAN_TYPES.map((value) => ({ value, label: LOAN_TYPE_LABELS[value] }))}
-                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <LabelledSelect
+                    label="Loan type"
+                    name="loanType"
+                    defaultValue={
+                      state?.values?.loanType ?? loan?.loanType ?? 'principalAndInterest'
+                    }
+                    options={LOAN_TYPES.map((value) => ({ value, label: LOAN_TYPE_LABELS[value] }))}
+                  />
+                  <MoneyInput
+                    label="Offset balance"
+                    name="offsetBalance"
+                    help="Money sitting in an account linked to this loan. It does not reduce what you owe, so equity and LVR are unchanged, but interest is charged on the loan less this, which lowers the repayment."
+                    locale={locale}
+                    defaultValue={state?.values?.offsetBalance ?? toMajorInput(loan?.offsetBalance)}
+                    placeholder={25000}
+                    error={state?.errors?.offsetBalance}
+                  />
+                </div>
               </div>
             </div>
           </ScrollArea>
