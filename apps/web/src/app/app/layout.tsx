@@ -1,6 +1,4 @@
 import { getAppSettings } from '@repo/database'
-import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui'
-import { ChevronsUpDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { prepareEmbeddedDatabase } from '@/lib/workspace'
 import { AppSidebar } from './_components/app-sidebar'
@@ -37,23 +35,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     )
   }
 
-  // const footer = (
-  //   <div className="flex items-center gap-3 rounded-lg px-1 py-1">
-  //     <Avatar className="size-8 rounded-lg">
-  //       <AvatarImage src="/logo.png" alt="" className="object-contain" />
-  //       <AvatarFallback className="rounded-lg bg-primary/15 text-primary">PC</AvatarFallback>
-  //     </Avatar>
-  //     <div className="min-w-0 flex-1 leading-tight">
-  //       <p className="truncate font-medium text-sm">Local workspace</p>
-  //       <p className="truncate text-muted-foreground text-xs">Single-user</p>
-  //     </div>
-  //     <ChevronsUpDown className="size-4 text-muted-foreground" />
-  //   </div>
-  // )
-
   return (
     <div className="flex min-h-screen">
-      <AppSidebar footer={null} />
+      <AppSidebar />
       <main className="min-w-0 flex-1">{dbStatus.ok ? children : <DatabaseRecovery />}</main>
     </div>
   )
