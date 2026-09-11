@@ -54,6 +54,29 @@ function IfYouBuy({ impact, currency }: { impact: PortfolioImpact; currency: str
   )
 }
 
+/**
+ * Where an offset account leaves you.
+ *
+ * Shown alongside the headline figures rather than replacing them, because the
+ * two answer different questions. You still owe the full loan, and a lender
+ * still reads LVR on it, so those stay as they are. What the offset changes is
+ * where you actually stand, and that was not visible anywhere on this card.
+ */
+function WithOffset({ position, currency }: { position: PropertyPosition; currency: string }) {
+  return (
+    <div className="border-t pt-3">
+      <p className="text-muted-foreground text-xs">With the offset account</p>
+      <p className="mt-1 text-sm">
+        <span className="tabular-nums">Offset {formatMoney(position.offset, currency)}</span>
+        <span className="text-muted-foreground"> · </span>
+        <span className="tabular-nums">Debt {formatMoney(position.netDebt, currency)}</span>
+        <span className="text-muted-foreground"> · </span>
+        <span className="tabular-nums">Equity {formatMoney(position.netEquity, currency)}</span>
+      </p>
+    </div>
+  )
+}
+
 export function PropertyCard({
   property,
   position,
@@ -128,6 +151,10 @@ export function PropertyCard({
           />
           <Stat label="LVR" value={position.value > 0 ? formatPercent(position.lvr) : '—'} />
         </div>
+
+        {position.offset > 0 ? (
+          <WithOffset position={position} currency={property.currency} />
+        ) : null}
 
         {impact ? <IfYouBuy impact={impact} currency={property.currency} /> : null}
       </CardContent>
