@@ -545,3 +545,33 @@ describe('a database this app did not build', () => {
     }
   }, 60_000)
 })
+
+describe('the draft status', () => {
+  /**
+   * `ALTER TYPE ... ADD VALUE` is the one migration shape with a Postgres caveat:
+   * the new value cannot be used in the transaction that adds it. Drizzle runs
+   * every pending migration in a single transaction, so this proves the value is
+   * genuinely usable afterwards rather than just declared.
+   */
+  it('can be written and read back after the migration', async () => {
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../drizzle/migrations')
+    const client = new PGlite('memory://', { extensions: { pg_trgm, fuzzystrmatch } })
+    try {
+      await client.waitReady
+      const db = drizzle(client, { schema })
+      await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
+      await db.execute(sql`CREATE EXTENSION IF NOT EXISTS fuzzystrmatch`)
+      await migrate(db, { migrationsFolder })
+
+      await db.execute(sql`
+        INSERT INTO properties (name, country, currency, status)
+        VALUES ('Untitled plan', 'AU', 'AUD', 'draft')
+      `)
+
+      const rows = await db.execute(sql`SELECT name, status FROM properties WHERE status = 'draft'`)
+      expect(rows.rows).toEqual([{ name: 'Untitled plan', status: 'draft' }])
+    } finally {
+      await client.close()
+    }
+  }, 60_000)
+})

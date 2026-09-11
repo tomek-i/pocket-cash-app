@@ -10,6 +10,7 @@ import { snapshotToEngineSchedule, toEngineSchedule } from '../../_lib/costs'
 import { PROPERTY_STATUS_LABELS, PROPERTY_USE_LABELS } from '../../_lib/labels'
 import { toPortfolioInput } from '../../_lib/portfolio'
 import { PlannerWorkspace } from './_components/planner-workspace'
+import { PromotePlan } from './_components/promote-plan'
 import { getPlannerData } from './actions'
 import { listAvailableCostTypes, listPropertyCosts } from './costs-actions'
 import { listAvailableFunds } from './funds-actions'
@@ -91,7 +92,17 @@ export default async function PlannerPage({ params }: { params: Promise<{ proper
             <Badge variant="outline">{PROPERTY_USE_LABELS[property.intendedUse]}</Badge>
             {jurisdiction ? <Badge variant="outline">{jurisdiction.name}</Badge> : null}
           </div>
+          {property.status === 'draft' ? (
+            <p className="mt-1 max-w-prose text-muted-foreground text-sm">
+              A plan with no particular property behind it. Everything here is saved as you go, so
+              you can come back and adjust it.
+            </p>
+          ) : null}
         </div>
+
+        {property.status === 'draft' ? (
+          <PromotePlan propertyId={property.id} name={property.name} />
+        ) : null}
       </div>
 
       <PlannerWorkspace

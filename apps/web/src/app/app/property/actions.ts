@@ -6,6 +6,7 @@ import {
   costTypes,
   db,
   eq,
+  getAppSettings,
   isNull,
   type Jurisdiction,
   jurisdictions,
@@ -16,11 +17,19 @@ import {
   propertyLoans,
   TRANSFER_TAX_GROUP,
 } from '@repo/database'
-import { createPropertySchema, propertyIdSchema, updatePropertySchema } from '@repo/validation'
+import {
+  createPropertySchema,
+  promotePlanSchema,
+  propertyIdSchema,
+  updatePropertySchema,
+} from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
 
 export type PropertyWithLoans = Property & { loans: PropertyLoan[] }
+
+/** The transaction handle, typed the way `_lib/seed.ts` does it. */
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 /** Every property, newest activity first, with the loans held against it. */
 export async function listProperties(): Promise<PropertyWithLoans[]> {
@@ -125,6 +134,36 @@ function hasLoanInput(parsed: {
   )
 }
 
+/**
+ * Start the purchase tax switched on.
+ *
+ * A new property used to open with no costs at all, so the planner's headline
+ * "cash required" was the deposit alone: on a $1.1m NSW purchase that is short by
+ * roughly $47,000 of transfer duty, presented as a settled figure. Silence is the
+ * wrong default for a charge that is not optional in the jurisdiction.
+ *
+ * Only the transfer tax. Inspections, conveyancing and the rest genuinely vary by
+ * purchase, and guessing at those would trade one wrong total for another. It is
+ * an ordinary cost row, so it can be disabled or overridden like any other.
+ */
+async function seedTransferTax(tx: Tx, propertyId: string): Promise<void> {
+  const [transferTax] = await tx
+    .select({ id: costTypes.id })
+    .from(costTypes)
+    .where(
+      and(
+        eq(costTypes.rateScheduleGroup, TRANSFER_TAX_GROUP),
+        eq(costTypes.enabled, true),
+        isNull(costTypes.deletedAt),
+      ),
+    )
+    .limit(1)
+
+  if (transferTax) {
+    await tx.insert(propertyCosts).values({ propertyId, costTypeId: transferTax.id })
+  }
+}
+
 export async function createProperty(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const values = readValues(formData)
   const parsed = createPropertySchema.safeParse(values)
@@ -161,36 +200,7 @@ export async function createProperty(_prev: ActionState, formData: FormData): Pr
       })
     }
 
-    // Start the purchase tax switched on.
-    //
-    // A new property used to open with no costs at all, so the planner's headline
-    // "cash required" was the deposit alone: on a $1.1m NSW purchase that is short
-    // by roughly $47,000 of transfer duty, presented as a settled figure. Silence
-    // is the wrong default for a charge that is not optional in the jurisdiction.
-    //
-    // Only the transfer tax. Inspections, conveyancing and the rest genuinely vary
-    // by purchase, and guessing at those would trade one wrong total for another.
-    // It is an ordinary cost row, so it can be disabled or overridden like any
-    // other.
-    if (created) {
-      const [transferTax] = await tx
-        .select({ id: costTypes.id })
-        .from(costTypes)
-        .where(
-          and(
-            eq(costTypes.rateScheduleGroup, TRANSFER_TAX_GROUP),
-            eq(costTypes.enabled, true),
-            isNull(costTypes.deletedAt),
-          ),
-        )
-        .limit(1)
-
-      if (transferTax) {
-        await tx
-          .insert(propertyCosts)
-          .values({ propertyId: created.id, costTypeId: transferTax.id })
-      }
-    }
+    if (created) await seedTransferTax(tx, created.id)
   })
 
   revalidatePath('/app/property')
@@ -254,6 +264,71 @@ export async function updateProperty(_prev: ActionState, formData: FormData): Pr
   })
 
   revalidatePath('/app/property')
+  return { ok: true }
+}
+
+/**
+ * Start a plan: the planner with no particular house behind it.
+ *
+ * Sometimes you want to push prices and deposits around to see where you would
+ * stand, before any specific property exists. A plan is a property in `draft`,
+ * not a separate kind of object, because everything the planner persists (the
+ * loan, the costs, the scenarios) already hangs off a property row and would
+ * otherwise need a parallel structure of its own.
+ *
+ * No dialog: a plan you have to fill in a form to start is a plan you do not
+ * start. Name and address come later, if it ever becomes a real purchase.
+ */
+export async function startPlan(): Promise<string> {
+  const [jurisdiction] = await db
+    .select()
+    .from(jurisdictions)
+    .where(eq(jurisdictions.enabled, true))
+    .orderBy(asc(jurisdictions.name))
+    .limit(1)
+
+  const settings = await getAppSettings()
+
+  const id = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(properties)
+      .values({
+        name: 'Untitled plan',
+        status: 'draft',
+        jurisdictionKey: jurisdiction?.key ?? null,
+        country: jurisdiction?.country ?? 'AU',
+        region: jurisdiction?.region ?? null,
+        currency: jurisdiction?.currency ?? settings.defaultCurrency ?? 'AUD',
+      })
+      .returning({ id: properties.id })
+
+    if (!created) throw new Error('Could not start a plan')
+    await seedTransferTax(tx, created.id)
+    return created.id
+  })
+
+  revalidatePath('/app/property')
+  return id
+}
+
+/**
+ * Promote a plan to a property you are actually pursuing.
+ *
+ * Only the status moves. Everything modelled on the plan (the loan, the costs,
+ * the scenarios) is already attached to this row, so nothing is copied and
+ * nothing is lost.
+ */
+export async function promotePlan(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const values = { id: String(formData.get('id') ?? ''), name: String(formData.get('name') ?? '') }
+  const parsed = promotePlanSchema.safeParse(values)
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors, values }
+
+  await db
+    .update(properties)
+    .set({ name: parsed.data.name, status: 'planned', updatedAt: new Date() })
+    .where(eq(properties.id, parsed.data.id))
+
+  revalidatePath('/app/property', 'layout')
   return { ok: true }
 }
 

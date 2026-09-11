@@ -432,3 +432,15 @@ export const updateScenarioSchema = scenarioSchema.extend({ id: z.string().uuid(
 export const scenarioIdSchema = z.object({ id: z.string().uuid() })
 
 export type ScenarioFormInput = z.infer<typeof scenarioSchema>
+
+/**
+ * Promoting a plan to a property you are actually pursuing.
+ *
+ * Only the name is asked for. Everything else was either modelled on the plan
+ * already or can be filled in on the property afterwards, and the moment a plan
+ * becomes a real house is exactly the moment it earns a name.
+ */
+export const promotePlanSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1, 'Give it a name').max(120),
+})
