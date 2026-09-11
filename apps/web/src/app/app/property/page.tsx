@@ -7,6 +7,7 @@ import { Empty } from '../_components/empty'
 import { getPropertySettings } from '../settings/property/actions'
 import { PropertyCard } from './_components/property-card'
 import { PropertyDialog } from './_components/property-dialog'
+import { StartPlanButton } from './_components/start-plan-button'
 import { formatPercent } from './_lib/format'
 import { PROPERTY_STATUS_LABELS, portfolioLvrHelp } from './_lib/labels'
 import {
@@ -78,7 +79,7 @@ export default async function PropertyPage() {
   )
 
   // Existing first, then what is being planned, then history.
-  const groups = (['existing', 'planned', 'sold'] as const)
+  const groups = (['existing', 'planned', 'draft', 'sold'] as const)
     .map((status) => ({
       status,
       items: properties.filter((property) => property.status === status),
@@ -94,27 +95,38 @@ export default async function PropertyPage() {
             What you own, what you are planning to buy, and where you stand.
           </p>
         </div>
-        <PropertyDialog
-          jurisdictions={jurisdictions}
-          defaultCurrency={defaultCurrency}
-          locale={locale}
-          trigger={addButton}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <StartPlanButton />
+          <PropertyDialog
+            jurisdictions={jurisdictions}
+            defaultCurrency={defaultCurrency}
+            locale={locale}
+            trigger={addButton}
+          />
+        </div>
       </div>
 
       {properties.length === 0 ? (
         <Card>
           <Empty
             icon={Building2}
-            title="No properties yet"
-            description="Add a property you already own, or one you are thinking about buying."
+            title="Nothing here yet"
+            description="Add a property you own or are buying, or start a plan to see what you could afford before you have one in mind."
             action={
-              <PropertyDialog
-                jurisdictions={jurisdictions}
-                defaultCurrency={defaultCurrency}
-                locale={locale}
-                trigger={addButton}
-              />
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <StartPlanButton variant="default" />
+                <PropertyDialog
+                  jurisdictions={jurisdictions}
+                  defaultCurrency={defaultCurrency}
+                  locale={locale}
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Plus className="size-4" />
+                      Add property
+                    </Button>
+                  }
+                />
+              </div>
             }
           />
         </Card>

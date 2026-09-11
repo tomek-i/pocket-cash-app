@@ -30,6 +30,7 @@ export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
   existing: 'Existing',
   planned: 'Planned purchase',
   sold: 'Sold',
+  draft: 'Plan',
 }
 
 export const LOAN_TYPE_LABELS: Record<LoanType, string> = {

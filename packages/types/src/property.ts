@@ -25,7 +25,13 @@ export const PROPERTY_USES = ['ownerOccupied', 'investment', 'mixed'] as const
 export type PropertyUse = (typeof PROPERTY_USES)[number]
 
 /** Where the property sits in the user's portfolio. */
-export const PROPERTY_STATUSES = ['existing', 'planned', 'sold'] as const
+/**
+ * `draft` is a plan with no particular house behind it: somewhere to push prices
+ * and deposits around and come back to later. Appended rather than inserted,
+ * because adding an enum value at the end is the one form of the migration that
+ * needs no reordering of what is already stored.
+ */
+export const PROPERTY_STATUSES = ['existing', 'planned', 'sold', 'draft'] as const
 
 export type PropertyStatus = (typeof PROPERTY_STATUSES)[number]
 

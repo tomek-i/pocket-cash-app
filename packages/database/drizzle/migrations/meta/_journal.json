@@ -36,6 +36,13 @@
       "when": 1789019738524,
       "tag": "0004_drop_old_value_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789101880588,
+      "tag": "0005_draft_property_status",
+      "breakpoints": true
     }
   ]
 }
