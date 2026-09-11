@@ -2,7 +2,7 @@
 
 import type { CostType, Jurisdiction, PropertyRental, PropertyScenario } from '@repo/database'
 import type { RateSchedule } from '@repo/property'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { buildCostContext, type PropertyCostRow, summariseUpfrontCosts } from '../../../_lib/costs'
 import { toMinorUnits } from '../../../_lib/format'
 import { type AvailableFundRow, summariseFunds } from '../../../_lib/funds'
@@ -124,9 +124,30 @@ export function PlannerWorkspace({
     [costRows, schedules, scheduleIdByGroup, financing, inputs.result],
   )
 
+  /**
+   * Fund amounts being typed, before they are saved.
+   *
+   * The section's own copy promises that everything recalculates as you type, and
+   * it did not: each row held its amount in local state while the totals were
+   * derived from the saved rows, so typing your real savings in left the red
+   * shortfall sitting exactly where it was. Holding the drafts here, next to the
+   * other working inputs, is what makes the promise true. Nothing is written until
+   * the row is saved.
+   */
+  const [fundDrafts, setFundDrafts] = useState<Record<string, number>>({})
+
+  const liveFunds = useMemo(
+    () =>
+      funds.map((fund) => {
+        const draft = fundDrafts[fund.id]
+        return draft === undefined ? fund : { ...fund, amount: draft }
+      }),
+    [funds, fundDrafts],
+  )
+
   const fundsSummary = useMemo(
-    () => summariseFunds(funds, costSummary.cashRequired),
-    [funds, costSummary.cashRequired],
+    () => summariseFunds(liveFunds, costSummary.cashRequired),
+    [liveFunds, costSummary.cashRequired],
   )
 
   // Year 1 interest and principal, not an average: interest falls over the life
@@ -172,9 +193,9 @@ export function PlannerWorkspace({
       scheduleIdByGroup,
       recurringRows,
       rental: isLet && rental ? rental : null,
-      funds,
+      funds: liveFunds,
     }),
-    [costRows, schedules, scheduleIdByGroup, recurringRows, rental, isLet, funds],
+    [costRows, schedules, scheduleIdByGroup, recurringRows, rental, isLet, liveFunds],
   )
 
   const impact = useMemo(
@@ -216,6 +237,8 @@ export function PlannerWorkspace({
         availableCash={fundsSummary.total}
         remainingCash={fundsSummary.position.remaining}
         maxPortfolioLvr={maxPortfolioLvr}
+        fundsUnknown={fundsSummary.unknown}
+        uncalculatedCosts={costSummary.errors.length}
       />
 
       <section className="flex flex-col gap-3">
@@ -252,7 +275,13 @@ export function PlannerWorkspace({
             so do the costs below.
           </p>
         </div>
-        <FinancingPanel property={property} locale={locale} inputs={inputs} />
+        <FinancingPanel
+          property={property}
+          locale={locale}
+          inputs={inputs}
+          cashRequired={costSummary.cashRequired}
+          cashLeftOver={fundsSummary.unknown ? null : fundsSummary.position.remaining}
+        />
       </section>
 
       <section className="flex flex-col gap-3">
@@ -290,7 +319,19 @@ export function PlannerWorkspace({
             type, so a shortfall is something to push against rather than just read.
           </p>
         </div>
-        <AvailableFunds summary={fundsSummary} currency={property.currency} locale={locale} />
+        <AvailableFunds
+          summary={fundsSummary}
+          currency={property.currency}
+          locale={locale}
+          drafts={fundDrafts}
+          onDraftChange={(id, amount) => setFundDrafts((d) => ({ ...d, [id]: amount }))}
+          onDraftSaved={(id) =>
+            setFundDrafts((d) => {
+              const { [id]: _saved, ...rest } = d
+              return rest
+            })
+          }
+        />
       </section>
 
       <section className="flex flex-col gap-3">

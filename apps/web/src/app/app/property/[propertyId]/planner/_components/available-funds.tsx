@@ -5,7 +5,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useActionState, useEffect, useState } from 'react'
 import { formatMoney } from '@/lib/money'
 import { MoneyInput } from '../../../_components/money-input'
-import { toMajorInput } from '../../../_lib/format'
+import { toMajorInput, toMinorUnits } from '../../../_lib/format'
 import type { AvailableFundRow, FundsSummary } from '../../../_lib/funds'
 import {
   addAvailableFund,
@@ -18,16 +18,29 @@ function FundRow({
   fund,
   currency,
   locale,
+  dirty,
+  onDraftChange,
+  onDraftSaved,
 }: {
   fund: AvailableFundRow
   currency: string
   locale: string
+  /** True while this row's typed amount differs from the saved one. */
+  dirty: boolean
+  onDraftChange: (id: string, amount: number) => void
+  onDraftSaved: (id: string) => void
 }) {
-  const [, updateAction, updating] = useActionState(updateAvailableFund, null)
+  const [state, updateAction, updating] = useActionState(updateAvailableFund, null)
   const [, toggleAction] = useActionState(toggleAvailableFund, null)
   const [, removeAction] = useActionState(removeAvailableFund, null)
   const [label, setLabel] = useState(fund.label)
   const [amount, setAmount] = useState(toMajorInput(fund.amount))
+
+  // Once the row is saved the server figure is authoritative again, so the draft
+  // has to go: leaving it would pin the totals to a value nothing is storing.
+  useEffect(() => {
+    if (state?.ok) onDraftSaved(fund.id)
+  }, [state, fund.id, onDraftSaved])
 
   return (
     <div
@@ -69,12 +82,20 @@ function FundRow({
             hideLabel
             locale={locale}
             value={amount}
-            onCanonicalChange={setAmount}
+            onCanonicalChange={(next) => {
+              setAmount(next)
+              onDraftChange(fund.id, toMinorUnits(next))
+            }}
             id={`fund-amount-${fund.id}`}
           />
         </div>
-        <Button type="submit" size="sm" variant="secondary" disabled={updating}>
-          {updating ? 'Saving…' : 'Save'}
+        <Button
+          type="submit"
+          size="sm"
+          variant={dirty ? 'default' : 'secondary'}
+          disabled={updating}
+        >
+          {updating ? 'Saving…' : dirty ? 'Save' : 'Saved'}
         </Button>
       </form>
 
@@ -136,10 +157,17 @@ export function AvailableFunds({
   summary,
   currency,
   locale,
+  drafts,
+  onDraftChange,
+  onDraftSaved,
 }: {
   summary: FundsSummary
   currency: string
   locale: string
+  /** Amounts being typed, keyed by fund id. Held by the workspace so totals move. */
+  drafts: Record<string, number>
+  onDraftChange: (id: string, amount: number) => void
+  onDraftSaved: (id: string) => void
 }) {
   const { position } = summary
 
@@ -154,7 +182,15 @@ export function AvailableFunds({
         ) : (
           <div className="flex flex-col border-t">
             {summary.funds.map((fund) => (
-              <FundRow key={fund.id} fund={fund} currency={currency} locale={locale} />
+              <FundRow
+                key={fund.id}
+                fund={fund}
+                currency={currency}
+                locale={locale}
+                dirty={drafts[fund.id] !== undefined}
+                onDraftChange={onDraftChange}
+                onDraftSaved={onDraftSaved}
+              />
             ))}
           </div>
         )}
@@ -171,15 +207,24 @@ export function AvailableFunds({
             <dd className="tabular-nums">-{formatMoney(position.cashRequired, currency)}</dd>
           </div>
           <div className="flex justify-between border-t pt-2 font-semibold">
-            <dt>{position.shortfall ? 'Short by' : 'Remaining'}</dt>
-            <dd className={position.shortfall ? 'text-destructive tabular-nums' : 'tabular-nums'}>
-              {formatMoney(
-                position.shortfall ? Math.abs(position.remaining) : position.remaining,
-                currency,
-              )}
-            </dd>
+            <dt>
+              {summary.unknown ? 'Cash left over' : position.shortfall ? 'Short by' : 'Remaining'}
+            </dt>
+            {summary.unknown ? (
+              // Nothing recorded is not the same as nothing available, and saying
+              // "short by the whole amount" before the user has typed anything
+              // spends the page's only alarm colour on an artefact.
+              <dd className="text-muted-foreground tabular-nums">Add a fund to see</dd>
+            ) : (
+              <dd className={position.shortfall ? 'text-destructive tabular-nums' : 'tabular-nums'}>
+                {formatMoney(
+                  position.shortfall ? Math.abs(position.remaining) : position.remaining,
+                  currency,
+                )}
+              </dd>
+            )}
           </div>
-          {position.shortfall ? (
+          {position.shortfall && !summary.unknown ? (
             <p className="text-muted-foreground text-xs">
               Lower the price or the deposit above and this updates as you go.
             </p>

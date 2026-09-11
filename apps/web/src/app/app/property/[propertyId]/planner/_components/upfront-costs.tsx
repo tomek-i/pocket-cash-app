@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui'
-import { Plus } from 'lucide-react'
+import { Plus, TriangleAlert } from 'lucide-react'
 import { useActionState, useEffect, useState } from 'react'
 import { formatMoney } from '@/lib/money'
 import type { UpfrontCostsSummary } from '../../../_lib/costs'
@@ -157,6 +157,32 @@ export function UpfrontCosts({
             alreadyAdded={alreadyAdded}
           />
         </div>
+
+        {/*
+          A cost the engine could not work out contributes zero to the total and
+          would otherwise say so nowhere: a jurisdiction with no rate schedule
+          showed an upfront total and a cash required that quietly omitted the
+          largest charge in the purchase, both presented as settled figures. The
+          engine already collects these; this reads them.
+        */}
+        {summary.errors.length > 0 ? (
+          <div className="flex gap-2.5 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <div>
+              <p className="font-medium">
+                {summary.errors.length} cost{summary.errors.length === 1 ? '' : 's'} could not be
+                calculated, and {summary.errors.length === 1 ? 'is' : 'are'} counted as zero
+              </p>
+              <ul className="mt-1 list-none space-y-0.5 p-0 text-muted-foreground">
+                {summary.errors.map((cost) => (
+                  <li key={cost.id}>
+                    {cost.name}: {cost.error?.message ?? 'unknown problem'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : null}
 
         {summary.costs.length === 0 ? (
           <p className="py-6 text-center text-muted-foreground text-sm">
