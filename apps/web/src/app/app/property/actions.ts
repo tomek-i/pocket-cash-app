@@ -1,15 +1,20 @@
 'use server'
 
 import {
+  and,
   asc,
+  costTypes,
   db,
   eq,
+  isNull,
   type Jurisdiction,
   jurisdictions,
   type Property,
   type PropertyLoan,
   properties,
+  propertyCosts,
   propertyLoans,
+  TRANSFER_TAX_GROUP,
 } from '@repo/database'
 import { createPropertySchema, propertyIdSchema, updatePropertySchema } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
@@ -154,6 +159,37 @@ export async function createProperty(_prev: ActionState, formData: FormData): Pr
         termYears: data.loanTermYears ?? 30,
         loanType: data.loanType ?? 'principalAndInterest',
       })
+    }
+
+    // Start the purchase tax switched on.
+    //
+    // A new property used to open with no costs at all, so the planner's headline
+    // "cash required" was the deposit alone: on a $1.1m NSW purchase that is short
+    // by roughly $47,000 of transfer duty, presented as a settled figure. Silence
+    // is the wrong default for a charge that is not optional in the jurisdiction.
+    //
+    // Only the transfer tax. Inspections, conveyancing and the rest genuinely vary
+    // by purchase, and guessing at those would trade one wrong total for another.
+    // It is an ordinary cost row, so it can be disabled or overridden like any
+    // other.
+    if (created) {
+      const [transferTax] = await tx
+        .select({ id: costTypes.id })
+        .from(costTypes)
+        .where(
+          and(
+            eq(costTypes.rateScheduleGroup, TRANSFER_TAX_GROUP),
+            eq(costTypes.enabled, true),
+            isNull(costTypes.deletedAt),
+          ),
+        )
+        .limit(1)
+
+      if (transferTax) {
+        await tx
+          .insert(propertyCosts)
+          .values({ propertyId: created.id, costTypeId: transferTax.id })
+      }
     }
   })
 

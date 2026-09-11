@@ -66,6 +66,8 @@ export function PlannerDashboard({
   availableCash,
   remainingCash,
   maxPortfolioLvr,
+  fundsUnknown,
+  uncalculatedCosts,
 }: {
   result: FinancingResult
   currency: string
@@ -85,6 +87,10 @@ export function PlannerDashboard({
   remainingCash: number
   /** Decimal. The configured LVR ceiling, quoted in the LVR explanation. */
   maxPortfolioLvr: number
+  /** True when no funds are recorded, so the cash position is unknown, not zero. */
+  fundsUnknown: boolean
+  /** How many costs the engine could not work out. They count as zero in the total. */
+  uncalculatedCosts: number
 }) {
   const { financing, amortisation } = result
 
@@ -92,9 +98,19 @@ export function PlannerDashboard({
     <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
       <Panel title="Purchase">
         <Metric label="Purchase price" value={formatMoney(financing.purchasePrice, currency)} />
-        <Metric label="Upfront costs" value={formatMoney(upfrontCosts, currency)} />
+        <Metric
+          label="Upfront costs"
+          value={formatMoney(upfrontCosts, currency)}
+          hint={uncalculatedCosts > 0 ? `${uncalculatedCosts} counted as zero` : undefined}
+          tone={uncalculatedCosts > 0 ? 'negative' : undefined}
+        />
         <Metric label="Deposit" value={formatMoney(financing.deposit, currency)} />
-        <Metric label="Cash required" value={formatMoney(cashRequired, currency)} />
+        <Metric
+          label="Cash required"
+          value={formatMoney(cashRequired, currency)}
+          hint={uncalculatedCosts > 0 ? 'Excludes a cost that failed' : undefined}
+          tone={uncalculatedCosts > 0 ? 'negative' : undefined}
+        />
       </Panel>
 
       <Panel title="Financing">
@@ -115,12 +131,18 @@ export function PlannerDashboard({
       </Panel>
 
       <Panel title="Cash position">
-        <Metric label="Available cash" value={formatMoney(availableCash, currency)} />
+        <Metric
+          label="Available cash"
+          value={fundsUnknown ? '—' : formatMoney(availableCash, currency)}
+          hint={fundsUnknown ? 'None recorded yet' : undefined}
+        />
         <Metric label="Cash required" value={formatMoney(cashRequired, currency)} />
+        {/* Unknown, not zero: an empty funds table would otherwise subtract to a
+            full shortfall and open every new property in red. */}
         <Metric
           label="Remaining"
-          value={formatMoney(remainingCash, currency)}
-          tone={remainingCash < 0 ? 'negative' : undefined}
+          value={fundsUnknown ? '—' : formatMoney(remainingCash, currency)}
+          tone={!fundsUnknown && remainingCash < 0 ? 'negative' : undefined}
         />
         <Metric
           label="Equity at settlement"

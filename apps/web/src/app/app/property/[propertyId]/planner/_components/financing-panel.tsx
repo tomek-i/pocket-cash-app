@@ -82,11 +82,24 @@ export function FinancingPanel({
   property,
   locale,
   inputs,
+  cashRequired,
+  cashLeftOver,
 }: {
   property: PlannerProperty
   locale: string
   /** Held by the workspace, so the upfront costs see the same numbers. */
   inputs: PlannerInputs
+  /**
+   * Minor units. Deposit plus upfront costs.
+   *
+   * Repeated here, a screen below where the dashboard already shows it, because
+   * this is where the deposit and the price are actually typed. Live recalculation
+   * is worth nothing if the figure it recalculates is scrolled off the top while
+   * you work the lever that changes it.
+   */
+  cashRequired: number
+  /** Minor units. Null when no funds are recorded, so the position is unknown. */
+  cashLeftOver: number | null
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     savePlannerFinancing,
@@ -239,6 +252,17 @@ export function FinancingPanel({
         </form>
 
         <div className="grid gap-4 border-t pt-5 sm:grid-cols-3 lg:grid-cols-4">
+          <Figure
+            label="Cash required"
+            value={formatMoney(cashRequired, currency)}
+            hint="Deposit plus upfront costs"
+          />
+          <Figure
+            label="Cash left over"
+            value={cashLeftOver === null ? '—' : formatMoney(cashLeftOver, currency)}
+            hint={cashLeftOver === null ? 'No funds recorded yet' : undefined}
+            tone={cashLeftOver !== null && cashLeftOver < 0 ? 'negative' : undefined}
+          />
           <Figure label="Loan amount" value={formatMoney(financing.loanAmount, currency)} />
           <Figure label="Deposit" value={formatMoney(financing.deposit, currency)} />
           <Figure
