@@ -178,7 +178,7 @@ export function AiSettings({ config, keyStatus }: { config: AiConfig; keyStatus:
 
       {/* Claude subscription via the local Claude Code CLI (desktop only). */}
       <div className={cn('grid gap-1.5', mode !== 'claude-cli' && 'hidden')}>
-        <Label htmlFor="claudeOauthToken">Claude Code OAuth token (optional)</Label>
+        <Label htmlFor="claudeOauthToken">Claude Code OAuth token</Label>
         <Input
           id="claudeOauthToken"
           name="claudeOauthToken"

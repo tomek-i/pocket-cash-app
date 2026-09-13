@@ -584,7 +584,8 @@ export function ImportWizard({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <ColumnField
-                label="Reference (optional)"
+                label="Reference"
+                description="Leave as None if your export doesn't have this column."
                 value={config.fields.reference?.column}
                 headers={headers}
                 hasHeader={hasHeader}
@@ -592,7 +593,8 @@ export function ImportWizard({
                 onChange={(r) => update((d) => setOptional(d, 'reference', r))}
               />
               <ColumnField
-                label="Balance (optional)"
+                label="Balance"
+                description="Leave as None if your export doesn't have this column."
                 value={config.fields.balance?.column}
                 headers={headers}
                 hasHeader={hasHeader}
@@ -783,10 +785,12 @@ function Separator() {
 
 function LabeledControl({
   label,
+  description,
   className,
   children,
 }: {
   label: string
+  description?: string
   className?: string
   children: ReactNode
 }) {
@@ -794,12 +798,14 @@ function LabeledControl({
     <div className={cn('grid gap-1.5', className)}>
       <Label className="text-muted-foreground text-xs">{label}</Label>
       {children}
+      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
     </div>
   )
 }
 
 function ColumnField({
   label,
+  description,
   value,
   headers,
   hasHeader,
@@ -807,6 +813,7 @@ function ColumnField({
   onChange,
 }: {
   label: string
+  description?: string
   value: ColumnRef | undefined
   headers: string[]
   hasHeader: boolean
@@ -822,7 +829,7 @@ function ColumnField({
     label: hasHeader ? h : `Column ${i + 1}`,
   }))
   return (
-    <LabeledControl label={label}>
+    <LabeledControl label={label} description={description}>
       <OptionSelect
         value={strValue}
         onValueChange={(v) => onChange(v === 'none' ? undefined : hasHeader ? v : Number(v))}

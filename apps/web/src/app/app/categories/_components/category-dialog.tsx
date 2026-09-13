@@ -49,14 +49,14 @@ export function CategoryDialog({
             error={state?.errors?.name}
           />
           <ColorField
-            label="Colour (optional)"
+            label="Colour"
             name="color"
             defaultValue={state?.values?.color ?? category?.color ?? ''}
             placeholder="#22c55e"
             error={state?.errors?.color}
           />
           <Field
-            label="Icon (optional)"
+            label="Icon"
             name="icon"
             defaultValue={state?.values?.icon ?? category?.icon ?? ''}
             placeholder="lucide icon name, e.g. shopping-cart"
