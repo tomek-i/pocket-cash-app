@@ -1,8 +1,10 @@
+import { getAppSettings } from '@repo/database'
 import { Card } from '@repo/ui'
 import { ArrowLeftRight } from 'lucide-react'
 import { parseAmountToMinor } from '@/lib/money'
 import { Empty } from '../_components/empty'
 import { Pagination } from '../_components/pagination'
+import { PAGE_SIZES, toPageSize } from '../_lib/pagination'
 import { listAllAccounts } from '../accounts/actions'
 import { listCategories } from '../categories/actions'
 import { listTags } from '../tags/actions'
@@ -21,9 +23,20 @@ interface SearchParams {
   min?: string
   max?: string
   page?: string
+  size?: string
 }
 
-function buildHref(params: SearchParams, page: number): string {
+/**
+ * Every link out of this page goes through here, so a filter, a page and a page
+ * size all survive each other. The size is only written when it differs from the
+ * user's own default, which keeps the common URL clean and means a shared link
+ * carries what the sharer was looking at.
+ */
+function buildHref(
+  params: SearchParams,
+  page: number,
+  size?: { value: number; isDefault: boolean },
+): string {
   const sp = new URLSearchParams()
   if (params.account) sp.set('account', params.account)
   if (params.q) sp.set('q', params.q)
@@ -33,6 +46,7 @@ function buildHref(params: SearchParams, page: number): string {
   if (params.min) sp.set('min', params.min)
   if (params.max) sp.set('max', params.max)
   if (page > 1) sp.set('page', String(page))
+  if (size && !size.isDefault) sp.set('size', String(size.value))
   const qs = sp.toString()
   return qs ? `/app/transactions?${qs}` : '/app/transactions'
 }
@@ -44,6 +58,11 @@ export default async function TransactionsPage({
 }) {
   const params = await searchParams
   const page = Math.max(1, Number(params.page) || 1)
+  const settings = await getAppSettings()
+  // The URL wins over the stored preference, so a shared link shows what the
+  // sharer saw rather than being rewritten by the reader's own default.
+  const preferred = toPageSize(settings.transactionsPageSize)
+  const pageSize = toPageSize(params.size, preferred)
 
   const amountMin = parseAmountToMinor(params.min)
   const amountMax = parseAmountToMinor(params.max)
@@ -58,6 +77,7 @@ export default async function TransactionsPage({
       amountMin,
       amountMax,
       page,
+      pageSize,
     }),
     listAllAccounts(),
     listCategories(),
@@ -68,6 +88,29 @@ export default async function TransactionsPage({
     id: a.id,
     label: `${a.bank.name} · ${a.name}`,
   }))
+
+  const size = { value: pageSize, isDefault: pageSize === preferred }
+  const hrefForPage = (p: number) => buildHref(params, p, size)
+  // Changing the page size returns to page one. Trying to keep the user's place
+  // across a resize sounds friendlier but lands them on a page whose contents
+  // they have never seen, which is worse than an honest reset.
+  const sizeOptions = PAGE_SIZES.map((next) => ({
+    size: next,
+    href: buildHref(params, 1, { value: next, isDefault: next === preferred }),
+  }))
+  const jump = {
+    action: '/app/transactions',
+    hidden: {
+      ...(params.account ? { account: params.account } : {}),
+      ...(params.q ? { q: params.q } : {}),
+      ...(params.from ? { from: params.from } : {}),
+      ...(params.to ? { to: params.to } : {}),
+      ...(params.category ? { category: params.category } : {}),
+      ...(params.min ? { min: params.min } : {}),
+      ...(params.max ? { max: params.max } : {}),
+      ...(pageSize === preferred ? {} : { size: String(pageSize) }),
+    },
+  }
 
   return (
     <div className="flex flex-col gap-6 px-5 py-5 lg:px-8 lg:py-7">
@@ -106,19 +149,31 @@ export default async function TransactionsPage({
           />
         </Card>
       ) : (
-        <TransactionsTable
-          rows={data.rows}
-          categories={categories}
-          tags={tags}
-          backHref={buildHref(params, page)}
-        />
+        <>
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            hrefFor={hrefForPage}
+            compact
+          />
+          <TransactionsTable
+            rows={data.rows}
+            categories={categories}
+            tags={tags}
+            backHref={hrefForPage(page)}
+          />
+        </>
       )}
 
       <Pagination
         page={data.page}
         pageSize={data.pageSize}
         total={data.total}
-        hrefFor={(p) => buildHref(params, p)}
+        hrefFor={hrefForPage}
+        sizeOptions={sizeOptions}
+        preferredSize={preferred}
+        jump={jump}
       />
     </div>
   )

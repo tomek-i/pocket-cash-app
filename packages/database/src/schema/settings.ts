@@ -53,6 +53,11 @@ export interface AppSettings {
   aiInsights?: Record<string, CachedInsight>
   /** Set once the first-run welcome tour is finished. Unset/false = show it. */
   onboardingCompleted?: boolean
+  /**
+   * Rows per page in the transactions and report lists. Stored so the choice
+   * survives a restart rather than being re-made on every visit.
+   */
+  transactionsPageSize?: number
   property?: PropertySettings
 }
 

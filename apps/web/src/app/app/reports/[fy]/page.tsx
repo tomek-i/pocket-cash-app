@@ -1,3 +1,4 @@
+import { getAppSettings } from '@repo/database'
 import { Card, CardContent, cn } from '@repo/ui'
 import { ArrowLeftRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -7,6 +8,7 @@ import { DonutChart } from '../../_components/charts'
 import { Empty } from '../../_components/empty'
 import { InsightCard } from '../../_components/insight-card'
 import { Pagination } from '../../_components/pagination'
+import { PAGE_SIZES, toPageSize } from '../../_lib/pagination'
 import { listAllAccounts } from '../../accounts/actions'
 import { listCategories } from '../../categories/actions'
 import { getDefaultCurrency, isAiConfigured } from '../../settings/actions'
@@ -39,6 +41,7 @@ interface SearchParams {
   min?: string
   max?: string
   page?: string
+  size?: string
 }
 
 /** Filename-safe slug of a tag name, e.g. "Tax 2025" → "tax-2025". */
@@ -51,7 +54,12 @@ function slug(name: string): string {
   )
 }
 
-function buildHref(fy: number, params: SearchParams, page: number): string {
+function buildHref(
+  fy: number,
+  params: SearchParams,
+  page: number,
+  size?: { value: number; isDefault: boolean },
+): string {
   const sp = new URLSearchParams()
   if (params.account) sp.set('account', params.account)
   if (params.tag) sp.set('tag', params.tag)
@@ -60,6 +68,7 @@ function buildHref(fy: number, params: SearchParams, page: number): string {
   if (params.min) sp.set('min', params.min)
   if (params.max) sp.set('max', params.max)
   if (page > 1) sp.set('page', String(page))
+  if (size && !size.isDefault) sp.set('size', String(size.value))
   const qs = sp.toString()
   return qs ? `/app/reports/${fy}?${qs}` : `/app/reports/${fy}`
 }
@@ -78,6 +87,28 @@ export default async function FyReportPage({
 
   const bounds = fyBounds(fy)
   const page = Math.max(1, Number(sp.page) || 1)
+  // The same stored preference the transactions list uses: one setting, so the
+  // two lists do not disagree about how many rows the user wants.
+  const preferred = toPageSize((await getAppSettings()).transactionsPageSize)
+  const pageSize = toPageSize(sp.size, preferred)
+  const size = { value: pageSize, isDefault: pageSize === preferred }
+  const hrefForPage = (p: number) => buildHref(fy, sp, p, size)
+  const sizeOptions = PAGE_SIZES.map((next) => ({
+    size: next,
+    href: buildHref(fy, sp, 1, { value: next, isDefault: next === preferred }),
+  }))
+  const jump = {
+    action: `/app/reports/${fy}`,
+    hidden: {
+      ...(sp.account ? { account: sp.account } : {}),
+      ...(sp.tag ? { tag: sp.tag } : {}),
+      ...(sp.q ? { q: sp.q } : {}),
+      ...(sp.category ? { category: sp.category } : {}),
+      ...(sp.min ? { min: sp.min } : {}),
+      ...(sp.max ? { max: sp.max } : {}),
+      ...(pageSize === preferred ? {} : { size: String(pageSize) }),
+    },
+  }
   const amountMin = parseAmountToMinor(sp.min)
   const amountMax = parseAmountToMinor(sp.max)
 
@@ -105,7 +136,7 @@ export default async function FyReportPage({
     insight,
     taxSummary,
   ] = await Promise.all([
-    listTransactions({ ...txnFilters, page }),
+    listTransactions({ ...txnFilters, page, pageSize }),
     listFinancialYears(),
     getFyCategoryBreakdowns(),
     listAllAccounts(),
@@ -258,19 +289,31 @@ export default async function FyReportPage({
           />
         </Card>
       ) : (
-        <TransactionsTable
-          rows={data.rows}
-          categories={categories}
-          tags={tags}
-          backHref={buildHref(fy, sp, page)}
-        />
+        <>
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            hrefFor={hrefForPage}
+            compact
+          />
+          <TransactionsTable
+            rows={data.rows}
+            categories={categories}
+            tags={tags}
+            backHref={hrefForPage(page)}
+          />
+        </>
       )}
 
       <Pagination
         page={data.page}
         pageSize={data.pageSize}
         total={data.total}
-        hrefFor={(p) => buildHref(fy, sp, p)}
+        hrefFor={hrefForPage}
+        sizeOptions={sizeOptions}
+        preferredSize={preferred}
+        jump={jump}
       />
     </div>
   )
