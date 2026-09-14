@@ -187,6 +187,15 @@
       .card h3 { font-size: 16.5px; font-weight: 600; letter-spacing: -0.01em; margin-top: 18px; }
       .card p { font-size: 13.5px; color: var(--text2); margin-top: 8px; }
       .card p strong { color: var(--text); font-weight: 600; }
+      /* Screenshots. The first shot leads at full width because the dashboard is
+         what the product looks like; the rest sit two-up beneath it. */
+      .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+      .shots figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
+      .shots figure.lead { grid-column: 1 / -1; }
+      .shots img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--border); }
+      .shots figcaption { font-size: 13.5px; color: var(--text2); padding: 14px 18px 16px; }
+      .shots figcaption b { color: var(--text); font-weight: 600; display: block; font-size: 14.5px; margin-bottom: 3px; letter-spacing: -0.01em; }
+
       .step-n { font-family: "Geist Mono", monospace; font-size: 40px; font-weight: 600; color: var(--step-num); line-height: 1; }
       .step h3 { margin-top: 16px; font-size: 15.5px; }
 
@@ -251,6 +260,8 @@
         .hero { grid-template-columns: 1fr; gap: 40px; padding: 56px 0 48px; }
         .mock { order: 2; }
         .grid3 { grid-template-columns: repeat(2, 1fr); }
+        .shots { grid-template-columns: repeat(2, 1fr); }
+        .shots figure.lead { grid-column: 1 / -1; }
         .grid4 { grid-template-columns: repeat(2, 1fr); }
         .privacy { grid-template-columns: 1fr; gap: 32px; }
         .nav-links { display: none; }
@@ -271,6 +282,7 @@
         <a class="brand" href="#top"><img src="./logo.png" alt="" /><span>Pocket Cash</span></a>
         <nav class="nav-links">
           <a href="#features">Features</a>
+          <a href="#screens">Screenshots</a>
           <a href="#how">How it works</a>
           <a href="#privacy">Privacy</a>
           <a href="#faq">FAQ</a>
@@ -386,6 +398,11 @@
             <p>Track recurring payments like rent and streaming, and see what's coming up on your dashboard.</p>
           </div>
           <div class="card">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-5h4v5"/></svg></div>
+            <h3>Property &amp; purchase planning</h3>
+            <p>Work out what a purchase really costs — stamp duty from live rate tables, every upfront cost, the cash you would need at settlement — then compare scenarios side by side and see what it does to your portfolio.</p>
+          </div>
+          <div class="card">
             <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg></div>
             <h3>AI, only if you want it</h3>
             <p>Optional auto-categorising, insights and a deduction scan. Run a local model with Ollama and stay <strong>100% offline</strong>, or use your own Anthropic key or Claude subscription. Off by default — nothing is sent anywhere until you turn it on.</p>
@@ -394,8 +411,78 @@
       </section>
     </div>
 
-    <!-- How it works -->
+    <!-- See it in action -->
     <div class="alt">
+      <div class="wrap">
+        <section id="screens">
+          <div class="sec-head">
+            <div class="eyebrow">See it in action</div>
+            <h2>Real screens, real data, running on one machine.</h2>
+          </div>
+          <div class="shots">
+            <figure class="lead">
+              <img
+                src="./shots/dashboard.png"
+                width="2160"
+                height="1350"
+                loading="lazy"
+                decoding="async"
+                alt="The Pocket Cash dashboard: total net worth across two accounts, a spending-by-category donut for the month, income and spending cards with month-on-month changes, recent activity and upcoming subscriptions."
+              />
+              <figcaption>
+                <b>Dashboard</b>
+                Net worth, where the month went, and what is due next.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="./shots/csv-mapping.png"
+                width="2160"
+                height="1350"
+                loading="lazy"
+                decoding="async"
+                alt="The CSV import screen: a preview of the uploaded statement above controls mapping each column to a field, with a live preview showing the parsed rows and how many are valid."
+              />
+              <figcaption>
+                <b>Map a bank's CSV once</b>
+                Columns, date format and sign conventions, saved as a reusable importer.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="./shots/transactions.png"
+                width="2160"
+                height="1350"
+                loading="lazy"
+                decoding="async"
+                alt="The transactions list: filters for account, category, search, amount range and dates above a table of transactions with inline category and tag controls on each row."
+              />
+              <figcaption>
+                <b>Every transaction, filtered</b>
+                Categorise and tag inline, without leaving the list.
+              </figcaption>
+            </figure>
+            <figure>
+              <img
+                src="./shots/fy-report.png"
+                width="2160"
+                height="1350"
+                loading="lazy"
+                decoding="async"
+                alt="A financial-year report: income, spending and net totals for the year, a spending-by-category breakdown, and a tax helper section with deductible totals and a CSV export."
+              />
+              <figcaption>
+                <b>Financial-year report</b>
+                Totals, category breakdown and a tax helper with CSV export.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div>
       <div class="wrap">
         <section id="how">
           <div class="sec-head">
@@ -590,6 +677,7 @@
           <a class="brand" href="#top"><img src="./logo.png" alt="" /><span>Pocket Cash</span></a>
           <nav class="foot-links">
             <a href="#features">Features</a>
+            <a href="#screens">Screenshots</a>
             <a href="#privacy">Privacy</a>
             <a href="#faq">FAQ</a>
             <a href="https://github.com/tomek-i/pocket-cash-app#readme">Docs</a>
