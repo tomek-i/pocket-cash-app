@@ -21,10 +21,9 @@ import {
 } from '@repo/database'
 import { createLogger } from '@repo/logger'
 import { revalidatePath } from 'next/cache'
+import { DEFAULT_PAGE_SIZE, toPageSize } from '../_lib/pagination'
 
 const log = createLogger('transactions')
-
-const TRANSACTIONS_PAGE_SIZE = 50
 
 export interface TransactionFilters {
   accountId?: string
@@ -40,6 +39,12 @@ export interface TransactionFilters {
   amountMin?: number
   amountMax?: number
   page?: number
+  /**
+   * Rows per page. Refused rather than clamped when it is not one of the offered
+   * sizes, because this reaches a SQL `limit` and a plausible looking number from
+   * the URL would otherwise fetch the whole table.
+   */
+  pageSize?: number
 }
 
 export interface TransactionRow {
@@ -102,7 +107,7 @@ function buildConditions(filters: TransactionFilters): SQL[] {
 
 export async function listTransactions(filters: TransactionFilters): Promise<TransactionPage> {
   const page = Math.max(1, filters.page ?? 1)
-  const pageSize = TRANSACTIONS_PAGE_SIZE
+  const pageSize = toPageSize(filters.pageSize, DEFAULT_PAGE_SIZE)
   const where = and(...buildConditions(filters))
 
   const [rows, [counted]] = await Promise.all([
