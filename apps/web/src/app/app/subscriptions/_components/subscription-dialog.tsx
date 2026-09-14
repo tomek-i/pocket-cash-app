@@ -113,7 +113,7 @@ export function SubscriptionDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="categoryId">Category (optional)</Label>
+            <Label htmlFor="categoryId">Category</Label>
             <OptionSelect
               id="categoryId"
               name="categoryId"
@@ -134,7 +134,7 @@ export function SubscriptionDialog({
           </div>
 
           <Field
-            label="Notes (optional)"
+            label="Notes"
             name="notes"
             defaultValue={state?.values?.notes ?? subscription?.notes ?? ''}
             placeholder="Family plan"

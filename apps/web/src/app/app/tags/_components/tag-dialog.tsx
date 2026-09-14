@@ -43,7 +43,7 @@ export function TagDialog({ tag, trigger }: { tag?: Tag; trigger: ReactElement }
             error={state?.errors?.name}
           />
           <ColorField
-            label="Colour (optional)"
+            label="Colour"
             name="color"
             defaultValue={state?.values?.color ?? tag?.color ?? ''}
             placeholder="#3b82f6"
