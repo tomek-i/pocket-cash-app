@@ -35,7 +35,7 @@ import {
  * categories plus common names a user might type; anything unknown falls back to
  * a neutral icon so a typo never breaks the layout.
  */
-const ICONS: Record<string, LucideIcon> = {
+export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'arrow-left-right': ArrowLeftRight,
   banknote: Banknote,
   car: Car,
@@ -76,6 +76,6 @@ export function CategoryIcon({
   color?: string | null
   className?: string
 }) {
-  const Icon = (name && ICONS[name]) || Shapes
+  const Icon = (name && CATEGORY_ICONS[name]) || Shapes
   return <Icon className={className} style={color ? { color } : undefined} aria-hidden />
 }
