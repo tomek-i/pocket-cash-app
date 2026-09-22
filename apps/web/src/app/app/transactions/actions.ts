@@ -353,18 +353,22 @@ export interface SimilarTransaction {
   amount: number
   currency: string
   similarity: number
+  category: Pick<Category, 'id' | 'name' | 'color' | 'icon'> | null
+  tags: Pick<Tag, 'id' | 'name' | 'color'>[]
 }
 
 /**
  * Fuzzy-find transactions whose description is similar to the given one, using
  * pg_trgm `similarity()`. `threshold` (0–1) is the minimum trigram similarity.
  * With `includeAmount`, results are additionally restricted to the same amount;
- * by default matching is on the description only.
+ * by default matching is on the description only. With `uncategorisedOnly`,
+ * rows that already have a category are left out (in SQL, since the list is capped).
  */
 export async function findSimilarTransactions(input: {
   id: string
   threshold: number
   includeAmount: boolean
+  uncategorisedOnly?: boolean
 }): Promise<SimilarTransaction[]> {
   const target = await db.query.transactions.findFirst({
     where: eq(transactions.id, input.id),
@@ -383,9 +387,10 @@ export async function findSimilarTransactions(input: {
 
   const conditions: SQL[] = [ne(transactions.id, input.id), sql`${sim} >= ${threshold}`]
   if (input.includeAmount) conditions.push(eq(transactions.amount, target.amount))
+  if (input.uncategorisedOnly) conditions.push(isNull(transactions.categoryId))
 
   try {
-    return await db
+    const rows = await db
       .select({
         id: transactions.id,
         date: transactions.date,
@@ -394,11 +399,51 @@ export async function findSimilarTransactions(input: {
         amount: transactions.amount,
         currency: transactions.currency,
         similarity: sim,
+        categoryId: categories.id,
+        categoryName: categories.name,
+        categoryColor: categories.color,
+        categoryIcon: categories.icon,
       })
       .from(transactions)
+      .leftJoin(categories, eq(transactions.categoryId, categories.id))
       .where(and(...conditions))
       .orderBy(desc(sim))
       .limit(200)
+
+    // Tags in a second query: joining them above would multiply the rows and
+    // break the limit. The ids are capped at 200, well under the bind limit.
+    const tagsByTransaction = new Map<string, SimilarTransaction['tags']>()
+    if (rows.length > 0) {
+      const tagRows = await db
+        .select({
+          transactionId: transactionTags.transactionId,
+          id: tags.id,
+          name: tags.name,
+          color: tags.color,
+        })
+        .from(transactionTags)
+        .innerJoin(tags, eq(transactionTags.tagId, tags.id))
+        .where(
+          inArray(
+            transactionTags.transactionId,
+            rows.map((r) => r.id),
+          ),
+        )
+      for (const { transactionId, ...tag } of tagRows) {
+        const list = tagsByTransaction.get(transactionId) ?? []
+        list.push(tag)
+        tagsByTransaction.set(transactionId, list)
+      }
+    }
+
+    return rows.map(({ categoryId, categoryName, categoryColor, categoryIcon, ...r }) => ({
+      ...r,
+      category:
+        categoryId && categoryName
+          ? { id: categoryId, name: categoryName, color: categoryColor, icon: categoryIcon }
+          : null,
+      tags: tagsByTransaction.get(r.id) ?? [],
+    }))
   } catch (error) {
     // Most likely the pg_trgm extension isn't installed yet (migration 0004).
     // Degrade to no results rather than crashing the detail page.
