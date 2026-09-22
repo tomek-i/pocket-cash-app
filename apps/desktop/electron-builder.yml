@@ -6,6 +6,16 @@
 # main.ts (PGLITE_DATA_DIR) and the export/import backup feature in the app.
 appId: app.pocketcash.desktop
 productName: Pocket Cash
+# Where the in-app updater (apps/desktop/src/updater.ts) looks for new releases.
+# electron-builder writes this into resources/app-update.yml, and emits the
+# latest.yml / latest-mac.yml files the updater reads next to the artifacts. The
+# release workflow uploads those to each GitHub Release. The build itself never
+# publishes (`--publish never`); CI attaches the files with `gh release upload`.
+publish:
+  provider: github
+  owner: tomek-i
+  repo: pocket-cash-app
+
 directories:
   # Emit artifacts to the repo-root release/ (paths here are relative to this
   # config, i.e. apps/desktop). Kept out of the app dir so the whole monorepo's
@@ -92,8 +102,8 @@ mac:
     - target: dmg
       arch:
         - arm64
-    # .zip is the no-ceremony alternative: unzip, run. Also the format a future
-    # auto-updater would need.
+    # .zip is the no-ceremony alternative: unzip, run. latest-mac.yml points at
+    # it, which is how the in-app update check sees new mac releases.
     - target: zip
       arch:
         - arm64

@@ -9,6 +9,10 @@ already here.
 > the user's machine against an embedded, in-process Postgres (PGlite). There is no
 > server to deploy and nothing phones home. Do not add auth, cloud services,
 > analytics or "call home" behaviour.
+>
+> The one exception is the desktop **update check** (`apps/desktop/src/updater.ts`).
+> It reads release metadata from GitHub Releases, sends no user data, and users can
+> turn it off in Settings. Do not piggyback anything else on it.
 
 ## Stack
 

@@ -19,7 +19,8 @@
     "lint": "biome check ."
   },
   "dependencies": {
-    "@repo/desktop-contract": "workspace:*"
+    "@repo/desktop-contract": "workspace:*",
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

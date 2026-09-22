@@ -30,6 +30,12 @@ export const IPC = {
   secretHas: 'secret:has',
   /** Whether the OS actually provides real encryption for the vault. */
   secretAvailable: 'secret:available',
+  /** Read the update settings and what this install can do with an update. */
+  updateStatus: 'update:status',
+  /** Turn the check-for-updates-on-launch setting on or off. */
+  updateSetAutoCheck: 'update:set-auto-check',
+  /** Check for an update right now (the Settings "Check now" button). */
+  updateCheck: 'update:check',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]
@@ -71,6 +77,36 @@ export interface DesktopSecrets {
   available(): Promise<boolean>
 }
 
+// ── Updates ──────────────────────────────────────────────────────────────────
+/**
+ * What the shell reports about updates. `canInstall` is true only for installs
+ * that can replace themselves (the Windows installer build, a Linux AppImage).
+ * Everything else (the portable exe, the zip, the unsigned macOS app) can only
+ * say a new version exists and link to the release page.
+ */
+export interface UpdateStatus {
+  /** Check GitHub for a newer release each time the app starts. On by default. */
+  autoCheck: boolean
+  currentVersion: string
+  /** False in dev and unpackaged builds, where there is nothing to update. */
+  supported: boolean
+  canInstall: boolean
+}
+
+export type UpdateCheckResult =
+  | { status: 'up-to-date' }
+  | { status: 'available'; version: string }
+  | { status: 'unsupported' }
+  | { status: 'error'; error: string }
+
+/** Update settings and the manual check, exposed by the desktop shell. */
+export interface DesktopUpdates {
+  status(): Promise<UpdateStatus>
+  setAutoCheck(enabled: boolean): Promise<UpdateStatus>
+  /** Check now. When an update is found the shell shows its own install prompt. */
+  check(): Promise<UpdateCheckResult>
+}
+
 /** Electron/Chromium/Node versions the shell reports to the UI. */
 export interface DesktopVersions {
   electron: string
@@ -95,4 +131,6 @@ export interface DesktopBridge {
   resetDatabase?: () => Promise<void> | void
   /** Secure secret vault; present only in desktop builds that expose it. */
   secrets?: DesktopSecrets
+  /** Update settings and manual check; present only in desktop builds that expose it. */
+  updates?: DesktopUpdates
 }

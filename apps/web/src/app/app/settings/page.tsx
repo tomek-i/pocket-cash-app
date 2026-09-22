@@ -8,6 +8,7 @@ import { DangerAction } from './_components/danger-action'
 import { DataBackup } from './_components/data-backup'
 import { GeneralSettings } from './_components/general-settings'
 import { ImportData } from './_components/import-data'
+import { UpdateSettings } from './_components/update-settings'
 import {
   clearAllTransactions,
   getAiConfig,
@@ -83,6 +84,8 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
       </section>
+
+      <UpdateSettings />
 
       <section className="flex flex-col gap-3">
         <div>

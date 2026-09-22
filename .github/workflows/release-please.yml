@@ -81,13 +81,15 @@ jobs:
         include:
           - os: windows-latest
             label: Windows installer
-            # NSIS installer, portable exe, and the unpacked zip.
-            artifacts: release/*.exe release/*.zip
+            # NSIS installer, portable exe, and the unpacked zip. latest.yml and
+            # the installer's .blockmap are what the in-app updater reads.
+            artifacts: release/*.exe release/*.zip release/*.blockmap release/latest.yml
           - os: macos-latest
             # macos-latest runners are Apple Silicon, so this builds arm64
             # natively for modern MacBooks.
             label: macOS app (Apple Silicon)
-            artifacts: release/*.dmg release/*.zip
+            # latest-mac.yml lets the in-app update check see new mac releases.
+            artifacts: release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml
     steps:
       # On dispatch, build from the branch the workflow was launched on (which has
       # any post-tag build fixes); on a release push, build the pushed commit.

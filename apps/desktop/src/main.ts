@@ -3,12 +3,13 @@ import { registerIpcHandlers } from './ipc'
 import { logStartup, setupFileLogging } from './logging'
 import { loadSecretsIntoEnv } from './secrets'
 import { startNextServer } from './server'
+import { initAutoUpdates } from './updater'
 import { createWindow, focusMainWindow, showFatalError } from './windows/app-window'
 import { createSplash } from './windows/splash'
 
 // Thin orchestrator. Each concern lives in its own module — logging, the embedded
-// Next server, DB-reset recovery, the splash + main windows, the IPC surface, and
-// the secret vault. This file just wires the app lifecycle together.
+// Next server, DB-reset recovery, the splash + main windows, the IPC surface, the
+// secret vault and the updater. This file just wires the app lifecycle together.
 const isDev = process.env.NODE_ENV === 'development'
 
 // One process per user, because one process per DATABASE: the app runs an embedded
@@ -65,6 +66,9 @@ function start(): void {
       showFatalError(error)
       return
     }
+
+    // Opt-out update check against GitHub Releases. No-op in dev.
+    initAutoUpdates()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

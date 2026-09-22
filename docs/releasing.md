@@ -37,6 +37,9 @@ There is no manual tagging and no manual changelog.
 | Windows (x64)                 | `PocketCash-Setup-<v>.exe` (installer), `PocketCash.exe` (portable), `PocketCash-<v>.zip` |
 | macOS (Apple Silicon / arm64) | `PocketCash-<v>-mac-arm64.dmg`, `PocketCash-<v>-mac-arm64.zip`                     |
 
+Each release also carries `latest.yml`, `latest-mac.yml` and `.blockmap` files.
+Users don't download these. The in-app updater reads them (see below).
+
 The two platforms build as a matrix with `fail-fast: false`, so a broken build on
 one still ships the other. Each job uploads only its own file globs, and the
 Windows and macOS zips have distinct names, so they do not clobber each other.
@@ -78,6 +81,27 @@ If the project ever gets an Apple Developer account, replace `identity: null` in
 `mac` block with the real identity, drop `hardenedRuntime: false` and
 `notarize: false`, remove the `afterPack` hook, and add the signing secrets to the
 workflow. The quarantine prompt then disappears entirely.
+
+## In-app updates
+
+On launch, the desktop app checks GitHub Releases for a newer version
+(`apps/desktop/src/updater.ts`, using `electron-updater`). Users can turn this off
+in **Settings → Updates**, which also has a **Check now** button. The setting is
+stored in `preferences.json` in the per-user data dir, not in the database.
+
+- **Windows installer** (`PocketCash-Setup-<v>.exe`): asks, downloads, then offers
+  to restart and install. If the user picks Later, the update installs on the next
+  quit.
+- **Windows portable exe and zip**: can't replace themselves, so the prompt opens
+  the release page instead.
+- **macOS**: macOS won't apply an update to an app that is only ad-hoc signed, so
+  the prompt opens the release page too. A real Developer ID would allow full
+  auto-install.
+
+The feed is the `publish` block in `apps/desktop/electron-builder.yml`. The
+updater needs `latest.yml` / `latest-mac.yml` on the **latest** release, so do not
+remove them from the upload globs in the workflow. Releases from before this
+feature don't have them, but only the newest release is ever checked.
 
 ## Notes
 
