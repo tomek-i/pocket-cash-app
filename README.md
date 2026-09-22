@@ -27,7 +27,9 @@ your own machine, with no account, no cloud and no telemetry.
 ## Why
 
 - **Your data never leaves your device.** The database sits in the app's own
-  folder. There is no sign-in, no server and no analytics. Nothing phones home.
+  folder. There is no sign-in, no server and no analytics. The only thing it
+  checks online is whether a new version is out, and you can turn that off in
+  Settings.
 - **Works with any bank.** If it exports CSV, it works. You map the columns once,
   and that mapping becomes a reusable importer for every future statement.
 - **Nothing gets double-counted.** Re-import the same file safely. Each account

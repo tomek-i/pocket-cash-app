@@ -4,6 +4,8 @@ import {
   type SecretDeleteResult,
   type SecretName,
   type SecretSetResult,
+  type UpdateCheckResult,
+  type UpdateStatus,
 } from '@repo/desktop-contract'
 import { contextBridge, ipcRenderer } from 'electron'
 
@@ -50,6 +52,16 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC.secretDelete, name),
     has: (name: SecretName): Promise<boolean> => ipcRenderer.invoke(IPC.secretHas, name),
     available: (): Promise<boolean> => ipcRenderer.invoke(IPC.secretAvailable),
+  },
+  /**
+   * The check-for-updates-on-launch setting and a manual check. When an update
+   * is found, the main process shows its own native prompt to install it.
+   */
+  updates: {
+    status: (): Promise<UpdateStatus> => ipcRenderer.invoke(IPC.updateStatus),
+    setAutoCheck: (enabled: boolean): Promise<UpdateStatus> =>
+      ipcRenderer.invoke(IPC.updateSetAutoCheck, enabled),
+    check: (): Promise<UpdateCheckResult> => ipcRenderer.invoke(IPC.updateCheck),
   },
 }
 

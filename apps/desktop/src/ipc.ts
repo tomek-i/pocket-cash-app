@@ -4,6 +4,7 @@ import { app, ipcMain, shell } from 'electron'
 import { requestDbReset } from './db-reset'
 import { logsDir } from './logging'
 import { deleteSecret, hasSecret, isSecretStorageAvailable, setSecret } from './secrets'
+import { checkForUpdates, getUpdateStatus, setAutoCheck } from './updater'
 
 /**
  * Register every main-process IPC handler. Channel names come from
@@ -63,4 +64,11 @@ export function registerIpcHandlers(): void {
     isSecretName(name) ? hasSecret(name) : false,
   )
   ipcMain.handle(IPC.secretAvailable, () => isSecretStorageAvailable())
+
+  // ── Updates (see updater.ts) ───────────────────────────────────────────────
+  ipcMain.handle(IPC.updateStatus, () => getUpdateStatus())
+  ipcMain.handle(IPC.updateSetAutoCheck, (_e, enabled: unknown) =>
+    typeof enabled === 'boolean' ? setAutoCheck(enabled) : getUpdateStatus(),
+  )
+  ipcMain.handle(IPC.updateCheck, () => checkForUpdates())
 }

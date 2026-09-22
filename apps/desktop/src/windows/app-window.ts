@@ -37,6 +37,11 @@ export function focusMainWindow(): void {
   win.focus()
 }
 
+/** The main app window, if it is open. Used to parent native dialogs. */
+export function getMainWindow(): BrowserWindow | null {
+  return mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
+}
+
 export function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,

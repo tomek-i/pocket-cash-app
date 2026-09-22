@@ -9,9 +9,12 @@ export {
   DESKTOP_CLAUDE_TOKEN,
   type DesktopBridge,
   type DesktopSecrets,
+  type DesktopUpdates,
   isSecretName,
   SECRET_NAMES,
   type SecretName,
+  type UpdateCheckResult,
+  type UpdateStatus,
 } from '@repo/desktop-contract'
 
 /**
