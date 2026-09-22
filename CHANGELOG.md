@@ -9,6 +9,16 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.6.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.5.0...v0.6.0) (2026-09-22)
+
+
+### Features
+
+* **categories:** add Investment and Insurance to the default set ([dc76902](https://github.com/tomek-i/pocket-cash-app/commit/dc76902f20c3c7afd1c187175622169a06e353d6))
+* **desktop:** check for updates on launch ([f67c220](https://github.com/tomek-i/pocket-cash-app/commit/f67c220f37e8459c126464cb08b0fa6e36546818))
+* **desktop:** check for updates on launch ([9997e99](https://github.com/tomek-i/pocket-cash-app/commit/9997e990dfed8e221f84bdbbb95f850c245fc170))
+* **site:** show real screenshots on the landing page ([0ba968d](https://github.com/tomek-i/pocket-cash-app/commit/0ba968d5efd8adf0efd9b97e0ac4137f677cfae4))
+
 ## [0.5.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.4.0...v0.5.0) (2026-09-14)
 
 
