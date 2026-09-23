@@ -9,6 +9,14 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.7.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.6.0...v0.7.0) (2026-09-23)
+
+
+### Features
+
+* **transactions:** show category and tags on similar transactions ([91daa0f](https://github.com/tomek-i/pocket-cash-app/commit/91daa0f85bd2c5af511715d1273e7525b111dc44))
+* **transactions:** show category and tags on similar transactions ([97b2e4e](https://github.com/tomek-i/pocket-cash-app/commit/97b2e4ea8ff9f44250a5eb7e80550c59b55ab7a8)), closes [#61](https://github.com/tomek-i/pocket-cash-app/issues/61)
+
 ## [0.6.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.5.0...v0.6.0) (2026-09-22)
 
 
