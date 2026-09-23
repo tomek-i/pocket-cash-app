@@ -20,7 +20,8 @@ import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { CategoryIcon } from '../../../categories/_components/category-icon'
-import { TagSwatch } from '../../../tags/_components/tag-pill'
+import { TagPill, TagSwatch } from '../../../tags/_components/tag-pill'
+import { overwritesCategory, type PendingCategory } from '../../_lib/category-change'
 import {
   bulkUpdateTransactions,
   findSimilarTransactions,
@@ -43,6 +44,7 @@ export function SimilarTransactions({
 }) {
   const [threshold, setThreshold] = useState(0.3)
   const [includeAmount, setIncludeAmount] = useState(false)
+  const [uncategorisedOnly, setUncategorisedOnly] = useState(false)
   const [results, setResults] = useState<SimilarTransaction[]>([])
   const [loaded, setLoaded] = useState(false)
   const [searching, startSearch] = useTransition()
@@ -52,7 +54,7 @@ export function SimilarTransactions({
 
   const [nameEnabled, setNameEnabled] = useState(false)
   const [nameValue, setNameValue] = useState('')
-  const [category, setCategory] = useState('nochange') // 'nochange' | 'none' | <id>
+  const [category, setCategory] = useState<PendingCategory>('nochange')
   const [addTags, setAddTags] = useState<Set<string>>(new Set())
   const [applying, startApply] = useTransition()
   const [notice, setNotice] = useState<string | null>(null)
@@ -62,7 +64,12 @@ export function SimilarTransactions({
   useEffect(() => {
     const timer = setTimeout(() => {
       startSearch(async () => {
-        const res = await findSimilarTransactions({ id: transactionId, threshold, includeAmount })
+        const res = await findSimilarTransactions({
+          id: transactionId,
+          threshold,
+          includeAmount,
+          uncategorisedOnly,
+        })
         setResults(res)
         setLoaded(true)
         setPage(0)
@@ -70,12 +77,16 @@ export function SimilarTransactions({
       })
     }, 250)
     return () => clearTimeout(timer)
-  }, [transactionId, threshold, includeAmount])
+  }, [transactionId, threshold, includeAmount, uncategorisedOnly])
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages - 1)
   const pageItems = results.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
   const allSelected = results.length > 0 && selected.size === results.length
+  const uncategorisedIds = results.filter((r) => !r.category).map((r) => r.id)
+  const isOverwrite = (r: SimilarTransaction) =>
+    overwritesCategory(r.category?.id ?? null, category)
+  const overwriteIds = results.filter((r) => selected.has(r.id) && isOverwrite(r)).map((r) => r.id)
 
   const toggleOne = (id: string) =>
     setSelected((prev) => {
@@ -85,6 +96,12 @@ export function SimilarTransactions({
       return next
     })
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(results.map((r) => r.id)))
+  const deselect = (ids: string[]) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) next.delete(id)
+      return next
+    })
   const toggleTag = (id: string) =>
     setAddTags((prev) => {
       const next = new Set(prev)
@@ -118,6 +135,7 @@ export function SimilarTransactions({
         id: transactionId,
         threshold,
         includeAmount,
+        uncategorisedOnly,
       })
       setResults(refreshed)
       setPage(0)
@@ -161,13 +179,23 @@ export function SimilarTransactions({
               />
               Same amount only
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={uncategorisedOnly}
+                onChange={(e) => setUncategorisedOnly(e.target.checked)}
+              />
+              Uncategorised only
+            </label>
           </div>
 
           {!loaded ? (
             <p className="text-muted-foreground text-sm">Searching…</p>
           ) : results.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No similar transactions at this threshold{includeAmount ? ' and amount' : ''}.
+              No similar{uncategorisedOnly ? ' uncategorised' : ''} transactions at this threshold
+              {includeAmount ? ' and amount' : ''}.
             </p>
           ) : (
             <>
@@ -185,11 +213,22 @@ export function SimilarTransactions({
                       {selected.size} of {results.length} selected
                     </span>
                   </label>
-                  {selected.size > 0 ? (
-                    <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
-                      Clear selection
-                    </Button>
-                  ) : null}
+                  <div className="flex items-center gap-1">
+                    {uncategorisedIds.length > 0 && uncategorisedIds.length < results.length ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelected(new Set(uncategorisedIds))}
+                      >
+                        Select uncategorised ({uncategorisedIds.length})
+                      </Button>
+                    ) : null}
+                    {selected.size > 0 ? (
+                      <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+                        Clear selection
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -262,41 +301,84 @@ export function SimilarTransactions({
                     {applying ? 'Applying…' : `Apply to ${selected.size}`}
                   </Button>
                 </div>
+                {overwriteIds.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2 text-destructive text-xs">
+                    <span>
+                      {overwriteIds.length === 1
+                        ? '1 selected transaction has a different category that will be '
+                        : `${overwriteIds.length} selected transactions have a different category that will be `}
+                      {category === 'none' ? 'cleared' : 'replaced'}.
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => deselect(overwriteIds)}
+                    >
+                      {overwriteIds.length === 1 ? 'Deselect it' : 'Deselect them'}
+                    </Button>
+                  </div>
+                ) : null}
                 {notice ? <p className="text-muted-foreground text-xs">{notice}</p> : null}
               </div>
 
               {/* Results (paginated) */}
               <div className={cn('flex flex-col', searching && 'opacity-60')}>
-                {pageItems.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/40"
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 shrink-0 accent-primary"
-                      checked={selected.has(r.id)}
-                      onChange={() => toggleOne(r.id)}
-                      aria-label={`Select ${r.displayName ?? r.description}`}
-                    />
-                    <Link href={`/app/transactions/${r.id}`} className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-sm hover:underline">
-                        {r.displayName ?? r.description}
-                      </p>
-                      <p className="truncate text-muted-foreground text-xs">
-                        {r.date} · {Math.round(r.similarity * 100)}% match
-                      </p>
-                    </Link>
-                    <span
-                      className={cn(
-                        'shrink-0 text-right text-sm tabular-nums',
-                        amountClassName(r.amount),
-                      )}
+                {pageItems.map((r) => {
+                  const overwrite = selected.has(r.id) && isOverwrite(r)
+                  return (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/40"
                     >
-                      {formatMoney(r.amount, r.currency)}
-                    </span>
-                  </div>
-                ))}
+                      <input
+                        type="checkbox"
+                        className="size-4 shrink-0 accent-primary"
+                        checked={selected.has(r.id)}
+                        onChange={() => toggleOne(r.id)}
+                        aria-label={`Select ${r.displayName ?? r.description}`}
+                      />
+                      <Link href={`/app/transactions/${r.id}`} className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-sm hover:underline">
+                          {r.displayName ?? r.description}
+                        </p>
+                        <p className="truncate text-muted-foreground text-xs">
+                          {r.date} · {Math.round(r.similarity * 100)}% match
+                        </p>
+                      </Link>
+                      <div className="flex min-w-0 max-w-[45%] shrink-0 flex-wrap items-center justify-end gap-1.5">
+                        {r.tags.map((t) => (
+                          <TagPill key={t.id} tag={t} />
+                        ))}
+                        <span
+                          className={cn(
+                            'flex items-center gap-1.5 text-xs',
+                            r.category ? 'text-foreground' : 'text-muted-foreground',
+                            overwrite && 'text-destructive line-through',
+                          )}
+                          title={overwrite ? 'This category will be overwritten' : undefined}
+                        >
+                          {r.category ? (
+                            <CategoryIcon
+                              name={r.category.icon}
+                              color={r.category.color}
+                              className="size-3.5"
+                            />
+                          ) : null}
+                          {r.category?.name ?? 'Uncategorised'}
+                        </span>
+                      </div>
+                      <span
+                        className={cn(
+                          'shrink-0 text-right text-sm tabular-nums',
+                          amountClassName(r.amount),
+                        )}
+                      >
+                        {formatMoney(r.amount, r.currency)}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
 
               {totalPages > 1 ? (
