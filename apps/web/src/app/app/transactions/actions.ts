@@ -16,6 +16,7 @@ import {
   sql,
   type Tag,
   tags,
+  transactionListOrder,
   transactions,
   transactionTags,
 } from '@repo/database'
@@ -113,7 +114,7 @@ export async function listTransactions(filters: TransactionFilters): Promise<Tra
   const [rows, [counted]] = await Promise.all([
     db.query.transactions.findMany({
       where,
-      orderBy: [desc(transactions.date), desc(transactions.createdAt)],
+      orderBy: transactionListOrder,
       limit: pageSize,
       offset: (page - 1) * pageSize,
       columns: {
@@ -163,7 +164,7 @@ export async function exportTransactionsCsv(filters: TransactionFilters): Promis
 
   const rows = await db.query.transactions.findMany({
     where,
-    orderBy: [desc(transactions.date), desc(transactions.createdAt)],
+    orderBy: transactionListOrder,
     limit: EXPORT_ROW_CAP,
     columns: {
       date: true,
@@ -213,6 +214,16 @@ export async function exportTransactionsCsv(filters: TransactionFilters): Promis
 
 export type MutationResult = { ok: true } | { error: string }
 
+/**
+ * Revalidate every route that renders the transactions table. The FY report
+ * renders the same table from the same data, so an inline edit there used to
+ * leave the page showing the old category until something else revalidated it.
+ */
+function revalidateTransactionLists(): void {
+  revalidatePath('/app/transactions')
+  revalidatePath('/app/reports/[fy]', 'page')
+}
+
 /** Assign (or clear, with null) a transaction's category. */
 export async function setTransactionCategory(
   transactionId: string,
@@ -229,7 +240,7 @@ export async function setTransactionCategory(
     .update(transactions)
     .set({ categoryId, updatedAt: new Date() })
     .where(eq(transactions.id, transactionId))
-  revalidatePath('/app/transactions')
+  revalidateTransactionLists()
   return { ok: true }
 }
 
@@ -259,7 +270,7 @@ export async function toggleTransactionTag(
         and(eq(transactionTags.transactionId, transactionId), eq(transactionTags.tagId, tagId)),
       )
   }
-  revalidatePath('/app/transactions')
+  revalidateTransactionLists()
   return { ok: true }
 }
 

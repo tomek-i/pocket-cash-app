@@ -5,12 +5,12 @@ import {
   banks,
   categories,
   db,
-  desc,
   eq,
   financialSubscriptions,
   gte,
   lt,
   sql,
+  transactionListOrder,
   transactions,
 } from '@repo/database'
 import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
@@ -212,7 +212,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
 
   // ── Recent activity ──────────────────────────────────────────────────────────
   const recentRows = await db.query.transactions.findMany({
-    orderBy: [desc(transactions.date), desc(transactions.createdAt)],
+    orderBy: transactionListOrder,
     limit: 6,
     columns: {
       id: true,
