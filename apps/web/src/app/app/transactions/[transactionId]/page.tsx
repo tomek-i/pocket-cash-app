@@ -38,7 +38,7 @@ export default async function TransactionDetailPage({
   const hasRaw = Object.keys(tx.rawData).length > 0
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-5 lg:py-7">
+    <div className="flex flex-col gap-6 px-5 py-5 lg:px-8 lg:py-7">
       <Link
         href={origin.href}
         className="flex w-fit items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
