@@ -13,6 +13,7 @@ export const DEFAULT_CATEGORIES: { name: string; icon: string; color: string }[]
   { name: 'Bills & Utilities', icon: 'plug-zap', color: '#d97706' },
   { name: 'Health', icon: 'heart-pulse', color: '#dc2626' },
   { name: 'Insurance', icon: 'shield', color: '#1d4ed8' },
+  { name: 'Pets', icon: 'paw-print', color: '#92400e' },
   { name: 'Shopping', icon: 'shopping-bag', color: '#e11d48' },
   { name: 'Entertainment', icon: 'clapperboard', color: '#db2777' },
   { name: 'Subscriptions', icon: 'repeat', color: '#6b5fd6' },
