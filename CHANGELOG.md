@@ -9,6 +9,20 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.8.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.7.0...v0.8.0) (2026-10-09)
+
+
+### Features
+
+* **categories:** add Pets to the default categories ([88a2e4c](https://github.com/tomek-i/pocket-cash-app/commit/88a2e4c2cba890a1d7cbea581d7802b29491429b))
+* **categories:** add Pets to the default categories ([2ac4a13](https://github.com/tomek-i/pocket-cash-app/commit/2ac4a13d921ad54da55651076c47aa07c3bcfce0))
+
+
+### Bug Fixes
+
+* **transactions:** let the detail page use the full width ([98413dd](https://github.com/tomek-i/pocket-cash-app/commit/98413dd534f9afa257686ef0651d0edced429d2f))
+* **transactions:** let the detail page use the full width ([64bd7b2](https://github.com/tomek-i/pocket-cash-app/commit/64bd7b2ec831cd98d395749a702ae19f2599563d))
+
 ## [0.7.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.6.0...v0.7.0) (2026-09-29)
 
 
