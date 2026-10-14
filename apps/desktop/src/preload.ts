@@ -40,6 +40,11 @@ const bridge: DesktopBridge = {
    */
   resetDatabase: () => ipcRenderer.invoke(IPC.dbReset),
   /**
+   * Restore the embedded database from a snapshot and relaunch. The current data
+   * directory is moved aside first, not deleted.
+   */
+  restoreSnapshot: (name: string) => ipcRenderer.invoke(IPC.dbRestore, name),
+  /**
    * OS-keychain-backed secret storage. The renderer may write, remove and check
    * secrets, but can NEVER read them back — decrypted values only ever live in
    * the main process (and its in-process Next server). Values are encrypted at

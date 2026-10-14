@@ -1,9 +1,11 @@
+import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { type Database, type EmbeddedDbOptions, initEmbeddedDb } from './client'
 import { seedPropertyDefaults } from './property-seed'
+import { createSnapshot } from './snapshots'
 
 /**
  * Offline-desktop entrypoint. Kept on a separate export subpath
@@ -94,6 +96,34 @@ export async function assertNotForeign(db: Database): Promise<void> {
 }
 
 /**
+ * How many migrations this build would apply to an existing database. Zero for a
+ * brand-new database: there is nothing in it to protect yet.
+ */
+export async function pendingMigrationCount(
+  db: Database,
+  migrationsFolder: string,
+): Promise<number> {
+  const journal = JSON.parse(
+    await readFile(join(migrationsFolder, 'meta', '_journal.json'), 'utf8'),
+  ) as { entries?: unknown[] }
+  const shipped = journal.entries?.length ?? 0
+
+  const [ledger] = (
+    await db.execute(sql`
+    SELECT count(*)::int AS count FROM information_schema.tables
+    WHERE table_schema = 'drizzle' AND table_name = '__drizzle_migrations'
+  `)
+  ).rows as unknown as [{ count: number }]
+  if (!ledger || ledger.count === 0) return 0
+
+  const [applied] = (
+    await db.execute(sql`SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations`)
+  ).rows as unknown as [{ count: number }]
+  if (!applied || applied.count === 0) return 0
+  return Math.max(0, shipped - applied.count)
+}
+
+/**
  * Bring an offline database up to date: open PGlite, enable the search
  * extensions, and apply all Drizzle migrations. Safe to call on every launch —
  * `CREATE EXTENSION IF NOT EXISTS` and Drizzle's journal make it idempotent, and
@@ -114,6 +144,19 @@ export async function runEmbeddedMigrations(
 
       const migrationsFolder =
         options.migrationsFolder ?? process.env.PGLITE_MIGRATIONS_DIR ?? defaultMigrationsFolder()
+
+      // Snapshot an existing database before changing its schema, so a release
+      // with a bad migration can be rolled back. A snapshot that fails to write is
+      // logged, not fatal: refusing to start would lock the user out of the data
+      // the snapshot was meant to protect.
+      if ((await pendingMigrationCount(db, migrationsFolder)) > 0) {
+        try {
+          await createSnapshot('before-migration', options.dataDir)
+        } catch (error) {
+          console.error('[database] snapshot before migration failed', error)
+        }
+      }
+
       await migrate(db, { migrationsFolder })
 
       // System property configuration (jurisdictions, rate schedules, cost
@@ -136,3 +179,11 @@ export async function runEmbeddedMigrations(
 
 export type { EmbeddedDbOptions } from './client'
 export { initEmbeddedDb, isEmbedded } from './client'
+export {
+  createSnapshot,
+  listSnapshots,
+  resolveSnapshot,
+  SNAPSHOTS_TO_KEEP,
+  type SnapshotInfo,
+  snapshotsDir,
+} from './snapshots'

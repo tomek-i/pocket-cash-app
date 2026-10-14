@@ -6,6 +6,7 @@ import { resetAndSeedDemo } from '../_lib/seed-actions'
 import { AiSettings } from './_components/ai-settings'
 import { DangerAction } from './_components/danger-action'
 import { DataBackup } from './_components/data-backup'
+import { DatabaseSnapshots } from './_components/database-snapshots'
 import { GeneralSettings } from './_components/general-settings'
 import { ImportData } from './_components/import-data'
 import { UpdateSettings } from './_components/update-settings'
@@ -16,12 +17,17 @@ import {
   getSettings,
   resetAllData,
 } from './actions'
+import { listDatabaseSnapshots } from './snapshot-actions'
 
 export const metadata = { title: 'Settings' }
 
 export default async function SettingsPage() {
   const settings = await getSettings()
-  const [aiConfig, aiKeyStatus] = await Promise.all([getAiConfig(), getAiKeyStatus()])
+  const [aiConfig, aiKeyStatus, snapshots] = await Promise.all([
+    getAiConfig(),
+    getAiKeyStatus(),
+    listDatabaseSnapshots(),
+  ])
 
   return (
     <div className="flex flex-col gap-8 px-5 py-5 lg:px-8 lg:py-7">
@@ -96,8 +102,11 @@ export default async function SettingsPage() {
           </p>
         </div>
         <Card>
-          <CardContent className="p-5">
+          <CardContent className="flex flex-col gap-6 p-5">
             <DataBackup />
+            {snapshots.keep > 0 ? (
+              <DatabaseSnapshots snapshots={snapshots.snapshots} keep={snapshots.keep} />
+            ) : null}
           </CardContent>
         </Card>
       </section>

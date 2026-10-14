@@ -10,6 +10,7 @@ import {
   csvImports,
   csvMappings,
   db,
+  eq,
   financialSubscriptions,
   getAppSettings,
   getTableColumns,
@@ -294,12 +295,19 @@ export async function importData(json: string): Promise<ImportResult> {
       //    batches: a single multi-row INSERT of thousands of rows overflows the
       //    driver's bind limits (PGlite throws "Invalid array length"), so chunk.
       const INSERT_BATCH = 500
+      // A transfer points at its other side, which may sit in a later batch, so
+      // the links are written after every transaction is in.
+      const transferPairs: { id: string; pairId: string }[] = []
       for (const { key, table } of BACKUP_TABLES) {
         const rows = (source[key] ?? []) as Record<string, unknown>[]
         if (!rows.length) continue
         const columns = getTableColumns(table)
         const revived = rows.map((row) => {
           const out: Record<string, unknown> = { ...row }
+          if (key === 'transactions' && typeof out.transferPairId === 'string') {
+            transferPairs.push({ id: String(out.id), pairId: out.transferPairId })
+            out.transferPairId = null
+          }
           for (const [name, col] of Object.entries(columns)) {
             if (out[name] != null && col.dataType === 'date')
               out[name] = new Date(out[name] as string)
@@ -309,6 +317,9 @@ export async function importData(json: string): Promise<ImportResult> {
         for (let i = 0; i < revived.length; i += INSERT_BATCH) {
           await tx.insert(table).values(revived.slice(i, i + INSERT_BATCH))
         }
+      }
+      for (const { id, pairId } of transferPairs) {
+        await tx.update(transactions).set({ transferPairId: pairId }).where(eq(transactions.id, id))
       }
     })
 

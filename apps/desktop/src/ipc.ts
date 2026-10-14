@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { IPC, isSecretName } from '@repo/desktop-contract'
 import { app, ipcMain, shell } from 'electron'
-import { requestDbReset } from './db-reset'
+import { requestDbReset, requestDbRestore, resolveSnapshotPath } from './db-reset'
 import { logsDir } from './logging'
 import { deleteSecret, hasSecret, isSecretStorageAvailable, setSecret } from './secrets'
 import { checkForUpdates, getUpdateStatus, setAutoCheck } from './updater'
@@ -38,6 +38,18 @@ export function registerIpcHandlers(): void {
     requestDbReset()
     app.relaunch()
     app.exit(0)
+  })
+
+  // Restore from a snapshot the same way: record the request, relaunch, and let
+  // the next startup swap the data directory before PGlite opens it.
+  ipcMain.handle(IPC.dbRestore, (_e, name: unknown) => {
+    const dataDir = process.env.PGLITE_DATA_DIR
+    const path = typeof name === 'string' && dataDir ? resolveSnapshotPath(dataDir, name) : null
+    if (!path) return { ok: false, error: 'That snapshot was not found.' }
+    requestDbRestore(path)
+    app.relaunch()
+    app.exit(0)
+    return undefined
   })
 
   // ── Secret vault (OS-keychain-backed, see secrets.ts) ──────────────────────

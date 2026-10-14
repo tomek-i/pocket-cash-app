@@ -1,3 +1,4 @@
+import type { PGlite } from '@electric-sql/pglite'
 import type { PgliteDatabase } from 'drizzle-orm/pglite'
 import { schema } from './schema'
 
@@ -26,9 +27,11 @@ export function isEmbedded(): boolean {
  */
 const DB_KEY = Symbol.for('pocket-cash.embedded-db')
 const DB_INIT_KEY = Symbol.for('pocket-cash.embedded-db-init')
+const CLIENT_KEY = Symbol.for('pocket-cash.embedded-client')
 type DbGlobal = typeof globalThis & {
   [DB_KEY]?: Database
   [DB_INIT_KEY]?: Promise<Database>
+  [CLIENT_KEY]?: PGlite
 }
 const dbGlobal = globalThis as DbGlobal
 
@@ -78,12 +81,17 @@ export async function initEmbeddedDb(options: EmbeddedDbOptions = {}): Promise<D
       const { drizzle } = await import('drizzle-orm/pglite')
 
       const dataDir = options.dataDir ?? process.env.PGLITE_DATA_DIR ?? 'memory://'
+      const loadDataDir = await pendingRestore(dataDir)
       // Extensions must be registered at construction for `CREATE EXTENSION` to
       // find them; pg_trgm powers fuzzy transaction search.
-      const client = new PGlite(dataDir, { extensions: { pg_trgm, fuzzystrmatch } })
+      const client = new PGlite(dataDir, {
+        extensions: { pg_trgm, fuzzystrmatch },
+        ...(loadDataDir ? { loadDataDir } : {}),
+      })
       await client.waitReady
 
       const instance = drizzle(client, { schema })
+      dbGlobal[CLIENT_KEY] = client
       dbGlobal[DB_KEY] = instance
       return instance
     })()
@@ -94,4 +102,30 @@ export async function initEmbeddedDb(options: EmbeddedDbOptions = {}): Promise<D
     dbGlobal[DB_INIT_KEY] = pending
   }
   return dbGlobal[DB_INIT_KEY]
+}
+
+/** The raw PGlite instance behind `db`, for whole-database operations like snapshots. */
+export function embeddedClient(): PGlite {
+  const client = dbGlobal[CLIENT_KEY]
+  if (!client) throw new Error('Embedded (PGlite) database not initialized.')
+  return client
+}
+
+/**
+ * A snapshot to restore into a fresh data directory, if one was requested.
+ *
+ * The desktop shell moves the current data directory aside before the server
+ * starts and points `PGLITE_RESTORE_FROM` at the snapshot (see snapshots.ts).
+ * PGlite unpacks it while creating the new directory. The variable is cleared
+ * once read, so a later re-open does not restore again. If the data directory
+ * still exists the request is ignored rather than overwriting live data.
+ */
+async function pendingRestore(dataDir: string): Promise<Blob | undefined> {
+  const from = process.env.PGLITE_RESTORE_FROM
+  if (!from || dataDir.startsWith('memory://')) return undefined
+  delete process.env.PGLITE_RESTORE_FROM
+  const { existsSync } = await import('node:fs')
+  const { readFile } = await import('node:fs/promises')
+  if (existsSync(dataDir)) return undefined
+  return new Blob([await readFile(from)])
 }
