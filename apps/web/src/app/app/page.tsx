@@ -284,6 +284,19 @@ export default async function OverviewPage({
             }
             positive={(data.spendingChangePct ?? 0) <= 0}
           />
+          {data.transfersNet !== 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-sm">Net transfers · {monthShort}</p>
+                  <p className="text-muted-foreground text-xs">Not income or spending</p>
+                </div>
+                <p className="font-medium text-sm tabular-nums">
+                  {formatMoney(data.transfersNet, currency)}
+                </p>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
 

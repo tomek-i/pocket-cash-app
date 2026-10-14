@@ -2,9 +2,11 @@
 
 import { type CategoryOption, isAiEnabled, suggestCategories } from '@repo/ai'
 import {
+  and,
   type Category,
   categories,
   db,
+  eq,
   inArray,
   isNotNull,
   isNull,
@@ -139,7 +141,8 @@ export async function suggestCategorizations(opts?: {
   const uncategorised = await db
     .select({ id: transactions.id, description: transactions.description })
     .from(transactions)
-    .where(isNull(transactions.categoryId))
+    // A transfer needs no category, so it is not waiting for one.
+    .where(and(isNull(transactions.categoryId), eq(transactions.isTransfer, false)))
 
   // Group the uncategorised rows by normalised merchant key.
   const groups = new Map<string, { sample: string; ids: string[] }>()

@@ -17,6 +17,7 @@ import {
 import { revalidatePath } from 'next/cache'
 import { formatMoney } from '@/lib/money'
 import { getAiConfig, getDefaultCurrency } from '../settings/actions'
+import { notTransfer } from '../transactions/_lib/flows'
 import { fyBounds } from './queries'
 
 /** How many untagged FY transactions we ever send to the LLM in one run. */
@@ -49,6 +50,8 @@ export async function getFyTaxSummary(fy: number): Promise<FyTaxSummary> {
   const inFy = and(
     gte(transactions.date, bounds.start),
     lte(transactions.date, bounds.endInclusive),
+    // A transfer between own accounts is neither income nor a deduction.
+    notTransfer,
   )
 
   const rows = await db
@@ -147,6 +150,8 @@ export async function findTaxCandidates(fy: number): Promise<FindTaxOutcome> {
   const inFy = and(
     gte(transactions.date, bounds.start),
     lte(transactions.date, bounds.endInclusive),
+    // A transfer between own accounts is neither income nor a deduction.
+    notTransfer,
   )
 
   // Transaction ids that already carry the "tax" tag — excluded from the scan.

@@ -193,6 +193,12 @@ export default async function FyReportPage({
           <StatCard label="Transactions" value={String(summary.count)} />
         </div>
       ) : null}
+      {summary && summary.transfers !== 0 ? (
+        <p className="text-muted-foreground text-sm">
+          Net transfers between your accounts: {formatMoney(summary.transfers, currency)}. They are
+          not counted as income or spending.
+        </p>
+      ) : null}
 
       {breakdown && breakdown.total > 0 ? (
         <Card>

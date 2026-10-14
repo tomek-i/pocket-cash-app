@@ -17,6 +17,7 @@ import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 import { getDefaultCurrency } from '../settings/actions'
 import { byPaymentStatus, type PaymentStatus } from '../subscriptions/_lib/schedule'
 import { loadPaymentStatuses } from '../subscriptions/_lib/status'
+import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
 /**
  * All figures on the Overview dashboard, computed from the workspace's real data.
@@ -41,6 +42,11 @@ export interface DashboardData {
   monthSpendTotal: number
   income: number
   spending: number
+  /**
+   * Signed net of the month's transfers. Linked pairs cancel out, so this is
+   * money moved to or from accounts the app does not track.
+   */
+  transfersNet: number
   /** Whether any transaction is dated in the selected month. */
   monthHasData: boolean
   /**
@@ -149,8 +155,9 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
   const flows = async (from: string, to: string) => {
     const [row] = await db
       .select({
-        income: sql<string>`coalesce(sum(case when ${transactions.amount} > 0 then ${transactions.amount} else 0 end), 0)`,
-        spending: sql<string>`coalesce(sum(case when ${transactions.amount} < 0 then -${transactions.amount} else 0 end), 0)`,
+        income: incomeSum,
+        spending: spendingSum,
+        transfers: transferNetSum,
         count: sql<string>`count(*)`,
       })
       .from(transactions)
@@ -158,6 +165,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     return {
       income: Number(row?.income ?? 0),
       spending: Number(row?.spending ?? 0),
+      transfers: Number(row?.transfers ?? 0),
       count: Number(row?.count ?? 0),
     }
   }
@@ -195,6 +203,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     .where(
       and(
         lt(transactions.amount, 0),
+        notTransfer,
         gte(transactions.date, startThisMonth),
         lt(transactions.date, startNextMonth),
       ),
@@ -309,6 +318,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     monthSpendTotal,
     income: thisMonth.income,
     spending: thisMonth.spending,
+    transfersNet: thisMonth.transfers,
     monthHasData: thisMonth.count > 0,
     latestMonth,
     incomeChangePct: pctChange(thisMonth.income, lastMonth.income),

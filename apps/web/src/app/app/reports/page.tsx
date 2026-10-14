@@ -37,6 +37,7 @@ export default async function ReportsPage({
     income: 0,
     spending: 0,
     net: 0,
+    transfers: 0,
     count: 0,
   }
   const pastYears = years.filter((y) => y.fy !== cy).sort((a, b) => b.fy - a.fy)
@@ -169,6 +170,9 @@ function FyCard({
                 value={formatMoney(y.net, currency)}
                 className={y.net >= 0 ? 'text-success' : 'text-destructive'}
               />
+              {y.transfers !== 0 ? (
+                <StatRow label="Net transfers" value={formatMoney(y.transfers, currency)} />
+              ) : null}
             </div>
           </div>
           {breakdown && breakdown.total > 0 ? (

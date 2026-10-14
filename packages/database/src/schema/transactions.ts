@@ -1,5 +1,7 @@
 import {
+  type AnyPgColumn,
   bigint,
+  boolean,
   date,
   index,
   jsonb,
@@ -22,6 +24,10 @@ import { csvImports } from './csv-imports'
  *   `displayName` is the user's optional clean override.
  * - `rawData` keeps the original CSV row for re-mapping/audit.
  * - `fingerprint` is the dedup key, unique per account.
+ * - `isTransfer` marks money moved between the user's own accounts. It still
+ *   counts towards the account balance but is neither income nor spending.
+ *   `transferPairId` points at the other side when that account is tracked too;
+ *   a transfer to an account outside the app has no pair.
  */
 export const transactions = pgTable(
   'transactions',
@@ -41,6 +47,10 @@ export const transactions = pgTable(
     reference: text('reference'),
     notes: text('notes'),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    isTransfer: boolean('is_transfer').notNull().default(false),
+    transferPairId: uuid('transfer_pair_id').references((): AnyPgColumn => transactions.id, {
+      onDelete: 'set null',
+    }),
     importId: uuid('import_id').references(() => csvImports.id, { onDelete: 'set null' }),
     rawData: jsonb('raw_data').$type<Record<string, string>>().notNull(),
     fingerprint: text('fingerprint').notNull(),

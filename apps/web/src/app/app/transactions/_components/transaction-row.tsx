@@ -24,7 +24,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@repo/ui'
-import { MoreVertical, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, MoreVertical, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
@@ -37,6 +37,7 @@ import {
   type TransactionRow as TxRow,
   toggleTransactionTag,
 } from '../actions'
+import { setTransfer } from '../transfer-actions'
 
 type CategoryLite = Pick<Category, 'id' | 'name' | 'color' | 'icon'>
 type TagLite = Pick<Tag, 'id' | 'name' | 'color'>
@@ -74,6 +75,12 @@ export function TransactionRow({
           {tx.account.name}
           {tx.merchant ? ` · ${tx.merchant}` : ''}
         </p>
+        {tx.isTransfer ? (
+          <Badge variant="secondary" className="mt-1 gap-1">
+            <ArrowLeftRight className="size-3" />
+            Transfer
+          </Badge>
+        ) : null}
       </td>
       <td className="p-3 align-top">
         {tx.category ? (
@@ -165,6 +172,11 @@ export function TransactionRow({
                 )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+
+            <DropdownMenuItem onClick={() => run(() => setTransfer(tx.id, !tx.isTransfer))}>
+              <ArrowLeftRight className="size-4" />
+              {tx.isTransfer ? 'Not a transfer' : 'Mark as transfer'}
+            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
             <DropdownMenuItem
