@@ -64,6 +64,7 @@ export * from './relations'
 export * from './settings'
 export * from './tags'
 export * from './transactions'
+export * from './transfer-dismissals'
 
 /** Full schema object passed to drizzle() so `db.query.*` and relations work.
  * Relation configs must be included for the relational query API (`with: …`). */
