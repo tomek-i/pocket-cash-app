@@ -1,6 +1,7 @@
 'use server'
 
 import {
+  and,
   asc,
   type Category,
   categories,
@@ -189,7 +190,8 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
         date: transactions.date,
       })
       .from(transactions)
-      .where(lt(transactions.amount, 0)),
+      // A transfer to the user's own account is not a bill.
+      .where(and(lt(transactions.amount, 0), eq(transactions.isTransfer, false))),
     db.select({ matcher: financialSubscriptions.matcher }).from(financialSubscriptions),
   ])
 

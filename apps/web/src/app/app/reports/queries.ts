@@ -1,4 +1,5 @@
-import { categories, db, eq, lt, sql, transactions } from '@repo/database'
+import { and, categories, db, eq, lt, sql, transactions } from '@repo/database'
+import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
 /** Australian financial year starts in July. A FY is named by its ending year:
  * FY2025 = 1 Jul 2024 – 30 Jun 2025. */
@@ -29,6 +30,8 @@ export interface FySummary {
   income: number
   spending: number
   net: number
+  /** Signed net of transfers between own accounts, kept out of income and spending. */
+  transfers: number
   count: number
 }
 
@@ -41,8 +44,9 @@ export async function listFinancialYears(): Promise<FySummary[]> {
   const rows = await db
     .select({
       month: sql<string>`to_char(date_trunc('month', ${transactions.date}::date), 'YYYY-MM')`,
-      income: sql<string>`coalesce(sum(case when ${transactions.amount} > 0 then ${transactions.amount} else 0 end), 0)`,
-      spending: sql<string>`coalesce(sum(case when ${transactions.amount} < 0 then -${transactions.amount} else 0 end), 0)`,
+      income: incomeSum,
+      spending: spendingSum,
+      transfers: transferNetSum,
       count: sql<string>`count(*)`,
     })
     .from(transactions)
@@ -52,9 +56,10 @@ export async function listFinancialYears(): Promise<FySummary[]> {
   for (const r of rows) {
     const [yearStr, monthStr] = r.month.split('-')
     const fy = Number(yearStr) + (Number(monthStr) >= FY_START_MONTH ? 1 : 0)
-    const cur = byFy.get(fy) ?? { fy, income: 0, spending: 0, net: 0, count: 0 }
+    const cur = byFy.get(fy) ?? { fy, income: 0, spending: 0, net: 0, transfers: 0, count: 0 }
     cur.income += Number(r.income)
     cur.spending += Number(r.spending)
+    cur.transfers += Number(r.transfers)
     cur.count += Number(r.count)
     cur.net = cur.income - cur.spending
     byFy.set(fy, cur)
@@ -94,7 +99,7 @@ export async function getFyCategoryBreakdowns(): Promise<Map<number, FyBreakdown
     })
     .from(transactions)
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
-    .where(lt(transactions.amount, 0))
+    .where(and(lt(transactions.amount, 0), notTransfer))
     .groupBy(
       sql`date_trunc('month', ${transactions.date}::date)`,
       categories.id,

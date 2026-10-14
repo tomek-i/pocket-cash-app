@@ -44,6 +44,8 @@ export interface DemoTxnDef {
   currency: string
   categoryName: string
   tagNames?: string[]
+  /** Shared by the two sides of a transfer between the demo accounts. */
+  transferKey?: string
 }
 
 export interface DemoData {
@@ -302,6 +304,7 @@ export function buildDemoData(now: Date): DemoData {
         amount: -40_000, // $400.00
         currency: CURRENCY,
         categoryName: 'Transfers',
+        transferKey: transferDate,
       })
       add({
         accountKey: 'savings',
@@ -310,6 +313,7 @@ export function buildDemoData(now: Date): DemoData {
         amount: 40_000,
         currency: CURRENCY,
         categoryName: 'Transfers',
+        transferKey: transferDate,
       })
     }
   }

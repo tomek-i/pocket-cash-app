@@ -56,6 +56,8 @@ export interface TransactionRow {
   merchant: string | null
   amount: number
   currency: string
+  /** Money moved between the user's own accounts: not income, not spending. */
+  isTransfer: boolean
   accountId: string
   account: { name: string; currency: string; bankId: string }
   category: Pick<Category, 'id' | 'name' | 'color' | 'icon'> | null
@@ -125,6 +127,7 @@ export async function listTransactions(filters: TransactionFilters): Promise<Tra
         merchant: true,
         amount: true,
         currency: true,
+        isTransfer: true,
         accountId: true,
       },
       with: {
@@ -288,6 +291,9 @@ export interface TransactionDetail {
   notes: string | null
   rawData: Record<string, string>
   createdAt: Date
+  isTransfer: boolean
+  /** The other side of the transfer, when it is linked to one. */
+  transferPair: { id: string; date: string; accountName: string } | null
   accountId: string
   account: {
     id: string
@@ -314,6 +320,13 @@ export async function getTransaction(id: string): Promise<TransactionDetail | nu
     },
   })
   if (!row) return null
+  const pair = row.transferPairId
+    ? await db.query.transactions.findFirst({
+        where: eq(transactions.id, row.transferPairId),
+        columns: { id: true, date: true },
+        with: { account: { columns: { name: true } } },
+      })
+    : null
   return {
     id: row.id,
     date: row.date,
@@ -328,6 +341,8 @@ export async function getTransaction(id: string): Promise<TransactionDetail | nu
     notes: row.notes,
     rawData: row.rawData,
     createdAt: row.createdAt,
+    isTransfer: row.isTransfer,
+    transferPair: pair ? { id: pair.id, date: pair.date, accountName: pair.account.name } : null,
     accountId: row.accountId,
     account: row.account,
     category: row.category,

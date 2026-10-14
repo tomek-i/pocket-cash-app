@@ -7,6 +7,7 @@ import {
   csvImports,
   csvMappings,
   db,
+  eq,
   financialSubscriptions,
   tags,
   transactions,
@@ -128,6 +129,7 @@ export async function seedDemoData(tx: Tx, now: Date): Promise<number> {
         amount: t.amount,
         currency: t.currency,
         categoryId: categoryId.get(t.categoryName) ?? null,
+        isTransfer: Boolean(t.transferKey),
         fingerprint,
         rawData: {
           date: t.date,
@@ -137,6 +139,7 @@ export async function seedDemoData(tx: Tx, now: Date): Promise<number> {
         } as Record<string, string>,
       },
       tagNames: t.tagNames ?? [],
+      transferKey: t.transferKey,
       fingerprint,
     }
   })
@@ -148,6 +151,19 @@ export async function seedDemoData(tx: Tx, now: Date): Promise<number> {
     .values(txnRows.map((t) => t.row))
     .returning({ id: transactions.id, fingerprint: transactions.fingerprint })
   const txnIdByFingerprint = new Map(insertedTxns.map((t) => [t.fingerprint, t.id]))
+
+  // Link the two sides of each transfer to each other.
+  const transferSides = new Map<string, string[]>()
+  for (const t of txnRows) {
+    const id = txnIdByFingerprint.get(t.fingerprint)
+    if (!t.transferKey || !id) continue
+    transferSides.set(t.transferKey, [...(transferSides.get(t.transferKey) ?? []), id])
+  }
+  for (const [a, b] of transferSides.values()) {
+    if (!a || !b) continue
+    await tx.update(transactions).set({ transferPairId: b }).where(eq(transactions.id, a))
+    await tx.update(transactions).set({ transferPairId: a }).where(eq(transactions.id, b))
+  }
 
   // Tag links.
   const tagLinks = txnRows.flatMap((t) => {

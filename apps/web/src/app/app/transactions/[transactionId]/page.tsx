@@ -10,9 +10,11 @@ import { CategoryCell } from '../_components/category-cell'
 import { TagsCell } from '../_components/tags-cell'
 import { parseOrigin } from '../_lib/origin'
 import { getTransaction } from '../actions'
+import { findTransferCounterparts } from '../transfer-actions'
 import { DeleteTransactionButton } from './_components/delete-transaction-button'
 import { DisplayNameField } from './_components/display-name-field'
 import { SimilarTransactions } from './_components/similar-transactions'
+import { TransferPanel } from './_components/transfer-panel'
 
 export const metadata = { title: 'Transaction' }
 
@@ -33,6 +35,7 @@ export default async function TransactionDetailPage({
     listTags(),
   ])
   if (!tx) notFound()
+  const transferCandidates = tx.transferPair ? [] : await findTransferCounterparts(tx.id)
 
   const title = tx.displayName ?? tx.description
   const hasRaw = Object.keys(tx.rawData).length > 0
@@ -116,6 +119,13 @@ export default async function TransactionDetailPage({
           </Card>
         ) : null}
       </div>
+
+      <TransferPanel
+        transactionId={tx.id}
+        isTransfer={tx.isTransfer}
+        pair={tx.transferPair}
+        candidates={transferCandidates}
+      />
 
       <SimilarTransactions transactionId={tx.id} categories={categories} tags={tags} />
 

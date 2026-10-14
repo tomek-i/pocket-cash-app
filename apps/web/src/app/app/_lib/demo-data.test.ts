@@ -46,4 +46,18 @@ describe('buildDemoData', () => {
     const net = transfers.reduce((sum, t) => sum + t.amount, 0)
     expect(net).toBe(0)
   })
+
+  it('marks both sides of every transfer with a shared key', () => {
+    const transfers = data.transactions.filter((t) => t.categoryName === 'Transfers')
+    const sides = new Map<string, number[]>()
+    for (const t of transfers) {
+      expect(t.transferKey).toBeDefined()
+      const key = t.transferKey as string
+      sides.set(key, [...(sides.get(key) ?? []), t.amount])
+    }
+    for (const amounts of sides.values()) {
+      expect(amounts).toHaveLength(2)
+      expect((amounts[0] ?? 0) + (amounts[1] ?? 0)).toBe(0)
+    }
+  })
 })

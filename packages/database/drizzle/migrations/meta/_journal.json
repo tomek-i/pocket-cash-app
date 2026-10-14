@@ -43,6 +43,13 @@
       "when": 1789101880588,
       "tag": "0005_draft_property_status",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791942673527,
+      "tag": "0006_transaction_transfers",
+      "breakpoints": true
     }
   ]
 }
