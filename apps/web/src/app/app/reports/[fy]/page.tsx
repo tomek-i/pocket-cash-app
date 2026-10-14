@@ -3,6 +3,7 @@ import { Card, CardContent, cn } from '@repo/ui'
 import { ArrowLeftRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { getDateLocale } from '@/lib/date-locale'
 import { formatMoney, parseAmountToMinor } from '@/lib/money'
 import { DonutChart } from '../../_components/charts'
 import { Empty } from '../../_components/empty'
@@ -151,6 +152,7 @@ export default async function FyReportPage({
     summarizeTransactions(txnFilters),
   ])
   const summary = years.find((y) => y.fy === fy)
+  const locale = await getDateLocale()
   const breakdown = breakdowns.get(fy)
   const taxTagId = tags.find((t) => t.name.toLowerCase() === 'tax')?.id
   const activeTag = sp.tag ? tags.find((t) => t.id === sp.tag) : undefined
@@ -172,7 +174,7 @@ export default async function FyReportPage({
         </Link>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="font-semibold text-2xl tracking-tight">FY{fy}</h1>
-          <p className="text-muted-foreground text-sm">{fyRangeLabel(fy)}</p>
+          <p className="text-muted-foreground text-sm">{fyRangeLabel(fy, locale)}</p>
         </div>
       </div>
 

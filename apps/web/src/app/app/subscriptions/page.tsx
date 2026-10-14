@@ -1,5 +1,7 @@
 import { Badge, Button, Card, CardContent } from '@repo/ui'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { formatDate } from '@/lib/date-format'
+import { getDateLocale } from '@/lib/date-locale'
 import { formatMoney } from '@/lib/money'
 import { Empty } from '../_components/empty'
 import { ConfirmDeleteDialog } from '../banks/[bankId]/_components/confirm-delete-dialog'
@@ -13,10 +15,12 @@ import { deleteSubscription, listSubscriptions, suggestSubscriptions } from './a
 
 export const metadata = { title: 'Subscriptions' }
 
-function paymentLabel(status: PaymentStatus | undefined): string | null {
-  if (status?.kind === 'upcoming') return `next ${status.date}`
+function paymentLabel(status: PaymentStatus | undefined, locale: string): string | null {
+  if (status?.kind === 'upcoming') return `next ${formatDate(status.date, locale)}`
   if (status?.kind === 'not-seen')
-    return status.lastSeen ? `not seen since ${status.lastSeen}` : 'not seen in your transactions'
+    return status.lastSeen
+      ? `not seen since ${formatDate(status.lastSeen, locale)}`
+      : 'not seen in your transactions'
   return null
 }
 
@@ -28,6 +32,7 @@ export default async function SubscriptionsPage() {
     getDefaultCurrency(),
   ])
   const statuses = await loadPaymentStatuses(subscriptions)
+  const locale = await getDateLocale()
   const monthlyTotal = subscriptions
     .filter((s) => s.active)
     .reduce((sum, s) => sum + monthlyCost(s.amount, s.cycle), 0)
@@ -90,7 +95,7 @@ export default async function SubscriptionsPage() {
               const status = statuses.get(sub.id)
               const details = [
                 CYCLE_LABELS[sub.cycle],
-                paymentLabel(status),
+                paymentLabel(status, locale),
                 sub.category?.name,
               ].filter(Boolean)
               return (

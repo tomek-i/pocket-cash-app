@@ -28,6 +28,7 @@ import { ArrowLeftRight, MoreVertical, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
+import { useDateFormat } from '../../_components/date-format-provider'
 import { CategoryIcon } from '../../categories/_components/category-icon'
 import { TagSwatch } from '../../tags/_components/tag-pill'
 import { withOrigin } from '../_lib/origin'
@@ -61,6 +62,7 @@ export function TransactionRow({
   onToggle: () => void
 }) {
   const router = useRouter()
+  const { date: formatDate } = useDateFormat()
   const [pending, startTransition] = useTransition()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const assigned = new Set(tx.tags.map((t) => t.id))
@@ -85,7 +87,9 @@ export function TransactionRow({
           aria-label={`Select ${tx.displayName ?? tx.description}`}
         />
       </td>
-      <td className="whitespace-nowrap p-3 align-top text-muted-foreground text-xs">{tx.date}</td>
+      <td className="whitespace-nowrap p-3 align-top text-muted-foreground text-xs">
+        {formatDate(tx.date)}
+      </td>
       <td className="max-w-[22rem] p-3 align-top">
         <p className="truncate font-medium">{tx.displayName ?? tx.description}</p>
         <p className="truncate text-muted-foreground text-xs">

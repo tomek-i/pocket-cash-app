@@ -5,6 +5,8 @@
  * Australian financial year starts in July. A FY is named by its ending year:
  * FY2025 = 1 Jul 2024 – 30 Jun 2025.
  */
+import { formatDate } from '../../../../lib/date-format'
+
 export const FY_START_MONTH = 7
 
 export function fyForDate(d: Date): number {
@@ -23,6 +25,9 @@ export function fyLabel(fy: number): string {
   return `FY${fy}`
 }
 
-export function fyRangeLabel(fy: number): string {
-  return `1 Jul ${fy - 1} – 30 Jun ${fy}`
+/** "1 Jul 2025 – 30 Jun 2026", in the given locale. */
+export function fyRangeLabel(fy: number, locale: string): string {
+  const { start, endInclusive } = fyBounds(fy)
+  const day = (iso: string) => formatDate(iso, locale, { alwaysYear: true })
+  return `${day(start)} – ${day(endInclusive)}`
 }

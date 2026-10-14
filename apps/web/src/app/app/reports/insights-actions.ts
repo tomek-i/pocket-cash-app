@@ -8,6 +8,7 @@ import {
   saveAppSettings,
 } from '@repo/database'
 import { revalidatePath } from 'next/cache'
+import { getDateLocale } from '@/lib/date-locale'
 import { formatMoney } from '@/lib/money'
 import { getAiConfig, getDefaultCurrency } from '../settings/actions'
 import { fyLabel, fyRangeLabel, getFyCategoryBreakdowns, listFinancialYears } from './queries'
@@ -51,7 +52,7 @@ async function buildFyFacts(
   }))
 
   const facts = {
-    period: fyRangeLabel(fy),
+    period: fyRangeLabel(fy, await getDateLocale()),
     currency,
     income: formatMoney(summary.income, currency),
     spending: formatMoney(summary.spending, currency),
@@ -107,7 +108,7 @@ export async function generateFyInsight(fy: number): Promise<GenerateResult> {
   try {
     result = await summarise({
       config,
-      subject: `${fyLabel(fy)} (${fyRangeLabel(fy)})`,
+      subject: `${fyLabel(fy)} (${fyRangeLabel(fy, await getDateLocale())})`,
       facts: built.facts,
     })
   } catch (error) {

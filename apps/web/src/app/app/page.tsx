@@ -19,6 +19,8 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
+import { formatDate, formatMonth } from '@/lib/date-format'
+import { getDateLocale } from '@/lib/date-locale'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { prepareEmbeddedDatabase } from '@/lib/workspace'
 import { DonutChart, MiniBars } from './_components/charts'
@@ -43,28 +45,21 @@ function pct(value: number | null): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
-function shortDate(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-function paymentLabel(status: PaymentStatus): string | null {
-  if (status.kind === 'upcoming') return `next ${shortDate(status.date)}`
+function paymentLabel(status: PaymentStatus, locale: string): string | null {
+  if (status.kind === 'upcoming') return `next ${formatDate(status.date, locale)}`
   if (status.kind === 'not-seen')
-    return status.lastSeen ? `not seen since ${shortDate(status.lastSeen)}` : 'not seen'
+    return status.lastSeen ? `not seen since ${formatDate(status.lastSeen, locale)}` : 'not seen'
   return null
 }
 
 /** The last 12 months as picker options, newest first, keyed `YYYY-MM`. */
-function monthOptions(): { key: string; label: string }[] {
+function monthOptions(locale: string): { key: string; label: string }[] {
   const now = new Date()
   const opts: { key: string; label: string }[] = []
   for (let i = 0; i < 12; i++) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1))
     const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
-    opts.push({
-      key,
-      label: d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
-    })
+    opts.push({ key, label: formatMonth(key, locale) })
   }
   return opts
 }
@@ -87,11 +82,12 @@ export default async function OverviewPage({
     getDashboardInsight(),
   ])
   const { currency, monthLabel, monthShort } = data
-  const months = monthOptions()
+  const locale = await getDateLocale()
+  const months = monthOptions(locale)
   const isCurrentMonth = data.monthKey === months[0]?.key
 
   const today = new Date()
-  const dateLabel = today.toLocaleDateString('en-US', {
+  const dateLabel = today.toLocaleDateString(locale, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -114,7 +110,7 @@ export default async function OverviewPage({
             title={
               data.latestMonth
                 ? isCurrentMonth
-                  ? `No transactions in ${monthLabel.split(' ')[0]} yet`
+                  ? `No transactions in ${formatMonth(data.monthKey, locale, 'name')} yet`
                   : `No transactions in ${monthLabel}`
                 : 'No transactions yet'
             }
@@ -363,7 +359,7 @@ export default async function OverviewPage({
                     >
                       {formatMoney(txn.amount, txn.currency)}
                     </p>
-                    <p className="text-muted-foreground text-xs">{shortDate(txn.date)}</p>
+                    <p className="text-muted-foreground text-xs">{formatDate(txn.date, locale)}</p>
                   </div>
                 </Link>
               ))
@@ -409,7 +405,7 @@ export default async function OverviewPage({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{sub.name}</p>
                     <p className="truncate text-muted-foreground text-xs">
-                      {[CYCLE_LABELS[sub.cycle], paymentLabel(sub.status)]
+                      {[CYCLE_LABELS[sub.cycle], paymentLabel(sub.status, locale)]
                         .filter(Boolean)
                         .join(' · ')}
                     </p>
