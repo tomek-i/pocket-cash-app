@@ -93,8 +93,9 @@ export function ImportData() {
             <AlertDialogTitle>Restore from backup?</AlertDialogTitle>
             <AlertDialogDescription>
               Importing <span className="font-medium text-foreground">{pendingFile?.name}</span>{' '}
-              will permanently delete all current finance data in this workspace and replace it with
-              the backup. This cannot be undone.
+              will permanently delete the current data in this workspace and replace it with the
+              backup. Property plans are only replaced when the backup includes them. This cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

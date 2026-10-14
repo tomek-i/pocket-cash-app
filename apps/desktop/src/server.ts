@@ -2,7 +2,7 @@ import { connect, createServer } from 'node:net'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app } from 'electron'
-import { performPendingDbReset } from './db-reset'
+import { performPendingDbReset, performPendingDbRestore } from './db-reset'
 import { logStartup } from './logging'
 
 // One source of truth for the UI: in dev we load the running `next dev` server,
@@ -106,6 +106,8 @@ export async function startNextServer(): Promise<void> {
   // If a reset was requested last session, move the corrupt data dir aside NOW,
   // before the server (and PGlite) load. A fresh cluster then bootstraps below.
   performPendingDbReset(process.env.PGLITE_DATA_DIR)
+  // Likewise a restore from a snapshot: swap the data directory before it opens.
+  performPendingDbRestore(process.env.PGLITE_DATA_DIR)
 
   const serverEntry = join(process.resourcesPath, 'web', 'apps', 'web', 'server.js')
   await import(pathToFileURL(serverEntry).href)

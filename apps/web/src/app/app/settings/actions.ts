@@ -3,20 +3,14 @@
 import { type AiConfig, isAiEnabled, pingModel } from '@repo/ai'
 import {
   type AiSettings,
-  accounts,
-  banks,
-  branches,
-  categories,
+  buildBackup,
   csvImports,
-  csvMappings,
   db,
-  financialSubscriptions,
   getAppSettings,
-  getTableColumns,
+  parseBackup,
+  restoreBackup,
   saveAppSettings,
-  tags,
   transactions,
-  transactionTags,
 } from '@repo/database'
 import { updateSettingsSchema } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
@@ -195,54 +189,16 @@ export async function resetAllData(): Promise<DangerResult> {
 }
 
 // ── Backup & restore ─────────────────────────────────────────────────────────
-// A full logical backup of the finance data as portable JSON. Version-tagged.
-// Export gathers every table; import wipes the data and restores the file (a true
-// "restore from backup"). Row ids are preserved so foreign keys stay intact.
-
-const BACKUP_FORMAT = 'pocket-cash-backup'
-const BACKUP_VERSION = 1
-
-// Ordered PARENT→CHILD so inserts satisfy foreign keys (the reverse of the
-// delete order in resetAllData).
-const BACKUP_TABLES = [
-  { key: 'banks', table: banks },
-  { key: 'categories', table: categories },
-  { key: 'tags', table: tags },
-  { key: 'branches', table: branches },
-  { key: 'csvMappings', table: csvMappings },
-  { key: 'accounts', table: accounts },
-  { key: 'financialSubscriptions', table: financialSubscriptions },
-  { key: 'csvImports', table: csvImports },
-  { key: 'transactions', table: transactions },
-  { key: 'transactionTags', table: transactionTags },
-] as const
-
-export interface BackupFile {
-  format: typeof BACKUP_FORMAT
-  formatVersion: number
-  exportedAt: string
-  settings: { defaultCurrency: string }
-  tables: Record<string, Record<string, unknown>[]>
-}
+// A full logical backup as portable JSON. The format, the tables it covers and
+// the restore all live in @repo/database (see backup.ts there); these are the
+// server actions the Settings page calls.
 
 export type ExportResult = { ok: true; json: string; filename: string } | { error: string }
 
-/** Serialize all finance data to a downloadable JSON backup. */
+/** Serialize all data to a downloadable JSON backup. */
 export async function exportData(): Promise<ExportResult> {
   try {
-    const tables: Record<string, Record<string, unknown>[]> = {}
-    for (const { key, table } of BACKUP_TABLES) {
-      tables[key] = (await db.select().from(table)) as Record<string, unknown>[]
-    }
-
-    const settings = await getSettings()
-    const backup: BackupFile = {
-      format: BACKUP_FORMAT,
-      formatVersion: BACKUP_VERSION,
-      exportedAt: new Date().toISOString(),
-      settings: { defaultCurrency: settings.defaultCurrency },
-      tables,
-    }
+    const backup = await buildBackup(db)
     const stamp = new Date().toISOString().slice(0, 10)
     return {
       ok: true,
@@ -257,84 +213,23 @@ export async function exportData(): Promise<ExportResult> {
 export type ImportResult = { ok: true; total: number } | { error: string }
 
 /**
- * Restore a backup: REPLACES all finance data with the file's contents. Runs in
- * one transaction so a malformed file leaves the DB untouched. JSON has no Date
- * type, so timestamp columns are revived from their ISO strings (detected
- * generically via the Drizzle column metadata).
+ * Restore a backup: REPLACES the data the file contains, in one transaction, so
+ * a malformed file leaves the database untouched.
  */
 export async function importData(json: string): Promise<ImportResult> {
-  let parsed: BackupFile
+  const parsed = parseBackup(json)
+  if ('error' in parsed) return parsed
+
+  let total: number
   try {
-    parsed = JSON.parse(json)
-  } catch {
-    return { error: 'Could not read the file — it is not valid JSON.' }
-  }
-  if (!parsed || typeof parsed !== 'object' || parsed.format !== BACKUP_FORMAT) {
-    return { error: 'This is not a Pocket Cash backup file.' }
-  }
-  if (parsed.formatVersion !== BACKUP_VERSION) {
-    return {
-      error: `This backup is version ${parsed.formatVersion}; this app reads version ${BACKUP_VERSION}.`,
-    }
-  }
-  const source = parsed.tables ?? {}
-  for (const { key } of BACKUP_TABLES) {
-    if (source[key] != null && !Array.isArray(source[key])) {
-      return { error: `The backup is malformed: "${key}" is not a list.` }
-    }
-  }
-
-  try {
-    await db.transaction(async (tx) => {
-      // 1. Wipe existing finance data (children first; transaction_tags cascade
-      //    off transactions).
-      await wipeAllFinanceData(tx)
-
-      // 2. Insert the backup's rows parent→child, reviving dates. Insert in
-      //    batches: a single multi-row INSERT of thousands of rows overflows the
-      //    driver's bind limits (PGlite throws "Invalid array length"), so chunk.
-      const INSERT_BATCH = 500
-      for (const { key, table } of BACKUP_TABLES) {
-        const rows = (source[key] ?? []) as Record<string, unknown>[]
-        if (!rows.length) continue
-        const columns = getTableColumns(table)
-        const revived = rows.map((row) => {
-          const out: Record<string, unknown> = { ...row }
-          for (const [name, col] of Object.entries(columns)) {
-            if (out[name] != null && col.dataType === 'date')
-              out[name] = new Date(out[name] as string)
-          }
-          return out
-        })
-        for (let i = 0; i < revived.length; i += INSERT_BATCH) {
-          await tx.insert(table).values(revived.slice(i, i + INSERT_BATCH))
-        }
-      }
-    })
-
-    // 3. Restore the default currency (keep other settings, e.g. AI).
-    if (parsed.settings?.defaultCurrency) {
-      const current = await getAppSettings()
-      await saveAppSettings({ ...current, defaultCurrency: parsed.settings.defaultCurrency })
-    }
+    total = await restoreBackup(db, parsed)
   } catch (error) {
     return {
       error:
-        `Import failed — nothing was changed. ${error instanceof Error ? error.message : ''}`.trim(),
+        `Import failed. Nothing was changed. ${error instanceof Error ? error.message : ''}`.trim(),
     }
   }
 
-  const total = BACKUP_TABLES.reduce((sum, { key }) => sum + (source[key]?.length ?? 0), 0)
-  for (const path of [
-    '/app',
-    '/app/banks',
-    '/app/accounts',
-    '/app/transactions',
-    '/app/subscriptions',
-    '/app/categories',
-    '/app/tags',
-    '/app/settings',
-  ])
-    revalidatePath(path)
+  revalidatePath('/app', 'layout')
   return { ok: true, total }
 }

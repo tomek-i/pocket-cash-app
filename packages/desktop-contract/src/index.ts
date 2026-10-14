@@ -22,6 +22,8 @@ export const IPC = {
   appOpenLogs: 'app:open-logs',
   /** Reset a corrupt embedded database: back up the bad dir and relaunch fresh. */
   dbReset: 'db:reset',
+  /** Restore the embedded database from a snapshot, then relaunch. */
+  dbRestore: 'db:restore',
   /** Write (encrypt + persist) a secret in the OS-keychain-backed vault. */
   secretSet: 'secret:set',
   /** Remove a secret from the vault. */
@@ -129,6 +131,12 @@ export interface DesktopBridge {
   openLogs?: () => Promise<void> | void
   /** Reset a corrupt embedded database: back up the bad dir and relaunch fresh. */
   resetDatabase?: () => Promise<void> | void
+  /**
+   * Restore the embedded database from a snapshot (a file name from the
+   * snapshot list) and relaunch. Resolves with an error when the snapshot is not
+   * found; on success the app restarts and the promise never settles in-page.
+   */
+  restoreSnapshot?: (name: string) => Promise<{ ok: false; error: string } | undefined>
   /** Secure secret vault; present only in desktop builds that expose it. */
   secrets?: DesktopSecrets
   /** Update settings and manual check; present only in desktop builds that expose it. */

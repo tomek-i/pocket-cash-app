@@ -23,6 +23,13 @@ export {
   sum,
 } from 'drizzle-orm'
 export { alias } from 'drizzle-orm/pg-core'
+export {
+  BACKUP_VERSION,
+  type BackupFile,
+  buildBackup,
+  parseBackup,
+  restoreBackup,
+} from './backup'
 export { type Database, db } from './client'
 export { seedPropertyDefaults, TRANSFER_TAX_GROUP } from './property-seed'
 export * from './schema'
