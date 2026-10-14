@@ -203,6 +203,7 @@ export default async function FyReportPage({
                 data={breakdown.slices}
                 centerValue={formatMoney(breakdown.total, currency)}
                 centerLabel="spent"
+                formatValue={(v) => formatMoney(v, currency)}
                 className="shrink-0"
               />
               <ul className="flex min-w-48 flex-1 flex-col gap-2">
