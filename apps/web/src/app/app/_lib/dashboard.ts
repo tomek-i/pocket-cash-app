@@ -15,6 +15,8 @@ import {
 } from '@repo/database'
 import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 import { getDefaultCurrency } from '../settings/actions'
+import { byPaymentStatus, type PaymentStatus } from '../subscriptions/_lib/schedule'
+import { loadPaymentStatuses } from '../subscriptions/_lib/status'
 import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
 /**
@@ -45,6 +47,13 @@ export interface DashboardData {
    * money moved to or from accounts the app does not track.
    */
   transfersNet: number
+  /** Whether any transaction is dated in the selected month. */
+  monthHasData: boolean
+  /**
+   * The newest month holding any transaction, or null with none at all.
+   * `selectable` is false when it is older than the picker's 12 months.
+   */
+  latestMonth: { key: string; label: string; selectable: boolean } | null
   incomeChangePct: number | null
   spendingChangePct: number | null
   recent: {
@@ -62,7 +71,7 @@ export interface DashboardData {
     amount: number
     currency: string
     cycle: BillingCycle
-    nextPaymentDate: string | null
+    status: PaymentStatus
   }[]
   subsMonthlyTotal: number
 }
@@ -149,6 +158,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
         income: incomeSum,
         spending: spendingSum,
         transfers: transferNetSum,
+        count: sql<string>`count(*)`,
       })
       .from(transactions)
       .where(and(gte(transactions.date, from), lt(transactions.date, to)))
@@ -156,12 +166,30 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
       income: Number(row?.income ?? 0),
       spending: Number(row?.spending ?? 0),
       transfers: Number(row?.transfers ?? 0),
+      count: Number(row?.count ?? 0),
     }
   }
   const thisMonth = await flows(startThisMonth, startNextMonth)
   const lastMonth = await flows(startLastMonth, startThisMonth)
   const pctChange = (curr: number, prev: number): number | null =>
     prev > 0 ? ((curr - prev) / prev) * 100 : null
+
+  // The newest month with anything in it, so an empty month can point somewhere.
+  const [latestRow] = await db
+    .select({ date: sql<string | null>`max(${transactions.date})` })
+    .from(transactions)
+  const latestKey = latestRow?.date?.slice(0, 7)
+  const latestMonth = latestKey
+    ? {
+        key: latestKey,
+        label: new Date(`${latestKey}-01T00:00:00Z`).toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }),
+        selectable: trendKeys.includes(latestKey),
+      }
+    : null
 
   // ── Spending by category (this month, debits only) ───────────────────────────
   const catRows = await db
@@ -258,10 +286,18 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
       currency: financialSubscriptions.currency,
       cycle: financialSubscriptions.cycle,
       nextPaymentDate: financialSubscriptions.nextPaymentDate,
+      matcher: financialSubscriptions.matcher,
     })
     .from(financialSubscriptions)
     .where(eq(financialSubscriptions.active, true))
-    .orderBy(asc(financialSubscriptions.nextPaymentDate))
+    .orderBy(asc(financialSubscriptions.name))
+  const subStatuses = await loadPaymentStatuses(subRows)
+  const upcomingSubs = subRows
+    .map(({ nextPaymentDate: _stored, matcher: _matcher, ...sub }) => ({
+      ...sub,
+      status: subStatuses.get(sub.id) ?? { kind: 'unknown' as const },
+    }))
+    .sort((a, b) => byPaymentStatus(a.status, b.status))
 
   const subsMonthlyTotal = subRows.reduce(
     (sum, s) => sum + Math.round(s.amount * (30 / BILLING_CYCLE_DAYS[s.cycle])),
@@ -283,10 +319,12 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     income: thisMonth.income,
     spending: thisMonth.spending,
     transfersNet: thisMonth.transfers,
+    monthHasData: thisMonth.count > 0,
+    latestMonth,
     incomeChangePct: pctChange(thisMonth.income, lastMonth.income),
     spendingChangePct: pctChange(thisMonth.spending, lastMonth.spending),
     recent,
-    subscriptions: subRows.slice(0, 6),
+    subscriptions: upcomingSubs.slice(0, 6),
     subsMonthlyTotal,
   }
 }
