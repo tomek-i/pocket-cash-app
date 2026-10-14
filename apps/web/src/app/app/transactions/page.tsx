@@ -2,16 +2,21 @@ import { getAppSettings } from '@repo/database'
 import { buttonVariants, Card, CardContent } from '@repo/ui'
 import { ArrowLeftRight } from 'lucide-react'
 import Link from 'next/link'
-import { parseAmountToMinor } from '@/lib/money'
+import { formatMoney, parseAmountToMinor } from '@/lib/money'
 import { Empty } from '../_components/empty'
 import { Pagination } from '../_components/pagination'
 import { PAGE_SIZES, toPageSize } from '../_lib/pagination'
 import { listAllAccounts } from '../accounts/actions'
 import { listCategories } from '../categories/actions'
+import { getDefaultCurrency } from '../settings/actions'
 import { listTags } from '../tags/actions'
-import { type FilterAccount, TransactionFilters } from './_components/transaction-filters'
+import {
+  type FilterAccount,
+  TotalsLine,
+  TransactionFilters,
+} from './_components/transaction-filters'
 import { TransactionsTable } from './_components/transactions-table'
-import { listTransactions } from './actions'
+import { listTransactions, summarizeTransactions } from './actions'
 import { countTransferSuggestions } from './transfer-actions'
 
 export const metadata = { title: 'Transactions' }
@@ -69,23 +74,25 @@ export default async function TransactionsPage({
   const amountMin = parseAmountToMinor(params.min)
   const amountMax = parseAmountToMinor(params.max)
 
-  const [data, accounts, categories, tags, transferSuggestions] = await Promise.all([
-    listTransactions({
-      accountId: params.account,
-      q: params.q,
-      from: params.from,
-      to: params.to,
-      category: params.category,
-      amountMin,
-      amountMax,
-      page,
-      pageSize,
-    }),
-    listAllAccounts(),
-    listCategories(),
-    listTags(),
-    countTransferSuggestions(),
-  ])
+  const filters = {
+    accountId: params.account,
+    q: params.q,
+    from: params.from,
+    to: params.to,
+    category: params.category,
+    amountMin,
+    amountMax,
+  }
+  const [data, accounts, categories, tags, transferSuggestions, totals, currency] =
+    await Promise.all([
+      listTransactions({ ...filters, page, pageSize }),
+      listAllAccounts(),
+      listCategories(),
+      listTags(),
+      countTransferSuggestions(),
+      summarizeTransactions(filters),
+      getDefaultCurrency(),
+    ])
 
   const filterAccounts: FilterAccount[] = accounts.map((a) => ({
     id: a.id,
@@ -173,6 +180,11 @@ export default async function TransactionsPage({
         </Card>
       ) : (
         <>
+          <TotalsLine
+            count={totals.count}
+            moneyIn={totals.moneyIn > 0 ? formatMoney(totals.moneyIn, currency) : ''}
+            moneyOut={totals.moneyOut > 0 ? formatMoney(totals.moneyOut, currency) : ''}
+          />
           <Pagination
             page={data.page}
             pageSize={data.pageSize}
