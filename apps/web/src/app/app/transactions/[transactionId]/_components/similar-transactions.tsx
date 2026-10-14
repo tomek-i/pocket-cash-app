@@ -19,6 +19,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
+import { useDateFormat } from '../../../_components/date-format-provider'
 import { CategoryIcon } from '../../../categories/_components/category-icon'
 import { TagPill, TagSwatch } from '../../../tags/_components/tag-pill'
 import { overwritesCategory, type PendingCategory } from '../../_lib/category-change'
@@ -42,6 +43,7 @@ export function SimilarTransactions({
   categories: CategoryLite[]
   tags: TagLite[]
 }) {
+  const { date: formatDate } = useDateFormat()
   const [threshold, setThreshold] = useState(0.3)
   const [includeAmount, setIncludeAmount] = useState(false)
   const [uncategorisedOnly, setUncategorisedOnly] = useState(false)
@@ -343,7 +345,7 @@ export function SimilarTransactions({
                           {r.displayName ?? r.description}
                         </p>
                         <p className="truncate text-muted-foreground text-xs">
-                          {r.date} · {Math.round(r.similarity * 100)}% match
+                          {formatDate(r.date)} · {Math.round(r.similarity * 100)}% match
                         </p>
                       </Link>
                       <div className="flex min-w-0 max-w-[45%] shrink-0 flex-wrap items-center justify-end gap-1.5">

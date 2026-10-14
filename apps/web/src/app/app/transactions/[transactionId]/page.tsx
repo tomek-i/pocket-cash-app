@@ -3,6 +3,8 @@ import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { formatDate } from '@/lib/date-format'
+import { getDateLocale } from '@/lib/date-locale'
 import { amountClassName, formatMoney } from '@/lib/money'
 import { listCategories } from '../../categories/actions'
 import { listTags } from '../../tags/actions'
@@ -35,6 +37,7 @@ export default async function TransactionDetailPage({
     listTags(),
   ])
   if (!tx) notFound()
+  const locale = await getDateLocale()
   const transferCandidates = tx.transferPair ? [] : await findTransferCounterparts(tx.id)
 
   const title = tx.displayName ?? tx.description
@@ -55,7 +58,7 @@ export default async function TransactionDetailPage({
           <h1 className="break-words font-semibold text-2xl tracking-tight">{title}</h1>
           <p className="text-muted-foreground text-sm">
             {tx.account.bank ? `${tx.account.bank.name} · ` : ''}
-            {tx.account.name} · {tx.date}
+            {tx.account.name} · {formatDate(tx.date, locale)}
           </p>
         </div>
         <p className={`font-semibold text-2xl tabular-nums ${amountClassName(tx.amount)}`}>
@@ -77,8 +80,12 @@ export default async function TransactionDetailPage({
             <Field label="Tags">
               <TagsCell transactionId={tx.id} tags={tx.tags} allTags={tags} />
             </Field>
-            <Field label="Date">{tx.date}</Field>
-            {tx.valueDate ? <Field label="Value date">{tx.valueDate}</Field> : null}
+            <Field label="Date">{formatDate(tx.date, locale, { alwaysYear: true })}</Field>
+            {tx.valueDate ? (
+              <Field label="Value date">
+                {formatDate(tx.valueDate, locale, { alwaysYear: true })}
+              </Field>
+            ) : null}
             <Field label="Account">
               <Link
                 href={`/app/banks/${tx.account.bankId}`}

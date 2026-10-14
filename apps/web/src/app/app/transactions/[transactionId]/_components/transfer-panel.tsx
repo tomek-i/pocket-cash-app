@@ -5,6 +5,7 @@ import { ArrowLeftRight, Link2, Unlink } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { amountClassName, formatMoney } from '@/lib/money'
+import { useDateFormat } from '../../../_components/date-format-provider'
 import type { TransactionDetail } from '../../actions'
 import {
   linkTransfer,
@@ -30,6 +31,7 @@ export function TransferPanel({
   candidates: TransferCandidate[]
 }) {
   const [pending, startTransition] = useTransition()
+  const { date: formatDate } = useDateFormat()
   const [error, setError] = useState<string | null>(null)
 
   const run = (fn: () => Promise<{ ok: true } | { error: string }>) =>
@@ -73,7 +75,7 @@ export function TransferPanel({
             <div className="min-w-0 text-sm">
               <p className="text-muted-foreground text-xs">Other side</p>
               <Link href={`/app/transactions/${pair.id}`} className="text-primary hover:underline">
-                {pair.accountName} · {pair.date}
+                {pair.accountName} · {formatDate(pair.date)}
               </Link>
             </div>
             <Button
@@ -100,7 +102,7 @@ export function TransferPanel({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{c.displayName ?? c.description}</p>
                     <p className="truncate text-muted-foreground text-xs">
-                      {c.accountName} · {c.date}
+                      {c.accountName} · {formatDate(c.date)}
                     </p>
                   </div>
                   <span className={`text-sm tabular-nums ${amountClassName(c.amount)}`}>

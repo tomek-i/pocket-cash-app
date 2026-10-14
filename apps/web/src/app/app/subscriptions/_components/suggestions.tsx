@@ -4,6 +4,7 @@ import { Button, Card, CardContent } from '@repo/ui'
 import { Check, Sparkles } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { formatMoney } from '@/lib/money'
+import { useDateFormat } from '../../_components/date-format-provider'
 import { hiddenSummary } from '../_lib/detection'
 import { CYCLE_LABELS } from '../_lib/schedule'
 import { applySuggestion, dismissSuggestion, type SubscriptionDetections } from '../actions'
@@ -13,6 +14,7 @@ export function Suggestions({ detections }: { detections: SubscriptionDetections
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [, startTransition] = useTransition()
+  const { date: formatDate } = useDateFormat()
 
   const visible = detections.suggestions.filter((s) => !dismissed.has(s.matcher))
   const hiddenLine = hiddenSummary(detections.hidden)
@@ -37,7 +39,7 @@ export function Suggestions({ detections }: { detections: SubscriptionDetections
                 <p className="truncate font-medium text-sm">{s.name}</p>
                 <p className="truncate text-muted-foreground text-xs">
                   {formatMoney(s.amount, s.currency)} · {CYCLE_LABELS[s.cycle]} · {s.occurrences}{' '}
-                  charges · next {s.nextPaymentDate}
+                  charges · next {formatDate(s.nextPaymentDate)}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

@@ -1,9 +1,11 @@
 import { getAppSettings } from '@repo/database'
 import { createLogger } from '@repo/logger'
 import type { ReactNode } from 'react'
+import { resolveNumberLocale } from '@/lib/number-format'
 import { prepareEmbeddedDatabase } from '@/lib/workspace'
 import { AppSidebar } from './_components/app-sidebar'
 import { DatabaseRecovery } from './_components/database-recovery'
+import { DateFormatProvider } from './_components/date-format-provider'
 import { Onboarding } from './_components/onboarding/onboarding'
 import { isWorkspaceEmpty } from './_lib/seed'
 import { countUncategorised } from './categorize/_lib/count'
@@ -46,7 +48,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // The flag lives in the single-row app_settings blob, so it survives restarts.
   // Guarded on an empty workspace too, so an install that predates the flag but
   // already has data is never interrupted (and can't hit demo-seed conflicts).
-  if (!(await getAppSettings()).onboardingCompleted && (await isWorkspaceEmpty())) {
+  const settings = await getAppSettings()
+  if (!settings.onboardingCompleted && (await isWorkspaceEmpty())) {
     return (
       <main className="min-h-screen">
         <Onboarding />
@@ -57,9 +60,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const uncategorised = await countUncategorised()
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar uncategorised={uncategorised} />
-      <main className="min-w-0 flex-1">{children}</main>
-    </div>
+    <DateFormatProvider locale={resolveNumberLocale(settings.numberLocale)}>
+      <div className="flex min-h-screen">
+        <AppSidebar uncategorised={uncategorised} />
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
+    </DateFormatProvider>
   )
 }

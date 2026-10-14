@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { getDateLocale } from '@/lib/date-locale'
 import { isAiConfigured } from '../../../settings/actions'
 import { currentFy, fyRangeLabel } from '../../queries'
 import { TaxCandidateFinder } from './_components/tax-candidate-finder'
@@ -27,8 +28,8 @@ export default async function TaxReviewPage({ params }: { params: Promise<{ fy: 
         <div>
           <h1 className="font-semibold text-2xl tracking-tight">Tax review · FY{fy}</h1>
           <p className="text-muted-foreground text-sm">
-            {fyRangeLabel(fy)} — scan this financial year for possibly tax-relevant transactions and
-            tag them for your return.
+            {fyRangeLabel(fy, await getDateLocale())}. Scan this financial year for possibly
+            tax-relevant transactions and tag them for your return.
           </p>
         </div>
       </div>

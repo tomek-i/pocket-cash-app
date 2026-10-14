@@ -14,6 +14,8 @@ import {
   transactions,
 } from '@repo/database'
 import type { BillingCycle } from '@repo/types'
+import { formatMonth } from '@/lib/date-format'
+import { getDateLocale } from '@/lib/date-locale'
 import { getDefaultCurrency } from '../settings/actions'
 import { byPaymentStatus, monthlyCost, type PaymentStatus } from '../subscriptions/_lib/schedule'
 import { loadPaymentStatuses } from '../subscriptions/_lib/status'
@@ -119,13 +121,9 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
   const startThisMonth = ymd(selYear, selMonth0)
   const startLastMonth = ymd(selYear, selMonth0 - 1)
   const startNextMonth = ymd(selYear, selMonth0 + 1)
-  const selDate = new Date(Date.UTC(selYear, selMonth0, 1))
-  const monthLabel = selDate.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-  const monthShort = selDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })
+  const locale = await getDateLocale()
+  const monthLabel = formatMonth(selectedKey as string, locale)
+  const monthShort = formatMonth(selectedKey as string, locale, 'short')
 
   // ── Accounts + balances (opening balance + net of transactions) ──────────────
   const accountRows = await db
@@ -182,11 +180,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
   const latestMonth = latestKey
     ? {
         key: latestKey,
-        label: new Date(`${latestKey}-01T00:00:00Z`).toLocaleDateString('en-US', {
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'UTC',
-        }),
+        label: formatMonth(latestKey, locale),
         selectable: trendKeys.includes(latestKey),
       }
     : null

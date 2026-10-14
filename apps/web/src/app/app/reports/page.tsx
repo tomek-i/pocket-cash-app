@@ -2,6 +2,7 @@ import { Card, CardContent, cn } from '@repo/ui'
 import { BarChart3, ChevronRight, Upload } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { getDateLocale } from '@/lib/date-locale'
 import { formatMoney } from '@/lib/money'
 import { DonutChart } from '../_components/charts'
 import { Empty } from '../_components/empty'
@@ -25,10 +26,11 @@ export default async function ReportsPage({
   const { view } = await searchParams
   const showingPast = view === 'past'
 
-  const [years, breakdowns, currency] = await Promise.all([
+  const [years, breakdowns, currency, locale] = await Promise.all([
     listFinancialYears(),
     getFyCategoryBreakdowns(),
     getDefaultCurrency(),
+    getDateLocale(),
   ])
 
   const cy = currentFy()
@@ -73,7 +75,13 @@ export default async function ReportsPage({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {pastYears.map((y) => (
-              <FyCard key={y.fy} y={y} breakdown={breakdowns.get(y.fy)} currency={currency} />
+              <FyCard
+                key={y.fy}
+                y={y}
+                breakdown={breakdowns.get(y.fy)}
+                currency={currency}
+                locale={locale}
+              />
             ))}
           </div>
         )
@@ -83,7 +91,7 @@ export default async function ReportsPage({
             className="p-12"
             icon={BarChart3}
             title={`No transactions for FY${cy} yet`}
-            description={`${fyRangeLabel(cy)}. Import a statement to start this year's report${pastYears.length ? ', or check previous years' : ''}.`}
+            description={`${fyRangeLabel(cy, locale)}. Import a statement to start this year's report${pastYears.length ? ', or check previous years' : ''}.`}
             action={
               <Link
                 href="/app/import"
@@ -96,7 +104,12 @@ export default async function ReportsPage({
           />
         </Card>
       ) : (
-        <FyCard y={currentSummary} breakdown={breakdowns.get(cy)} currency={currency} />
+        <FyCard
+          y={currentSummary}
+          breakdown={breakdowns.get(cy)}
+          currency={currency}
+          locale={locale}
+        />
       )}
     </div>
   )
@@ -130,10 +143,12 @@ function FyCard({
   y,
   breakdown,
   currency,
+  locale,
 }: {
   y: FySummary
   breakdown: FyBreakdown | undefined
   currency: string
+  locale: string
 }) {
   return (
     <Link href={`/app/reports/${y.fy}`}>
@@ -142,7 +157,7 @@ function FyCard({
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-lg">FY{y.fy}</p>
-              <p className="text-muted-foreground text-xs">{fyRangeLabel(y.fy)}</p>
+              <p className="text-muted-foreground text-xs">{fyRangeLabel(y.fy, locale)}</p>
             </div>
             <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
           </div>

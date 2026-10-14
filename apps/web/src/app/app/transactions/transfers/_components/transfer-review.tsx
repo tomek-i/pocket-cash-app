@@ -5,6 +5,7 @@ import { ArrowRight, CheckCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { formatMoney } from '@/lib/money'
+import { useDateFormat } from '../../../_components/date-format-provider'
 import { Empty } from '../../../_components/empty'
 import type { TransferSuggestion } from '../../_lib/transfer-matching'
 import {
@@ -210,6 +211,7 @@ function Side({
   account: string
   date: string
 }) {
+  const { date: formatDate } = useDateFormat()
   return (
     <div className="min-w-0 flex-1 basis-48">
       <Link
@@ -219,7 +221,7 @@ function Side({
         {name}
       </Link>
       <p className="truncate text-muted-foreground text-xs">
-        {account} · {date}
+        {account} · {formatDate(date)}
       </p>
     </div>
   )

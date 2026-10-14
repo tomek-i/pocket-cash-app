@@ -5,6 +5,7 @@ import { Button, Input, OptionSelect } from '@repo/ui'
 import { CalendarDays, Search, SlidersHorizontal, X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { useDateFormat } from '../../_components/date-format-provider'
 import { CategoryIcon } from '../../categories/_components/category-icon'
 import { TagSwatch } from '../../tags/_components/tag-pill'
 import { DATE_PRESET_LABELS, type DatePreset, presetFor, presetRange } from '../_lib/date-presets'
@@ -65,6 +66,7 @@ export function TransactionFilters({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { date: formatDate } = useDateFormat()
 
   const [q, setQ] = useState(current.q ?? '')
   const [min, setMin] = useState(current.amountMin ?? '')
@@ -144,7 +146,7 @@ export function TransactionFilters({
   if (showDateRange && (current.from || current.to)) {
     const label =
       activePreset === 'custom'
-        ? `${current.from ?? '…'} to ${current.to ?? '…'}`
+        ? `${current.from ? formatDate(current.from) : '…'} to ${current.to ? formatDate(current.to) : '…'}`
         : DATE_PRESET_LABELS[activePreset]
     chips.push({ key: 'date', label, clear: { from: undefined, to: undefined } })
   }
