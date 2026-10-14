@@ -1,6 +1,7 @@
 import { getAppSettings } from '@repo/database'
-import { Card } from '@repo/ui'
+import { buttonVariants, Card, CardContent } from '@repo/ui'
 import { ArrowLeftRight } from 'lucide-react'
+import Link from 'next/link'
 import { parseAmountToMinor } from '@/lib/money'
 import { Empty } from '../_components/empty'
 import { Pagination } from '../_components/pagination'
@@ -11,6 +12,7 @@ import { listTags } from '../tags/actions'
 import { type FilterAccount, TransactionFilters } from './_components/transaction-filters'
 import { TransactionsTable } from './_components/transactions-table'
 import { listTransactions } from './actions'
+import { countTransferSuggestions } from './transfer-actions'
 
 export const metadata = { title: 'Transactions' }
 
@@ -67,7 +69,7 @@ export default async function TransactionsPage({
   const amountMin = parseAmountToMinor(params.min)
   const amountMax = parseAmountToMinor(params.max)
 
-  const [data, accounts, categories, tags] = await Promise.all([
+  const [data, accounts, categories, tags, transferSuggestions] = await Promise.all([
     listTransactions({
       accountId: params.account,
       q: params.q,
@@ -82,6 +84,7 @@ export default async function TransactionsPage({
     listAllAccounts(),
     listCategories(),
     listTags(),
+    countTransferSuggestions(),
   ])
 
   const filterAccounts: FilterAccount[] = accounts.map((a) => ({
@@ -120,6 +123,26 @@ export default async function TransactionsPage({
           Everything imported across your accounts. Categorise and tag inline.
         </p>
       </div>
+
+      {transferSuggestions > 0 ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <ArrowLeftRight className="size-4 shrink-0 text-muted-foreground" />
+              <p className="text-sm">
+                {transferSuggestions} possible transfer{transferSuggestions === 1 ? '' : 's'}{' '}
+                between your accounts. Confirm them to keep them out of income and spending.
+              </p>
+            </div>
+            <Link
+              href="/app/transactions/transfers"
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              Review
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <TransactionFilters
         accounts={filterAccounts}

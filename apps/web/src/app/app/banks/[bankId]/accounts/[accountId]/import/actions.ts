@@ -14,6 +14,7 @@ import {
 } from '@repo/database'
 import { createLogger } from '@repo/logger'
 import { revalidatePath } from 'next/cache'
+import { countTransferSuggestions } from '../../../../../transactions/transfer-actions'
 
 const log = createLogger('csv-import')
 
@@ -115,6 +116,8 @@ export interface ImportResult {
   skipped: number
   errors: number
   total: number
+  /** Possible transfers waiting for review across all accounts, after this import. */
+  transferSuggestions: number
 }
 
 export async function runImport(input: {
@@ -203,6 +206,7 @@ export async function runImport(input: {
     skipped: okRows.length - imported,
     errors: parseResult.errorCount,
     total: parseResult.rows.length,
+    transferSuggestions: imported > 0 ? await countTransferSuggestions() : 0,
   }
   await db
     .update(csvImports)

@@ -22,6 +22,7 @@ export {
   sql,
   sum,
 } from 'drizzle-orm'
+export { alias } from 'drizzle-orm/pg-core'
 export { type Database, db } from './client'
 export { seedPropertyDefaults, TRANSFER_TAX_GROUP } from './property-seed'
 export * from './schema'

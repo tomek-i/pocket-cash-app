@@ -703,6 +703,18 @@ export function ImportWizard({
                   {result.imported} imported · {result.skipped} skipped (duplicates) ·{' '}
                   {result.errors} errors of {result.total} rows.
                 </p>
+                {result.transferSuggestions > 0 ? (
+                  <p className="mt-2 text-sm">
+                    {result.transferSuggestions} possible transfer
+                    {result.transferSuggestions === 1 ? '' : 's'} between your accounts.{' '}
+                    <Link
+                      href="/app/transactions/transfers"
+                      className="text-primary hover:underline"
+                    >
+                      Review
+                    </Link>
+                  </p>
+                ) : null}
               </div>
               <div className="flex gap-2">
                 <Link href={`/app/banks/${bankId}`}>
