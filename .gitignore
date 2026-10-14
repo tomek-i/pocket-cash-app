@@ -47,3 +47,6 @@ Thumbs.db
 # apps/desktop/scripts/prepare-icon.mjs at build time (single source of truth).
 apps/desktop/build/icon.png
 .narrate/
+
+# Playwright MCP browser session output (snapshots, screenshots, console logs)
+.playwright-mcp/
