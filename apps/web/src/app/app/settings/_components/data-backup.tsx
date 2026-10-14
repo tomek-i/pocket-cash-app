@@ -40,8 +40,8 @@ export function DataBackup() {
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm">Export data</p>
           <p className="text-muted-foreground text-sm">
-            Download a full backup — banks, accounts, transactions, categories, tags and
-            subscriptions — as a single JSON file.
+            Download everything as a single JSON file: banks, accounts, transactions, categories,
+            tags, subscriptions, property plans and your settings. Your AI key is left out.
           </p>
         </div>
         <Button variant="outline" className="shrink-0" disabled={pending} onClick={runExport}>
