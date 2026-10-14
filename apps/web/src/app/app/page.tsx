@@ -188,6 +188,7 @@ export default async function OverviewPage({
                   data={data.categorySpend}
                   centerValue={formatMoney(data.monthSpendTotal, currency)}
                   centerLabel={monthLabel}
+                  formatValue={(v) => formatMoney(v, currency)}
                   className="shrink-0"
                 />
                 <ul className="flex w-full flex-col gap-2.5">

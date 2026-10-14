@@ -147,7 +147,11 @@ function FyCard({
           </div>
           <div className="flex items-center gap-4">
             {breakdown && breakdown.total > 0 ? (
-              <DonutChart data={breakdown.slices} className="size-24 shrink-0" />
+              <DonutChart
+                data={breakdown.slices}
+                formatValue={(v) => formatMoney(v, currency)}
+                className="size-24 shrink-0"
+              />
             ) : null}
             <div className="flex flex-1 flex-col gap-2">
               <StatRow
@@ -167,6 +171,20 @@ function FyCard({
               />
             </div>
           </div>
+          {breakdown && breakdown.total > 0 ? (
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 border-t pt-3">
+              {breakdown.slices.map((s) => (
+                <li key={s.label} className="flex items-center gap-2 text-xs">
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: s.color }}
+                  />
+                  <span className="flex-1 truncate text-muted-foreground">{s.label}</span>
+                  <span className="font-medium tabular-nums">{formatMoney(s.value, currency)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <p className="text-muted-foreground text-xs">
             {y.count} transaction{y.count === 1 ? '' : 's'}
           </p>

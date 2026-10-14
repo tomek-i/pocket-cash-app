@@ -6,16 +6,22 @@ export interface DonutSlice {
   color: string
 }
 
-/** Lightweight SVG donut — no charting dependency. */
+/**
+ * Lightweight SVG donut — no charting dependency. Hovering a slice shows its
+ * label, value and share of the total; pass `formatValue` to format the value
+ * (e.g. as money), otherwise only the label and share are shown.
+ */
 export function DonutChart({
   data,
   centerValue,
   centerLabel,
+  formatValue,
   className,
 }: {
   data: DonutSlice[]
   centerValue?: string
   centerLabel?: string
+  formatValue?: (value: number) => string
   className?: string
 }) {
   const total = data.reduce((sum, s) => sum + s.value, 0) || 1
@@ -25,8 +31,12 @@ export function DonutChart({
 
   return (
     <div className={cn('relative size-40', className)}>
-      <svg viewBox="0 0 140 140" className="-rotate-90 size-full" role="img">
-        <title>Spending by category</title>
+      <svg
+        viewBox="0 0 140 140"
+        className="-rotate-90 size-full"
+        role="img"
+        aria-label="Spending by category"
+      >
         <circle
           cx="70"
           cy="70"
@@ -40,6 +50,7 @@ export function DonutChart({
           const dash = fraction * circumference
           const dashoffset = -offset * circumference
           offset += fraction
+          const share = `${(fraction * 100).toFixed(1)}%`
           return (
             <circle
               key={slice.label}
@@ -52,12 +63,18 @@ export function DonutChart({
               strokeDasharray={`${dash} ${circumference - dash}`}
               strokeDashoffset={dashoffset}
               strokeLinecap="butt"
-            />
+            >
+              <title>
+                {formatValue
+                  ? `${slice.label}: ${formatValue(slice.value)} (${share})`
+                  : `${slice.label}: ${share}`}
+              </title>
+            </circle>
           )
         })}
       </svg>
       {centerValue || centerLabel ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           {centerValue ? (
             <span className="font-semibold text-foreground text-xl tracking-tight">
               {centerValue}
