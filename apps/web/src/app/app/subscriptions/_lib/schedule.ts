@@ -1,4 +1,4 @@
-import type { BillingCycle } from '@repo/types'
+import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 
 export const CYCLE_LABELS: Record<BillingCycle, string> = {
   weekly: 'Weekly',
@@ -21,6 +21,11 @@ const GRACE_DAYS: Record<BillingCycle, number> = {
   monthly: 5,
   quarterly: 5,
   yearly: 5,
+}
+
+/** What one cycle's amount costs per month, on a 30-day month. Minor units. */
+export function monthlyCost(amount: number, cycle: BillingCycle): number {
+  return Math.round(amount * (30 / BILLING_CYCLE_DAYS[cycle]))
 }
 
 /** Zero-padded YYYY-MM-DD in local time. */

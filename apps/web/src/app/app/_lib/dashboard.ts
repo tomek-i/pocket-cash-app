@@ -13,9 +13,9 @@ import {
   transactionListOrder,
   transactions,
 } from '@repo/database'
-import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
+import type { BillingCycle } from '@repo/types'
 import { getDefaultCurrency } from '../settings/actions'
-import { byPaymentStatus, type PaymentStatus } from '../subscriptions/_lib/schedule'
+import { byPaymentStatus, monthlyCost, type PaymentStatus } from '../subscriptions/_lib/schedule'
 import { loadPaymentStatuses } from '../subscriptions/_lib/status'
 import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
@@ -299,10 +299,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     }))
     .sort((a, b) => byPaymentStatus(a.status, b.status))
 
-  const subsMonthlyTotal = subRows.reduce(
-    (sum, s) => sum + Math.round(s.amount * (30 / BILLING_CYCLE_DAYS[s.cycle])),
-    0,
-  )
+  const subsMonthlyTotal = subRows.reduce((sum, s) => sum + monthlyCost(s.amount, s.cycle), 0)
 
   return {
     currency,
