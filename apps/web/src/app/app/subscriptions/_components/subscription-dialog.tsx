@@ -1,7 +1,7 @@
 'use client'
 
 import type { Category } from '@repo/database'
-import { BILLING_CYCLES, type BillingCycle } from '@repo/types'
+import { BILLING_CYCLES } from '@repo/types'
 import {
   Button,
   Dialog,
@@ -18,14 +18,8 @@ import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../banks/_components/form-field'
 import { CategoryIcon } from '../../categories/_components/category-icon'
+import { CYCLE_LABELS } from '../_lib/schedule'
 import { createSubscription, type SubscriptionWithCategory, updateSubscription } from '../actions'
-
-export const CYCLE_LABELS: Record<BillingCycle, string> = {
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  quarterly: 'Quarterly',
-  yearly: 'Yearly',
-}
 
 export function SubscriptionDialog({
   categories,

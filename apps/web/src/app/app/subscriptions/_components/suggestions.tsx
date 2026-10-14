@@ -4,8 +4,8 @@ import { Button, Card, CardContent } from '@repo/ui'
 import { Check, Sparkles } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { formatMoney } from '@/lib/money'
+import { CYCLE_LABELS } from '../_lib/schedule'
 import { applySuggestion, type SubscriptionSuggestion } from '../actions'
-import { CYCLE_LABELS } from './subscription-dialog'
 
 export function Suggestions({ suggestions }: { suggestions: SubscriptionSuggestion[] }) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())

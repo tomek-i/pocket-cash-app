@@ -15,6 +15,7 @@ import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 import { createSubscriptionSchema, updateSubscriptionSchema } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
+import { addDays, normalizeText } from './_lib/schedule'
 
 export type SubscriptionWithCategory = FinancialSubscription & {
   category: Pick<Category, 'id' | 'name' | 'color'> | null
@@ -133,15 +134,7 @@ export interface SubscriptionSuggestion {
 
 /** Group key for a transaction: lowercased letters of merchant/description. */
 function normalizeKey(raw: string): string {
-  return raw
-    .toLowerCase()
-    .replace(/[0-9]+/g, ' ')
-    .replace(/[^a-z\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .slice(0, 4)
-    .join(' ')
+  return normalizeText(raw).split(' ').slice(0, 4).join(' ')
 }
 
 function titleCase(value: string): string {
@@ -165,12 +158,6 @@ function classifyCycle(gapDays: number): BillingCycle | null {
 }
 
 const DAY_MS = 86_400_000
-
-function addDays(isoDate: string, days: number): string {
-  const next = new Date(`${isoDate}T00:00:00Z`)
-  next.setUTCDate(next.getUTCDate() + days)
-  return next.toISOString().slice(0, 10)
-}
 
 /**
  * Scan outflow transactions for recurring charges and suggest subscriptions.

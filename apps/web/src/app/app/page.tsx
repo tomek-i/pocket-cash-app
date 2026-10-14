@@ -28,7 +28,7 @@ import { getDashboardData } from './_lib/dashboard'
 import { generateDashboardInsight, getDashboardInsight } from './_lib/dashboard-insight-actions'
 import { CategoryIcon } from './categories/_components/category-icon'
 import { isAiConfigured } from './settings/actions'
-import { CYCLE_LABELS } from './subscriptions/_components/subscription-dialog'
+import { CYCLE_LABELS, type PaymentStatus } from './subscriptions/_lib/schedule'
 
 export const metadata = { title: 'Overview' }
 
@@ -44,6 +44,13 @@ function pct(value: number | null): string {
 
 function shortDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function paymentLabel(status: PaymentStatus): string | null {
+  if (status.kind === 'upcoming') return `next ${shortDate(status.date)}`
+  if (status.kind === 'not-seen')
+    return status.lastSeen ? `not seen since ${shortDate(status.lastSeen)}` : 'not seen'
+  return null
 }
 
 /** The last 12 months as picker options, newest first, keyed `YYYY-MM`. */
@@ -344,8 +351,9 @@ export default async function OverviewPage({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-sm">{sub.name}</p>
                     <p className="truncate text-muted-foreground text-xs">
-                      {CYCLE_LABELS[sub.cycle]}
-                      {sub.nextPaymentDate ? ` · next ${shortDate(sub.nextPaymentDate)}` : ''}
+                      {[CYCLE_LABELS[sub.cycle], paymentLabel(sub.status)]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   </div>
                   <p className="font-medium text-sm tabular-nums">

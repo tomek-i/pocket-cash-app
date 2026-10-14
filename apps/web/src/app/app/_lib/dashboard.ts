@@ -15,6 +15,8 @@ import {
 } from '@repo/database'
 import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 import { getDefaultCurrency } from '../settings/actions'
+import { byPaymentStatus, type PaymentStatus } from '../subscriptions/_lib/schedule'
+import { loadPaymentStatuses } from '../subscriptions/_lib/status'
 
 /**
  * All figures on the Overview dashboard, computed from the workspace's real data.
@@ -56,7 +58,7 @@ export interface DashboardData {
     amount: number
     currency: string
     cycle: BillingCycle
-    nextPaymentDate: string | null
+    status: PaymentStatus
   }[]
   subsMonthlyTotal: number
 }
@@ -246,10 +248,18 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
       currency: financialSubscriptions.currency,
       cycle: financialSubscriptions.cycle,
       nextPaymentDate: financialSubscriptions.nextPaymentDate,
+      matcher: financialSubscriptions.matcher,
     })
     .from(financialSubscriptions)
     .where(eq(financialSubscriptions.active, true))
-    .orderBy(asc(financialSubscriptions.nextPaymentDate))
+    .orderBy(asc(financialSubscriptions.name))
+  const subStatuses = await loadPaymentStatuses(subRows)
+  const upcomingSubs = subRows
+    .map(({ nextPaymentDate: _stored, matcher: _matcher, ...sub }) => ({
+      ...sub,
+      status: subStatuses.get(sub.id) ?? { kind: 'unknown' as const },
+    }))
+    .sort((a, b) => byPaymentStatus(a.status, b.status))
 
   const subsMonthlyTotal = subRows.reduce(
     (sum, s) => sum + Math.round(s.amount * (30 / BILLING_CYCLE_DAYS[s.cycle])),
@@ -273,7 +283,7 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     incomeChangePct: pctChange(thisMonth.income, lastMonth.income),
     spendingChangePct: pctChange(thisMonth.spending, lastMonth.spending),
     recent,
-    subscriptions: subRows.slice(0, 6),
+    subscriptions: upcomingSubs.slice(0, 6),
     subsMonthlyTotal,
   }
 }
