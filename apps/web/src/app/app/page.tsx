@@ -13,6 +13,7 @@ import {
   ArrowDownRight,
   ArrowLeftRight,
   ArrowUpRight,
+  CalendarX,
   RefreshCw,
   TrendingDown,
   TrendingUp,
@@ -80,6 +81,7 @@ export default async function OverviewPage({
   ])
   const { currency, monthLabel, monthShort } = data
   const months = monthOptions()
+  const isCurrentMonth = data.monthKey === months[0]?.key
 
   const today = new Date()
   const dateLabel = today.toLocaleDateString('en-US', {
@@ -97,6 +99,47 @@ export default async function OverviewPage({
         </div>
         <OverviewTopbar months={months} selected={data.monthKey} />
       </div>
+
+      {data.monthHasData ? null : (
+        <Card>
+          <Empty
+            icon={CalendarX}
+            title={
+              data.latestMonth
+                ? isCurrentMonth
+                  ? `No transactions in ${monthLabel.split(' ')[0]} yet`
+                  : `No transactions in ${monthLabel}`
+                : 'No transactions yet'
+            }
+            description={
+              data.latestMonth
+                ? `Your latest data is from ${data.latestMonth.label}.`
+                : 'Import a CSV from your bank to see your money here.'
+            }
+            action={
+              <>
+                {data.latestMonth?.selectable ? (
+                  <Link
+                    href={`/app?month=${data.latestMonth.key}`}
+                    className={buttonVariants({ size: 'sm' })}
+                  >
+                    View {data.latestMonth.label}
+                  </Link>
+                ) : null}
+                <Link
+                  href="/app/import"
+                  className={buttonVariants({
+                    size: 'sm',
+                    variant: data.latestMonth?.selectable ? 'outline' : 'default',
+                  })}
+                >
+                  Import CSV
+                </Link>
+              </>
+            }
+          />
+        </Card>
+      )}
 
       {/* Top row */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -181,7 +224,9 @@ export default async function OverviewPage({
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-5">
             {data.categorySpend.length === 0 ? (
-              <p className="py-6 text-muted-foreground text-sm">No spending this month.</p>
+              <p className="py-6 text-muted-foreground text-sm">
+                {data.monthHasData ? 'No spending this month.' : 'No data for this month.'}
+              </p>
             ) : (
               <>
                 <DonutChart
@@ -213,7 +258,7 @@ export default async function OverviewPage({
         <div className="flex flex-col gap-4 xl:col-span-3">
           <StatCard
             label={`Income · ${monthShort}`}
-            value={formatMoney(data.income, currency)}
+            value={data.monthHasData ? formatMoney(data.income, currency) : null}
             delta={
               data.incomeChangePct !== null
                 ? `${pct(data.incomeChangePct)} vs last month`
@@ -223,7 +268,7 @@ export default async function OverviewPage({
           />
           <StatCard
             label={`Spending · ${monthShort}`}
-            value={formatMoney(data.spending, currency)}
+            value={data.monthHasData ? formatMoney(data.spending, currency) : null}
             delta={
               data.spendingChangePct !== null
                 ? `${pct(data.spendingChangePct)} vs last month`
@@ -367,10 +412,21 @@ function StatCard({
   positive,
 }: {
   label: string
-  value: string
+  /** Null when the month has no transactions, so no figure or delta is shown. */
+  value: string | null
   delta: string
   positive?: boolean
 }) {
+  if (value === null) {
+    return (
+      <Card className="flex-1">
+        <CardContent className="flex h-full flex-col justify-between gap-6 p-5">
+          <span className="text-muted-foreground text-sm">{label}</span>
+          <p className="font-semibold text-3xl text-muted-foreground tracking-tight">No data</p>
+        </CardContent>
+      </Card>
+    )
+  }
   return (
     <Card className="flex-1">
       <CardContent className="flex h-full flex-col justify-between gap-6 p-5">

@@ -5,6 +5,7 @@ import { AppSidebar } from './_components/app-sidebar'
 import { DatabaseRecovery } from './_components/database-recovery'
 import { Onboarding } from './_components/onboarding/onboarding'
 import { isWorkspaceEmpty } from './_lib/seed'
+import { countUncategorised } from './categorize/_lib/count'
 
 // Every /app page reads data from the embedded database at request time. This
 // is a local-only build with no auth, so nothing reads cookies/headers and Next
@@ -35,9 +36,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     )
   }
 
+  const uncategorised = dbStatus.ok ? await countUncategorised() : 0
+
   return (
     <div className="flex min-h-screen">
-      <AppSidebar />
+      <AppSidebar uncategorised={uncategorised} />
       <main className="min-w-0 flex-1">{dbStatus.ok ? children : <DatabaseRecovery />}</main>
     </div>
   )

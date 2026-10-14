@@ -39,6 +39,13 @@ export interface DashboardData {
   monthSpendTotal: number
   income: number
   spending: number
+  /** Whether any transaction is dated in the selected month. */
+  monthHasData: boolean
+  /**
+   * The newest month holding any transaction, or null with none at all.
+   * `selectable` is false when it is older than the picker's 12 months.
+   */
+  latestMonth: { key: string; label: string; selectable: boolean } | null
   incomeChangePct: number | null
   spendingChangePct: number | null
   recent: {
@@ -142,15 +149,37 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
       .select({
         income: sql<string>`coalesce(sum(case when ${transactions.amount} > 0 then ${transactions.amount} else 0 end), 0)`,
         spending: sql<string>`coalesce(sum(case when ${transactions.amount} < 0 then -${transactions.amount} else 0 end), 0)`,
+        count: sql<string>`count(*)`,
       })
       .from(transactions)
       .where(and(gte(transactions.date, from), lt(transactions.date, to)))
-    return { income: Number(row?.income ?? 0), spending: Number(row?.spending ?? 0) }
+    return {
+      income: Number(row?.income ?? 0),
+      spending: Number(row?.spending ?? 0),
+      count: Number(row?.count ?? 0),
+    }
   }
   const thisMonth = await flows(startThisMonth, startNextMonth)
   const lastMonth = await flows(startLastMonth, startThisMonth)
   const pctChange = (curr: number, prev: number): number | null =>
     prev > 0 ? ((curr - prev) / prev) * 100 : null
+
+  // The newest month with anything in it, so an empty month can point somewhere.
+  const [latestRow] = await db
+    .select({ date: sql<string | null>`max(${transactions.date})` })
+    .from(transactions)
+  const latestKey = latestRow?.date?.slice(0, 7)
+  const latestMonth = latestKey
+    ? {
+        key: latestKey,
+        label: new Date(`${latestKey}-01T00:00:00Z`).toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }),
+        selectable: trendKeys.includes(latestKey),
+      }
+    : null
 
   // ── Spending by category (this month, debits only) ───────────────────────────
   const catRows = await db
@@ -270,6 +299,8 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     monthSpendTotal,
     income: thisMonth.income,
     spending: thisMonth.spending,
+    monthHasData: thisMonth.count > 0,
+    latestMonth,
     incomeChangePct: pctChange(thisMonth.income, lastMonth.income),
     spendingChangePct: pctChange(thisMonth.spending, lastMonth.spending),
     recent,

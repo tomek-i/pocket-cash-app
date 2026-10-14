@@ -1,8 +1,8 @@
 'use client'
 
 import { Button, Card, CardContent, cn, Input, OptionSelect } from '@repo/ui'
-import { ChevronLeft, ChevronRight, Sparkles, Tags } from 'lucide-react'
-import { useEffect, useState, useTransition } from 'react'
+import { CheckCheck, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { useState, useTransition } from 'react'
 import { Empty } from '../../_components/empty'
 import { CategoryIcon } from '../../categories/_components/category-icon'
 import {
@@ -11,6 +11,7 @@ import {
   type CategorizeResult,
   suggestCategorizations,
 } from '../../transactions/categorize-actions'
+import { CategorizeSkeleton } from './categorize-skeleton'
 
 const PAGE_SIZE = 25
 const NO_CATEGORY = 'none'
@@ -22,13 +23,25 @@ function sourceBadge(source: CategorizeGroup['source']) {
   return { label: '—', className: 'bg-muted text-muted-foreground' }
 }
 
-export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
-  const [result, setResult] = useState<CategorizeResult | null>(null)
+/** Every group that came back with a suggested category starts out selected. */
+function suggestedKeys(result: CategorizeResult): Set<string> {
+  return new Set(result.groups.filter((g) => g.suggestedCategoryId).map((g) => g.key))
+}
+
+export function CategorizeReview({
+  aiConfigured,
+  initial,
+}: {
+  aiConfigured: boolean
+  /** The offline, rule-based suggestions, worked out on the server. */
+  initial: CategorizeResult
+}) {
+  const [result, setResult] = useState<CategorizeResult>(initial)
   const [loading, startLoad] = useTransition()
   const [applying, startApply] = useTransition()
   const [notice, setNotice] = useState<string | null>(null)
 
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(() => suggestedKeys(initial))
   const [catOverride, setCatOverride] = useState<Map<string, string>>(new Map())
   const [nameOverride, setNameOverride] = useState<Map<string, string>>(new Map())
   const [page, setPage] = useState(0)
@@ -41,17 +54,10 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
       setPage(0)
       setCatOverride(new Map())
       setNameOverride(new Map())
-      // Pre-select every group that came back with a suggested category.
-      setSelected(new Set(res.groups.filter((g) => g.suggestedCategoryId).map((g) => g.key)))
+      setSelected(suggestedKeys(res))
     })
 
-  // Instant, free, offline rules on first render. AI is an explicit opt-in click.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
-  useEffect(() => {
-    load(false)
-  }, [])
-
-  const groups = result?.groups ?? []
+  const groups = result.groups
   const totalPages = Math.max(1, Math.ceil(groups.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages - 1)
   const pageItems = groups.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
@@ -108,9 +114,9 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">
-          {result
-            ? `${result.totalUncategorised} uncategorised transaction(s) across ${groups.length} merchant(s).`
-            : 'Loading suggestions…'}
+          {result.totalUncategorised === 0
+            ? 'Nothing is waiting for a category.'
+            : `${result.totalUncategorised} uncategorised transaction(s) across ${groups.length} merchant(s).`}
         </p>
         <div className="flex items-center gap-2">
           {aiConfigured ? (
@@ -122,7 +128,7 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
               onClick={() => load(true)}
             >
               <Sparkles className="size-4" />
-              {result?.aiUsed ? 'Re-run with AI' : 'Suggest with AI'}
+              {result.aiUsed ? 'Re-run with AI' : 'Suggest with AI'}
             </Button>
           ) : null}
           <Button size="sm" variant="ghost" disabled={loading} onClick={() => load(false)}>
@@ -131,26 +137,29 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
         </div>
       </div>
 
-      {result?.aiError ? (
+      {result.aiError ? (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-xs">
           AI suggestions failed: {result.aiError}
         </p>
       ) : null}
-      {result?.truncated ? (
+      {result.truncated ? (
         <p className="rounded-md bg-muted px-3 py-2 text-muted-foreground text-xs">
           Only the first 200 unlearned merchants were sent to the AI this run — refresh after
           applying to process the rest.
         </p>
       ) : null}
 
-      {loading && !result ? (
-        <p className="text-muted-foreground text-sm">Working…</p>
+      {loading && groups.length === 0 ? (
+        <CategorizeSkeleton />
       ) : groups.length === 0 ? (
-        <Empty
-          icon={Tags}
-          title="Nothing to categorise"
-          description="Every transaction already has a category. Import more or check back later."
-        />
+        <Card>
+          <Empty
+            className="p-12"
+            icon={CheckCheck}
+            title="All caught up"
+            description="Every transaction has a category. New ones will show up here after your next import."
+          />
+        </Card>
       ) : (
         <Card>
           <CardContent className="flex flex-col gap-3 p-4">
@@ -222,7 +231,7 @@ export function CategorizeReview({ aiConfigured }: { aiConfigured: boolean }) {
                       onValueChange={(v) => setCat(g.key, v)}
                       options={[
                         { value: NO_CATEGORY, label: 'No category' },
-                        ...(result?.categories ?? []).map((c) => ({
+                        ...result.categories.map((c) => ({
                           value: c.id,
                           label: (
                             <span className="flex items-center gap-2">

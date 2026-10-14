@@ -31,6 +31,8 @@ import { usePathname } from 'next/navigation'
  * destination stays one click away and none of it hides. Collapsing earns its
  * complexity somewhere north of thirty items, not eleven.
  */
+const CATEGORISE_HREF = '/app/categorize'
+
 const GROUPS = [
   {
     // The overview is the landing page, so it sits above the grouping rather than
@@ -44,7 +46,7 @@ const GROUPS = [
       { href: '/app/banks', label: 'Banks', icon: Landmark },
       { href: '/app/accounts', label: 'Accounts', icon: Wallet },
       { href: '/app/transactions', label: 'Transactions', icon: ArrowLeftRight },
-      { href: '/app/categorize', label: 'Categorise', icon: Sparkles },
+      { href: CATEGORISE_HREF, label: 'Categorise', icon: Sparkles },
     ],
   },
   {
@@ -65,7 +67,7 @@ const GROUPS = [
   },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ uncategorised = 0 }: { uncategorised?: number }) {
   const pathname = usePathname()
 
   return (
@@ -116,6 +118,12 @@ export function AppSidebar() {
                       >
                         <Icon className="size-4.5" />
                         {label}
+                        {href === CATEGORISE_HREF && uncategorised > 0 ? (
+                          <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 font-medium text-[11px] text-primary tabular-nums leading-none">
+                            {uncategorised}
+                            <span className="sr-only"> uncategorised</span>
+                          </span>
+                        ) : null}
                       </Link>
                     </li>
                   )
