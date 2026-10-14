@@ -16,6 +16,7 @@ import {
   properties,
   propertyLoans,
   transactions,
+  transferDismissals,
 } from './schema'
 
 let db: Database
@@ -59,6 +60,7 @@ beforeAll(async () => {
   inId = inn.id
   await db.update(transactions).set({ transferPairId: inId }).where(eq(transactions.id, outId))
   await db.update(transactions).set({ transferPairId: outId }).where(eq(transactions.id, inId))
+  await db.insert(transferDismissals).values({ outId, inId })
 
   const [property] = await db
     .insert(properties)
@@ -109,6 +111,9 @@ describe('restoreBackup', () => {
 
     const out = await db.query.transactions.findFirst({ where: eq(transactions.id, outId) })
     expect(out?.transferPairId).toBe(inId)
+    expect(await db.select().from(transferDismissals)).toEqual([
+      expect.objectContaining({ outId, inId }),
+    ])
     const loan = await db.query.propertyLoans.findFirst({
       where: eq(propertyLoans.propertyId, propertyId),
     })

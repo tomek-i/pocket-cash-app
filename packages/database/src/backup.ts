@@ -25,6 +25,7 @@ import {
   tags,
   transactions,
   transactionTags,
+  transferDismissals,
 } from './schema'
 
 /**
@@ -60,6 +61,7 @@ const BACKUP_TABLES: { key: string; table: PgTable; group: Group }[] = [
   { key: 'csvImports', table: csvImports, group: 'finance' },
   { key: 'transactions', table: transactions, group: 'finance' },
   { key: 'transactionTags', table: transactionTags, group: 'finance' },
+  { key: 'transferDismissals', table: transferDismissals, group: 'finance' },
   { key: 'jurisdictions', table: jurisdictions, group: 'propertyConfig' },
   { key: 'rateSchedules', table: rateSchedules, group: 'propertyConfig' },
   { key: 'costCategories', table: costCategories, group: 'propertyConfig' },
