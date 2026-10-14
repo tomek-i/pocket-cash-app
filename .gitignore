@@ -50,3 +50,6 @@ apps/desktop/build/icon.png
 
 # Playwright MCP browser session output (snapshots, screenshots, console logs)
 .playwright-mcp/
+
+# Impeccable design-skill working files
+.impeccable/
