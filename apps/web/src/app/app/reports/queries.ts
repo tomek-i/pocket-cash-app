@@ -1,29 +1,11 @@
 import { and, categories, db, eq, lt, sql, transactions } from '@repo/database'
 import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
-/** Australian financial year starts in July. A FY is named by its ending year:
- * FY2025 = 1 Jul 2024 – 30 Jun 2025. */
-const FY_START_MONTH = 7
+import { FY_START_MONTH } from './_lib/fy'
 
-export function fyForDate(d: Date): number {
-  return d.getUTCFullYear() + (d.getUTCMonth() + 1 >= FY_START_MONTH ? 1 : 0)
-}
-
-export function currentFy(): number {
-  return fyForDate(new Date())
-}
-
-export function fyBounds(fy: number): { start: string; endInclusive: string } {
-  return { start: `${fy - 1}-07-01`, endInclusive: `${fy}-06-30` }
-}
-
-export function fyLabel(fy: number): string {
-  return `FY${fy}`
-}
-
-export function fyRangeLabel(fy: number): string {
-  return `1 Jul ${fy - 1} – 30 Jun ${fy}`
-}
+// The FY helpers live in a pure module so client code can use them; re-exported
+// here for the existing server callers.
+export { currentFy, fyBounds, fyForDate, fyLabel, fyRangeLabel } from './_lib/fy'
 
 export interface FySummary {
   fy: number

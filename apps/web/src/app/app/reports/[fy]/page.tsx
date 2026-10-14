@@ -15,10 +15,11 @@ import { getDefaultCurrency, isAiConfigured } from '../../settings/actions'
 import { listTags } from '../../tags/actions'
 import {
   type FilterAccount,
+  TotalsLine,
   TransactionFilters,
 } from '../../transactions/_components/transaction-filters'
 import { TransactionsTable } from '../../transactions/_components/transactions-table'
-import { listTransactions } from '../../transactions/actions'
+import { listTransactions, summarizeTransactions } from '../../transactions/actions'
 import { generateFyInsight, getFyInsight } from '../insights-actions'
 import {
   currentFy,
@@ -135,6 +136,7 @@ export default async function FyReportPage({
     aiConfigured,
     insight,
     taxSummary,
+    totals,
   ] = await Promise.all([
     listTransactions({ ...txnFilters, page, pageSize }),
     listFinancialYears(),
@@ -146,6 +148,7 @@ export default async function FyReportPage({
     isAiConfigured(),
     getFyInsight(fy),
     getFyTaxSummary(fy),
+    summarizeTransactions(txnFilters),
   ])
   const summary = years.find((y) => y.fy === fy)
   const breakdown = breakdowns.get(fy)
@@ -255,7 +258,7 @@ export default async function FyReportPage({
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-muted-foreground text-sm">
-            Search and filter within FY{fy} — the date range is fixed to this year.
+            Search and filter within FY{fy}. The date range is fixed to this year.
           </p>
           {data.total > 0 ? (
             <ExportTransactionsButton
@@ -297,6 +300,11 @@ export default async function FyReportPage({
         </Card>
       ) : (
         <>
+          <TotalsLine
+            count={totals.count}
+            moneyIn={totals.moneyIn > 0 ? formatMoney(totals.moneyIn, currency) : ''}
+            moneyOut={totals.moneyOut > 0 ? formatMoney(totals.moneyOut, currency) : ''}
+          />
           <Pagination
             page={data.page}
             pageSize={data.pageSize}

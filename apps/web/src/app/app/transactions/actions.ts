@@ -150,6 +150,37 @@ export async function listTransactions(filters: TransactionFilters): Promise<Tra
   }
 }
 
+export interface TransactionTotals {
+  count: number
+  /** Money in, minor units. */
+  moneyIn: number
+  /** Money out as a positive figure, minor units. */
+  moneyOut: number
+}
+
+/**
+ * Count and money in/out across every transaction matching `filters`, not just
+ * the page shown. Plain sums of the rows: transfers count here like any other
+ * row, since this totals the list, not income and spending.
+ */
+export async function summarizeTransactions(
+  filters: TransactionFilters,
+): Promise<TransactionTotals> {
+  const [row] = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+      moneyIn: sql<string>`coalesce(sum(case when ${transactions.amount} > 0 then ${transactions.amount} else 0 end), 0)`,
+      moneyOut: sql<string>`coalesce(sum(case when ${transactions.amount} < 0 then -${transactions.amount} else 0 end), 0)`,
+    })
+    .from(transactions)
+    .where(and(...buildConditions(filters)))
+  return {
+    count: row?.count ?? 0,
+    moneyIn: Number(row?.moneyIn ?? 0),
+    moneyOut: Number(row?.moneyOut ?? 0),
+  }
+}
+
 /** Hard cap on rows in one CSV export — a safety valve, far above any real FY. */
 const EXPORT_ROW_CAP = 20000
 
