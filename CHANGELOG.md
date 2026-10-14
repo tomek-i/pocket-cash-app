@@ -9,6 +9,31 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.8.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.7.0...v0.8.0) (2026-10-14)
+
+
+### Features
+
+* **categories:** add Pets to the default categories ([88a2e4c](https://github.com/tomek-i/pocket-cash-app/commit/88a2e4c2cba890a1d7cbea581d7802b29491429b))
+* **categories:** add Pets to the default categories ([2ac4a13](https://github.com/tomek-i/pocket-cash-app/commit/2ac4a13d921ad54da55651076c47aa07c3bcfce0))
+* **database:** snapshot before migrations, and restore from Settings ([#141](https://github.com/tomek-i/pocket-cash-app/issues/141)) ([f0c7e9d](https://github.com/tomek-i/pocket-cash-app/commit/f0c7e9da9de554942f4f8d3f718aa81044b20a2b))
+* explain an empty dashboard month and show what needs categorising ([71df52a](https://github.com/tomek-i/pocket-cash-app/commit/71df52af66796375ea1f041c15173a96f8a99a1b))
+* explain an empty dashboard month and show what needs categorising ([cae9aef](https://github.com/tomek-i/pocket-cash-app/commit/cae9aefe363ce03db7b4ea5b0b6cfb0527a61996)), closes [#123](https://github.com/tomek-i/pocket-cash-app/issues/123) [#131](https://github.com/tomek-i/pocket-cash-app/issues/131)
+* **reports:** show value and share when hovering a donut slice ([1ca5f22](https://github.com/tomek-i/pocket-cash-app/commit/1ca5f229e36a4a4e96d58cd3e3ed493c4111ccdb))
+* **transactions:** keep transfers between own accounts out of income and spending ([f1624d1](https://github.com/tomek-i/pocket-cash-app/commit/f1624d1cd73aabc2520464bc06a45395e4a603ff))
+* **transactions:** keep transfers between own accounts out of income and spending ([0b90fcb](https://github.com/tomek-i/pocket-cash-app/commit/0b90fcb4cb9fed9f4af42da5610051b967bb8933)), closes [#62](https://github.com/tomek-i/pocket-cash-app/issues/62)
+* **transactions:** select several rows and change them at once ([#140](https://github.com/tomek-i/pocket-cash-app/issues/140)) ([21f1f17](https://github.com/tomek-i/pocket-cash-app/commit/21f1f179fac6181fb94c29e574c4d4d03eb344f4))
+* **transactions:** suggest transfers between your own accounts ([#139](https://github.com/tomek-i/pocket-cash-app/issues/139)) ([7d713a6](https://github.com/tomek-i/pocket-cash-app/commit/7d713a605913f70ff4e6e7137a2f19f2563e5a35)), closes [#62](https://github.com/tomek-i/pocket-cash-app/issues/62)
+
+
+### Bug Fixes
+
+* **categorize:** leave transfers out of the uncategorised count ([64cf883](https://github.com/tomek-i/pocket-cash-app/commit/64cf8831afa047fcc57f715b9b0c09f162f4f27a))
+* **subscriptions:** never show a next payment date in the past ([01abbb0](https://github.com/tomek-i/pocket-cash-app/commit/01abbb0afbf9bb3cc590fc931dadc52ed9260c8d))
+* **subscriptions:** never show a next payment date in the past ([4035e50](https://github.com/tomek-i/pocket-cash-app/commit/4035e500e39f692e07e9fb7f7be761661622e7bb)), closes [#125](https://github.com/tomek-i/pocket-cash-app/issues/125)
+* **transactions:** let the detail page use the full width ([98413dd](https://github.com/tomek-i/pocket-cash-app/commit/98413dd534f9afa257686ef0651d0edced429d2f))
+* **transactions:** let the detail page use the full width ([64bd7b2](https://github.com/tomek-i/pocket-cash-app/commit/64bd7b2ec831cd98d395749a702ae19f2599563d))
+
 ## [0.7.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.6.0...v0.7.0) (2026-09-29)
 
 
