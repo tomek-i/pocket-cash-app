@@ -535,6 +535,18 @@ export async function bulkUpdateTransactions(input: {
     }
   })
 
-  revalidatePath('/app/transactions')
+  revalidateTransactionLists()
+  return { ok: true }
+}
+
+/** Delete several transactions at once (from the transactions table selection). */
+export async function bulkDeleteTransactions(ids: string[]): Promise<MutationResult> {
+  const unique = [...new Set(ids)]
+  if (unique.length === 0) return { error: 'Nothing selected' }
+  for (let i = 0; i < unique.length; i += 1000) {
+    await db.delete(transactions).where(inArray(transactions.id, unique.slice(i, i + 1000)))
+  }
+  revalidateTransactionLists()
+  revalidatePath('/app')
   return { ok: true }
 }

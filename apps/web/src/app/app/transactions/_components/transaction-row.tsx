@@ -49,12 +49,16 @@ export function TransactionRow({
   categories,
   tags,
   backHref,
+  selected,
+  onToggle,
 }: {
   tx: TxRow
   categories: CategoryLite[]
   tags: TagLite[]
   /** The list URL this row was rendered from, carried to the detail page. */
   backHref: string
+  selected: boolean
+  onToggle: () => void
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -65,9 +69,22 @@ export function TransactionRow({
 
   return (
     <tr
-      className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+      className={cn(
+        'cursor-pointer border-b last:border-0 hover:bg-muted/30',
+        selected && 'bg-primary/5',
+      )}
       onClick={() => router.push(withOrigin(`/app/transactions/${tx.id}`, backHref))}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stop row navigation for the checkbox cell */}
+      <td className="w-10 p-3 align-top" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          className="size-4 align-middle accent-primary"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={`Select ${tx.displayName ?? tx.description}`}
+        />
+      </td>
       <td className="whitespace-nowrap p-3 align-top text-muted-foreground text-xs">{tx.date}</td>
       <td className="max-w-[22rem] p-3 align-top">
         <p className="truncate font-medium">{tx.displayName ?? tx.description}</p>
