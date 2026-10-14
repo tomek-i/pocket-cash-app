@@ -1,7 +1,6 @@
 'use server'
 
 import {
-  and,
   asc,
   type Category,
   categories,
@@ -9,13 +8,16 @@ import {
   eq,
   type FinancialSubscription,
   financialSubscriptions,
+  getAppSettings,
   lt,
+  saveAppSettings,
   transactions,
 } from '@repo/database'
 import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
 import { createSubscriptionSchema, updateSubscriptionSchema } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
+import { type HiddenDetections, isAlreadyTracked } from './_lib/detection'
 import { addDays, normalizeText } from './_lib/schedule'
 
 export type SubscriptionWithCategory = FinancialSubscription & {
@@ -160,14 +162,24 @@ function classifyCycle(gapDays: number): BillingCycle | null {
 
 const DAY_MS = 86_400_000
 
+export type ApplyResult = { ok: true } | { error: string }
+
+export interface SubscriptionDetections {
+  suggestions: SubscriptionSuggestion[]
+  /** Recurring charges found but not offered, and why. */
+  hidden: HiddenDetections
+}
+
 /**
  * Scan outflow transactions for recurring charges and suggest subscriptions.
  * A group qualifies when it has ≥3 charges, a tight amount spread (≤25%), and a
- * regular interval that maps to a billing cycle. Groups already covered by an
- * existing subscription (by matcher) are excluded.
+ * regular interval that maps to a billing cycle. Qualifying groups are not
+ * offered when they are transfers between the user's own accounts, match a
+ * subscription already tracked, or were marked as not a subscription; those are
+ * counted in `hidden` instead.
  */
-export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> {
-  const [rows, existing] = await Promise.all([
+export async function suggestSubscriptions(): Promise<SubscriptionDetections> {
+  const [rows, existing, settings] = await Promise.all([
     db
       .select({
         description: transactions.description,
@@ -175,16 +187,17 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
         amount: transactions.amount,
         currency: transactions.currency,
         date: transactions.date,
+        isTransfer: transactions.isTransfer,
       })
       .from(transactions)
-      // A transfer to the user's own account is not a bill.
-      .where(and(lt(transactions.amount, 0), eq(transactions.isTransfer, false))),
-    db.select({ matcher: financialSubscriptions.matcher }).from(financialSubscriptions),
+      .where(lt(transactions.amount, 0)),
+    db
+      .select({ name: financialSubscriptions.name, matcher: financialSubscriptions.matcher })
+      .from(financialSubscriptions),
+    getAppSettings(),
   ])
-
-  const existingMatchers = new Set(
-    existing.map((e) => e.matcher).filter((m): m is string => Boolean(m)),
-  )
+  const dismissed = new Set(settings.dismissedSubscriptions ?? [])
+  const hidden: HiddenDetections = { tracked: 0, dismissed: 0, transfers: 0 }
 
   interface Group {
     key: string
@@ -192,6 +205,7 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
     amounts: number[] // abs minor units
     currencyCounts: Map<string, number>
     dates: string[]
+    transfers: number
   }
   const groups = new Map<string, Group>()
 
@@ -207,6 +221,7 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
         amounts: [],
         currencyCounts: new Map(),
         dates: [],
+        transfers: 0,
       }
       groups.set(key, group)
     }
@@ -214,12 +229,12 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
     group.amounts.push(Math.abs(row.amount))
     group.currencyCounts.set(row.currency, (group.currencyCounts.get(row.currency) ?? 0) + 1)
     group.dates.push(row.date)
+    if (row.isTransfer) group.transfers += 1
   }
 
   const suggestions: SubscriptionSuggestion[] = []
   for (const group of groups.values()) {
     if (group.amounts.length < 3) continue
-    if (existingMatchers.has(group.key)) continue
 
     const sortedAmounts = [...group.amounts].sort((a, b) => a - b)
     const medAmount = median(sortedAmounts)
@@ -242,6 +257,20 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
     const cycle = classifyCycle(median([...gaps].sort((a, b) => a - b)))
     if (!cycle) continue
 
+    // A regular charge, but one the user does not want offered.
+    if (group.transfers * 2 >= group.amounts.length) {
+      hidden.transfers += 1
+      continue
+    }
+    if (dismissed.has(group.key)) {
+      hidden.dismissed += 1
+      continue
+    }
+    if (isAlreadyTracked(group.key, existing)) {
+      hidden.tracked += 1
+      continue
+    }
+
     const labelEntry = [...group.labelCounts.entries()].sort((a, b) => b[1] - a[1])[0]
     const currencyEntry = [...group.currencyCounts.entries()].sort((a, b) => b[1] - a[1])[0]
     const label = labelEntry?.[0] ?? group.key
@@ -259,10 +288,20 @@ export async function suggestSubscriptions(): Promise<SubscriptionSuggestion[]> 
     })
   }
 
-  return suggestions.sort((a, b) => b.occurrences - a.occurrences)
+  return { suggestions: suggestions.sort((a, b) => b.occurrences - a.occurrences), hidden }
 }
 
-export type ApplyResult = { ok: true } | { error: string }
+/** Remember that a detected charge is not a subscription, so it is not offered again. */
+export async function dismissSuggestion(matcher: string): Promise<ApplyResult> {
+  const key = matcher.trim()
+  if (!key) return { error: 'Invalid suggestion' }
+  const settings = await getAppSettings()
+  const dismissed = new Set(settings.dismissedSubscriptions ?? [])
+  dismissed.add(key)
+  await saveAppSettings({ ...settings, dismissedSubscriptions: [...dismissed] })
+  revalidatePath('/app/subscriptions')
+  return { ok: true }
+}
 
 /** Create a subscription from an auto-detected suggestion. */
 export async function applySuggestion(input: SubscriptionSuggestion): Promise<ApplyResult> {

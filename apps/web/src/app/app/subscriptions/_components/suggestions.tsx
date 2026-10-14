@@ -4,16 +4,21 @@ import { Button, Card, CardContent } from '@repo/ui'
 import { Check, Sparkles } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { formatMoney } from '@/lib/money'
+import { hiddenSummary } from '../_lib/detection'
 import { CYCLE_LABELS } from '../_lib/schedule'
-import { applySuggestion, type SubscriptionSuggestion } from '../actions'
+import { applySuggestion, dismissSuggestion, type SubscriptionDetections } from '../actions'
 
-export function Suggestions({ suggestions }: { suggestions: SubscriptionSuggestion[] }) {
+export function Suggestions({ detections }: { detections: SubscriptionDetections }) {
+  // Hidden straight away on click; the server keeps the answer for next time.
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  const visible = suggestions.filter((s) => !dismissed.has(s.matcher))
-  if (visible.length === 0) return null
+  const visible = detections.suggestions.filter((s) => !dismissed.has(s.matcher))
+  const hiddenLine = hiddenSummary(detections.hidden)
+  if (visible.length === 0) {
+    return hiddenLine ? <p className="text-muted-foreground text-xs">{hiddenLine}</p> : null
+  }
 
   return (
     <section className="flex flex-col gap-3">
@@ -39,9 +44,15 @@ export function Suggestions({ suggestions }: { suggestions: SubscriptionSuggesti
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDismissed((d) => new Set(d).add(s.matcher))}
+                  disabled={pendingKey === s.matcher}
+                  onClick={() => {
+                    setDismissed((d) => new Set(d).add(s.matcher))
+                    startTransition(async () => {
+                      await dismissSuggestion(s.matcher)
+                    })
+                  }}
                 >
-                  Dismiss
+                  Not a subscription
                 </Button>
                 <Button
                   size="sm"
@@ -56,13 +67,14 @@ export function Suggestions({ suggestions }: { suggestions: SubscriptionSuggesti
                   }}
                 >
                   <Check className="size-4" />
-                  {pendingKey === s.matcher ? 'Adding…' : 'Apply'}
+                  {pendingKey === s.matcher ? 'Adding…' : 'Track'}
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+      {hiddenLine ? <p className="text-muted-foreground text-xs">{hiddenLine}</p> : null}
     </section>
   )
 }

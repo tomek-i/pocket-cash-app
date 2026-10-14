@@ -59,6 +59,8 @@ export interface AppSettings {
    */
   transactionsPageSize?: number
   property?: PropertySettings
+  /** Detected subscriptions the user said are not subscriptions, by matcher key. */
+  dismissedSubscriptions?: string[]
 }
 
 /**
