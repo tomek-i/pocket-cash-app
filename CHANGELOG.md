@@ -9,6 +9,16 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.9.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.8.0...v0.9.0) (2026-10-16)
+
+
+### Features
+
+* **dashboard:** show which cards follow the month picker ([#146](https://github.com/tomek-i/pocket-cash-app/issues/146)) ([bd03d1c](https://github.com/tomek-i/pocket-cash-app/commit/bd03d1cb27e239b36926b1346b50226758b637cc)), closes [#124](https://github.com/tomek-i/pocket-cash-app/issues/124)
+* show dates one way everywhere, in the Settings locale ([#145](https://github.com/tomek-i/pocket-cash-app/issues/145)) ([74e2366](https://github.com/tomek-i/pocket-cash-app/commit/74e236673abc03215f88a64ee3e0aa14727033e6)), closes [#129](https://github.com/tomek-i/pocket-cash-app/issues/129)
+* **subscriptions:** stop offering detections that are already handled ([#142](https://github.com/tomek-i/pocket-cash-app/issues/142)) ([ae375f7](https://github.com/tomek-i/pocket-cash-app/commit/ae375f7e4bd58aa29ec441176edbce243ce416f2)), closes [#126](https://github.com/tomek-i/pocket-cash-app/issues/126)
+* **transactions:** quicker filters and a totals line ([#144](https://github.com/tomek-i/pocket-cash-app/issues/144)) ([add1adf](https://github.com/tomek-i/pocket-cash-app/commit/add1adfbeee91e6bd8109cfd7f56f66ccfabffda)), closes [#128](https://github.com/tomek-i/pocket-cash-app/issues/128)
+
 ## [0.8.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.7.0...v0.8.0) (2026-10-14)
 
 
