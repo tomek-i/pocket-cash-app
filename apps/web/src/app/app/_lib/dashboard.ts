@@ -38,8 +38,6 @@ export interface DashboardData {
   netWorth: number
   netWorthChangePct: number | null
   trend: number[]
-  /** Index into `trend` (last 12 months) to highlight — the selected month. */
-  trendHighlightIndex: number
   categorySpend: { label: string; value: number; color: string }[]
   monthSpendTotal: number
   income: number
@@ -304,7 +302,6 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
     netWorth,
     netWorthChangePct,
     trend,
-    trendHighlightIndex: trendKeys.indexOf(selectedKey as string),
     categorySpend,
     monthSpendTotal,
     income: thisMonth.income,

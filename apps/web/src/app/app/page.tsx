@@ -26,7 +26,7 @@ import { prepareEmbeddedDatabase } from '@/lib/workspace'
 import { DonutChart, MiniBars } from './_components/charts'
 import { Empty } from './_components/empty'
 import { InsightCard } from './_components/insight-card'
-import { OverviewTopbar } from './_components/overview-topbar'
+import { MonthPicker, OverviewSearch } from './_components/overview-topbar'
 import { getDashboardData } from './_lib/dashboard'
 import { generateDashboardInsight, getDashboardInsight } from './_lib/dashboard-insight-actions'
 import { CategoryIcon } from './categories/_components/category-icon'
@@ -98,327 +98,351 @@ export default async function OverviewPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-semibold text-2xl tracking-tight">Overview</h1>
-          <p className="text-muted-foreground text-sm">{dateLabel} · everything in one place.</p>
+          <p className="text-muted-foreground text-sm">{dateLabel}</p>
         </div>
-        <OverviewTopbar months={months} selected={data.monthKey} />
+        <OverviewSearch />
       </div>
 
-      {data.monthHasData ? null : (
-        <Card>
-          <Empty
-            icon={CalendarX}
-            title={
-              data.latestMonth
-                ? isCurrentMonth
-                  ? `No transactions in ${formatMonth(data.monthKey, locale, 'name')} yet`
-                  : `No transactions in ${monthLabel}`
-                : 'No transactions yet'
-            }
-            description={
-              data.latestMonth
-                ? `Your latest data is from ${data.latestMonth.label}.`
-                : 'Import a CSV from your bank to see your money here.'
-            }
-            action={
-              <>
-                {data.latestMonth?.selectable ? (
-                  <Link
-                    href={`/app?month=${data.latestMonth.key}`}
-                    className={buttonVariants({ size: 'sm' })}
-                  >
-                    View {data.latestMonth.label}
-                  </Link>
-                ) : null}
-                <Link
-                  href="/app/import"
-                  className={buttonVariants({
-                    size: 'sm',
-                    variant: data.latestMonth?.selectable ? 'outline' : 'default',
-                  })}
-                >
-                  Import CSV
-                </Link>
-              </>
-            }
-          />
-        </Card>
-      )}
-
-      {/* Top row */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        {/* Net worth */}
-        <Card className="xl:col-span-5">
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="font-medium text-muted-foreground text-sm">
-              Total net worth · {data.accounts.length} account
-              {data.accounts.length === 1 ? '' : 's'}
-            </CardTitle>
-            {data.netWorthChangePct !== null ? (
-              <Badge variant={data.netWorthChangePct >= 0 ? 'success' : 'destructive'}>
-                {data.netWorthChangePct >= 0 ? (
-                  <TrendingUp className="size-3" />
-                ) : (
-                  <TrendingDown className="size-3" />
-                )}
-                {pct(data.netWorthChangePct)}
-              </Badge>
-            ) : null}
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            <div className="flex items-end justify-between gap-4">
-              <span className="font-semibold text-4xl tracking-tight tabular-nums">
-                {formatMoney(data.netWorth, currency)}
-              </span>
-              {data.trend.some((v) => v !== 0) ? (
-                <MiniBars
-                  values={data.trend}
-                  highlightIndex={data.trendHighlightIndex}
-                  className="w-32"
-                />
+      {/* Today: figures as they stand now, whatever month is picked below */}
+      <section aria-labelledby="today-heading" className="flex flex-col gap-3">
+        <SectionHeading
+          id="today-heading"
+          title="Today"
+          note="Balances and bills as they stand now."
+        />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          {/* Net worth */}
+          <Card className="xl:col-span-7">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="font-medium text-muted-foreground text-sm">
+                Net worth today · {data.accounts.length} account
+                {data.accounts.length === 1 ? '' : 's'}
+              </CardTitle>
+              {data.netWorthChangePct !== null ? (
+                <Badge variant={data.netWorthChangePct >= 0 ? 'success' : 'destructive'}>
+                  {data.netWorthChangePct >= 0 ? (
+                    <TrendingUp className="size-3" />
+                  ) : (
+                    <TrendingDown className="size-3" />
+                  )}
+                  {pct(data.netWorthChangePct)}
+                </Badge>
               ) : null}
-            </div>
-            {data.accounts.length === 0 ? (
-              <p className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
-                No accounts yet.{' '}
-                <Link href="/app/accounts" className="text-primary hover:underline">
-                  Add one
-                </Link>
-                .
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {data.accounts.map((acct) => (
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5">
+              <div className="flex items-end justify-between gap-4">
+                <span className="font-semibold text-4xl tracking-tight tabular-nums">
+                  {formatMoney(data.netWorth, currency)}
+                </span>
+                {data.trend.some((v) => v !== 0) ? (
+                  <MiniBars
+                    values={data.trend}
+                    highlightIndex={data.trend.length - 1}
+                    className="w-32"
+                  />
+                ) : null}
+              </div>
+              {data.accounts.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
+                  No accounts yet.{' '}
+                  <Link href="/app/accounts" className="text-primary hover:underline">
+                    Add one
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {data.accounts.map((acct) => (
+                    <div
+                      key={acct.id}
+                      className="flex items-center gap-3 rounded-lg border bg-background/40 p-3"
+                    >
+                      <Avatar className="size-8 rounded-md">
+                        <AvatarFallback className="rounded-md bg-primary/15 text-[11px] text-primary">
+                          {initials(acct.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-muted-foreground text-xs">
+                          {acct.bankName ? `${acct.bankName} · ` : ''}
+                          {acct.name}
+                        </p>
+                        <p
+                          className={cn(
+                            'font-medium text-sm tabular-nums',
+                            amountClassName(acct.balance),
+                          )}
+                        >
+                          {formatMoney(acct.balance, currency)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming subscriptions */}
+          <Card className="xl:col-span-5">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base">Upcoming subscriptions</CardTitle>
+              {data.subsMonthlyTotal > 0 ? (
+                <Badge variant="secondary" className="tabular-nums">
+                  {formatMoney(data.subsMonthlyTotal, currency)}/mo
+                </Badge>
+              ) : null}
+            </CardHeader>
+            <CardContent className="flex flex-col">
+              {data.subscriptions.length === 0 ? (
+                <Empty
+                  className="py-8"
+                  icon={RefreshCw}
+                  title="No subscriptions"
+                  description="Track recurring bills like Netflix or rent."
+                  action={
+                    <Link href="/app/subscriptions" className={buttonVariants({ size: 'sm' })}>
+                      Add subscription
+                    </Link>
+                  }
+                />
+              ) : (
+                data.subscriptions.map((sub, i) => (
                   <div
-                    key={acct.id}
-                    className="flex items-center gap-3 rounded-lg border bg-background/40 p-3"
+                    key={sub.id}
+                    className={cn(
+                      'flex items-center gap-3 py-3',
+                      i !== data.subscriptions.length - 1 && 'border-b',
+                    )}
                   >
-                    <Avatar className="size-8 rounded-md">
-                      <AvatarFallback className="rounded-md bg-primary/15 text-[11px] text-primary">
-                        {initials(acct.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <RefreshCw className="size-[18px]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-sm">{sub.name}</p>
                       <p className="truncate text-muted-foreground text-xs">
-                        {acct.bankName ? `${acct.bankName} · ` : ''}
-                        {acct.name}
-                      </p>
-                      <p
-                        className={cn(
-                          'font-medium text-sm tabular-nums',
-                          amountClassName(acct.balance),
-                        )}
-                      >
-                        {formatMoney(acct.balance, currency)}
+                        {[CYCLE_LABELS[sub.cycle], paymentLabel(sub.status, locale)]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </p>
                     </div>
+                    <p className="font-medium text-sm tabular-nums">
+                      {formatMoney(sub.amount, sub.currency)}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Spending by category */}
-        <Card className="xl:col-span-4">
-          <CardHeader>
-            <CardTitle className="font-medium text-muted-foreground text-sm">
-              Spending by category
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-5">
-            {data.categorySpend.length === 0 ? (
-              <p className="py-6 text-muted-foreground text-sm">
-                {data.monthHasData ? 'No spending this month.' : 'No data for this month.'}
-              </p>
-            ) : (
-              <>
-                <DonutChart
-                  data={data.categorySpend}
-                  centerValue={formatMoney(data.monthSpendTotal, currency)}
-                  centerLabel={monthLabel}
-                  formatValue={(v) => formatMoney(v, currency)}
-                  className="shrink-0"
-                />
-                <ul className="flex w-full flex-col gap-2.5">
-                  {data.categorySpend.map((slice) => (
-                    <li key={slice.label} className="flex items-center gap-2 text-sm">
-                      <span
-                        className="size-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: slice.color }}
-                      />
-                      <span className="flex-1 truncate text-muted-foreground">{slice.label}</span>
-                      <span className="font-medium tabular-nums">
-                        {formatMoney(slice.value, currency)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Income / Spending */}
-        <div className="flex flex-col gap-4 xl:col-span-3">
-          <StatCard
-            label={`Income · ${monthShort}`}
-            value={data.monthHasData ? formatMoney(data.income, currency) : null}
-            delta={
-              data.incomeChangePct !== null
-                ? `${pct(data.incomeChangePct)} vs last month`
-                : 'No prior month'
-            }
-            positive={(data.incomeChangePct ?? 0) >= 0}
-          />
-          <StatCard
-            label={`Spending · ${monthShort}`}
-            value={data.monthHasData ? formatMoney(data.spending, currency) : null}
-            delta={
-              data.spendingChangePct !== null
-                ? `${pct(data.spendingChangePct)} vs last month`
-                : 'No prior month'
-            }
-            positive={(data.spendingChangePct ?? 0) <= 0}
-          />
-          {data.transfersNet !== 0 ? (
-            <Card>
-              <CardContent className="flex items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <p className="text-muted-foreground text-sm">Net transfers · {monthShort}</p>
-                  <p className="text-muted-foreground text-xs">Not income or spending</p>
-                </div>
-                <p className="font-medium text-sm tabular-nums">
-                  {formatMoney(data.transfersNet, currency)}
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </div>
+        {/* AI summary */}
+        {data.recent.length > 0 ? (
+          <InsightCard
+            aiConfigured={aiConfigured}
+            initial={insight}
+            generate={generateDashboardInsight}
+            prompt="How's this month going? Get a quick read on your income, spending and where the money's going."
+          />
+        ) : null}
+      </section>
 
-      {/* AI summary */}
-      {data.recent.length > 0 ? (
-        <InsightCard
-          aiConfigured={aiConfigured}
-          initial={insight}
-          generate={generateDashboardInsight}
-          prompt={`How's ${monthLabel} going? Get a quick read on your income, spending and where the money's going.`}
-        />
-      ) : null}
-
-      {/* Bottom row */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        {/* Recent activity */}
-        <Card className="xl:col-span-7">
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-base">Recent activity</CardTitle>
-            <Link
-              href="/app/transactions"
-              className="text-muted-foreground text-sm hover:text-foreground"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent className="flex flex-col">
-            {data.recent.length === 0 ? (
-              <p className="py-6 text-muted-foreground text-sm">No transactions yet.</p>
-            ) : (
-              data.recent.map((txn, i) => (
-                <Link
-                  key={txn.id}
-                  href={`/app/transactions/${txn.id}`}
-                  className={cn(
-                    'flex items-center gap-3 py-3 hover:bg-muted/30',
-                    i !== data.recent.length - 1 && 'border-b',
-                  )}
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    {txn.category ? (
-                      <CategoryIcon
-                        name={txn.category.icon}
-                        color={txn.category.color}
-                        className="size-[18px]"
-                      />
-                    ) : (
-                      <ArrowLeftRight className="size-[18px]" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-sm">{txn.name}</p>
-                    <p className="truncate text-muted-foreground text-xs">
-                      {txn.accountName}
-                      {txn.category ? ` · ${txn.category.name}` : ''}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={cn(
-                        'font-medium text-sm tabular-nums',
-                        amountClassName(txn.amount),
-                      )}
+      {/* The month picked in the picker */}
+      <section aria-labelledby="month-heading" className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <SectionHeading
+            id="month-heading"
+            title={monthLabel}
+            note="Income, spending and where the money went."
+          />
+          <MonthPicker months={months} selected={data.monthKey} />
+        </div>
+        {data.monthHasData ? null : (
+          <Card>
+            <Empty
+              icon={CalendarX}
+              title={
+                data.latestMonth
+                  ? isCurrentMonth
+                    ? `No transactions in ${formatMonth(data.monthKey, locale, 'name')} yet`
+                    : `No transactions in ${monthLabel}`
+                  : 'No transactions yet'
+              }
+              description={
+                data.latestMonth
+                  ? `Your latest data is from ${data.latestMonth.label}.`
+                  : 'Import a CSV from your bank to see your money here.'
+              }
+              action={
+                <>
+                  {data.latestMonth?.selectable ? (
+                    <Link
+                      href={`/app?month=${data.latestMonth.key}`}
+                      className={buttonVariants({ size: 'sm' })}
                     >
-                      {formatMoney(txn.amount, txn.currency)}
-                    </p>
-                    <p className="text-muted-foreground text-xs">{formatDate(txn.date, locale)}</p>
-                  </div>
-                </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Upcoming subscriptions */}
-        <Card className="xl:col-span-5">
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-base">Upcoming subscriptions</CardTitle>
-            {data.subsMonthlyTotal > 0 ? (
-              <Badge variant="secondary" className="tabular-nums">
-                {formatMoney(data.subsMonthlyTotal, currency)}/mo
-              </Badge>
-            ) : null}
-          </CardHeader>
-          <CardContent className="flex flex-col">
-            {data.subscriptions.length === 0 ? (
-              <Empty
-                className="py-8"
-                icon={RefreshCw}
-                title="No subscriptions"
-                description="Track recurring bills like Netflix or rent."
-                action={
-                  <Link href="/app/subscriptions" className={buttonVariants({ size: 'sm' })}>
-                    Add subscription
+                      View {data.latestMonth.label}
+                    </Link>
+                  ) : null}
+                  <Link
+                    href="/app/import"
+                    className={buttonVariants({
+                      size: 'sm',
+                      variant: data.latestMonth?.selectable ? 'outline' : 'default',
+                    })}
+                  >
+                    Import CSV
                   </Link>
-                }
-              />
-            ) : (
-              data.subscriptions.map((sub, i) => (
-                <div
-                  key={sub.id}
-                  className={cn(
-                    'flex items-center gap-3 py-3',
-                    i !== data.subscriptions.length - 1 && 'border-b',
-                  )}
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    <RefreshCw className="size-[18px]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-sm">{sub.name}</p>
-                    <p className="truncate text-muted-foreground text-xs">
-                      {[CYCLE_LABELS[sub.cycle], paymentLabel(sub.status, locale)]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
+                </>
+              }
+            />
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          {/* Spending by category */}
+          <Card className="xl:col-span-7">
+            <CardHeader>
+              <CardTitle className="font-medium text-muted-foreground text-sm">
+                Spending by category
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-5">
+              {data.categorySpend.length === 0 ? (
+                <p className="py-6 text-muted-foreground text-sm">
+                  {data.monthHasData ? 'No spending this month.' : 'No data for this month.'}
+                </p>
+              ) : (
+                <>
+                  <DonutChart
+                    data={data.categorySpend}
+                    centerValue={formatMoney(data.monthSpendTotal, currency)}
+                    centerLabel={monthLabel}
+                    formatValue={(v) => formatMoney(v, currency)}
+                    className="shrink-0"
+                  />
+                  <ul className="flex w-full flex-col gap-2.5">
+                    {data.categorySpend.map((slice) => (
+                      <li key={slice.label} className="flex items-center gap-2 text-sm">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: slice.color }}
+                        />
+                        <span className="flex-1 truncate text-muted-foreground">{slice.label}</span>
+                        <span className="font-medium tabular-nums">
+                          {formatMoney(slice.value, currency)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Income / Spending */}
+          <div className="flex flex-col gap-4 xl:col-span-5">
+            <StatCard
+              label={`Income · ${monthShort}`}
+              value={data.monthHasData ? formatMoney(data.income, currency) : null}
+              delta={
+                data.incomeChangePct !== null
+                  ? `${pct(data.incomeChangePct)} vs last month`
+                  : 'No prior month'
+              }
+              positive={(data.incomeChangePct ?? 0) >= 0}
+            />
+            <StatCard
+              label={`Spending · ${monthShort}`}
+              value={data.monthHasData ? formatMoney(data.spending, currency) : null}
+              delta={
+                data.spendingChangePct !== null
+                  ? `${pct(data.spendingChangePct)} vs last month`
+                  : 'No prior month'
+              }
+              positive={(data.spendingChangePct ?? 0) <= 0}
+            />
+            {data.transfersNet !== 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Net transfers · {monthShort}</p>
+                    <p className="text-muted-foreground text-xs">Not income or spending</p>
                   </div>
                   <p className="font-medium text-sm tabular-nums">
-                    {formatMoney(sub.amount, sub.currency)}
+                    {formatMoney(data.transfersNet, currency)}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* Recent activity: always the latest, not the picked month */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-base">Recent activity</CardTitle>
+          <Link
+            href="/app/transactions"
+            className="text-muted-foreground text-sm hover:text-foreground"
+          >
+            View all
+          </Link>
+        </CardHeader>
+        <CardContent className="flex flex-col">
+          {data.recent.length === 0 ? (
+            <p className="py-6 text-muted-foreground text-sm">No transactions yet.</p>
+          ) : (
+            data.recent.map((txn, i) => (
+              <Link
+                key={txn.id}
+                href={`/app/transactions/${txn.id}`}
+                className={cn(
+                  'flex items-center gap-3 py-3 hover:bg-muted/30',
+                  i !== data.recent.length - 1 && 'border-b',
+                )}
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  {txn.category ? (
+                    <CategoryIcon
+                      name={txn.category.icon}
+                      color={txn.category.color}
+                      className="size-[18px]"
+                    />
+                  ) : (
+                    <ArrowLeftRight className="size-[18px]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-sm">{txn.name}</p>
+                  <p className="truncate text-muted-foreground text-xs">
+                    {txn.accountName}
+                    {txn.category ? ` · ${txn.category.name}` : ''}
                   </p>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                <div className="text-right">
+                  <p
+                    className={cn('font-medium text-sm tabular-nums', amountClassName(txn.amount))}
+                  >
+                    {formatMoney(txn.amount, txn.currency)}
+                  </p>
+                  <p className="text-muted-foreground text-xs">{formatDate(txn.date, locale)}</p>
+                </div>
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function SectionHeading({ id, title, note }: { id: string; title: string; note: string }) {
+  return (
+    <div>
+      <h2 id={id} className="font-semibold text-lg tracking-tight">
+        {title}
+      </h2>
+      <p className="text-muted-foreground text-sm">{note}</p>
     </div>
   )
 }
