@@ -7,6 +7,7 @@ import {
   Building2,
   Landmark,
   LayoutDashboard,
+  PiggyBank,
   RefreshCw,
   Settings,
   Shapes,
@@ -21,7 +22,7 @@ import { usePathname } from 'next/navigation'
 /**
  * Grouped by the question each destination answers, not by how the app is built.
  *
- * Eleven links in one flat column read as a wall: everything has equal weight, so
+ * Twelve links in one flat column read as a wall: everything has equal weight, so
  * nothing is findable except by reading all of it. The groups below give the eye
  * somewhere to stop, and they encode something true. **Money** is what happened
  * and where it sits. **Planning** is what it means and what is next. **Setup** is
@@ -29,7 +30,7 @@ import { usePathname } from 'next/navigation'
  *
  * Headings rather than collapsible submenus, deliberately: at this size every
  * destination stays one click away and none of it hides. Collapsing earns its
- * complexity somewhere north of thirty items, not eleven.
+ * complexity somewhere north of thirty items, not twelve.
  */
 const CATEGORISE_HREF = '/app/categorize'
 
@@ -52,6 +53,7 @@ const GROUPS = [
   {
     label: 'Planning',
     items: [
+      { href: '/app/budget', label: 'Budget', icon: PiggyBank },
       { href: '/app/reports', label: 'Reports', icon: BarChart3 },
       { href: '/app/property', label: 'Property', icon: Building2 },
       { href: '/app/subscriptions', label: 'Subscriptions', icon: RefreshCw },
