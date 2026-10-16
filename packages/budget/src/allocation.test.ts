@@ -4,9 +4,12 @@ import {
   bucketCaps,
   kindShare,
   largestRemainder,
+  maxShare,
   normaliseShares,
-  rebalance,
   removeBucket,
+  setShare,
+  unallocatedAmount,
+  unallocatedShare,
 } from './allocation'
 import type { BucketShare } from './buckets'
 
@@ -37,52 +40,51 @@ describe('largestRemainder', () => {
   })
 })
 
-describe('rebalance', () => {
-  it('sets the dragged bucket and keeps the others in proportion', () => {
-    // Lifestyle and Savings shared 50% as 3:2. At 40% left over they get 24 and 16.
-    expect(rebalance(balanced, 'essentials', 6000)).toEqual([
-      { type: 'essentials', share: 6000 },
-      { type: 'lifestyle', share: 2400 },
-      { type: 'savings', share: 1600 },
+describe('setShare', () => {
+  it('lowers one bucket and frees the difference', () => {
+    expect(setShare(balanced, 'lifestyle', 2000)).toEqual([
+      { type: 'essentials', share: 5000 },
+      { type: 'lifestyle', share: 2000 },
+      { type: 'savings', share: 2000 },
     ])
   })
 
-  it('keeps the total at 100% for awkward splits', () => {
-    const result = rebalance(balanced, 'essentials', 3300)
-    expect(total(result)).toBe(10_000)
-    expect(result.every((s) => s.share % 100 === 0)).toBe(true)
+  it('never hands freed share to another bucket', () => {
+    // Lower Lifestyle, then Essentials: each change stays where it was made.
+    const lowered = setShare(setShare(balanced, 'lifestyle', 2000), 'essentials', 4500)
+    expect(lowered).toEqual([
+      { type: 'essentials', share: 4500 },
+      { type: 'lifestyle', share: 2000 },
+      { type: 'savings', share: 2000 },
+    ])
+    expect(unallocatedShare(lowered)).toBe(1500)
   })
 
-  it('rounds to whole percents and clamps to the whole income', () => {
-    expect(rebalance(balanced, 'savings', 2049).find((s) => s.type === 'savings')?.share).toBe(2000)
-    expect(rebalance(balanced, 'savings', 12_000)).toEqual([
-      { type: 'essentials', share: 0 },
-      { type: 'lifestyle', share: 0 },
-      { type: 'savings', share: 10_000 },
-    ])
+  it('raises a bucket only as far as the unallocated share allows', () => {
+    const freed = setShare(balanced, 'lifestyle', 2000)
+    expect(setShare(freed, 'savings', 9000).find((s) => s.type === 'savings')?.share).toBe(3000)
+    expect(total(setShare(freed, 'savings', 9000))).toBe(10_000)
   })
 
-  it('spreads evenly when the other buckets are all at zero', () => {
-    const shares: BucketShare[] = [
-      { type: 'essentials', share: 10_000 },
-      { type: 'lifestyle', share: 0 },
-      { type: 'savings', share: 0 },
-    ]
-    expect(rebalance(shares, 'essentials', 8000)).toEqual([
-      { type: 'essentials', share: 8000 },
-      { type: 'lifestyle', share: 1000 },
-      { type: 'savings', share: 1000 },
-    ])
+  it('cannot raise anything when the plan is full', () => {
+    expect(setShare(balanced, 'essentials', 6000)).toEqual(balanced)
   })
 
-  it('pins a single bucket at 100%', () => {
-    expect(rebalance([{ type: 'essentials', share: 10_000 }], 'essentials', 4000)).toEqual([
-      { type: 'essentials', share: 10_000 },
-    ])
+  it('rounds to whole percents and stops at zero', () => {
+    expect(setShare(balanced, 'savings', 1549).find((s) => s.type === 'savings')?.share).toBe(1500)
+    expect(setShare(balanced, 'savings', -500).find((s) => s.type === 'savings')?.share).toBe(0)
   })
 
   it('ignores a bucket that is not in the plan', () => {
-    expect(rebalance(balanced, 'debt', 2000)).toEqual(balanced)
+    expect(setShare(balanced, 'debt', 2000)).toEqual(balanced)
+  })
+})
+
+describe('maxShare', () => {
+  it('is the bucket share plus whatever is unallocated', () => {
+    const freed = setShare(balanced, 'lifestyle', 2000)
+    expect(maxShare(freed, 'essentials')).toBe(6000)
+    expect(maxShare(balanced, 'essentials')).toBe(5000)
   })
 })
 
@@ -107,13 +109,13 @@ describe('addBucket', () => {
 })
 
 describe('removeBucket', () => {
-  it('hands the removed share to the rest in proportion', () => {
-    // Essentials and Lifestyle were 5:3. Over 100% that is 62.5 and 37.5, rounded.
+  it('frees the removed share instead of handing it out', () => {
     const result = removeBucket(balanced, 'savings')
     expect(result).toEqual([
-      { type: 'essentials', share: 6300 },
-      { type: 'lifestyle', share: 3700 },
+      { type: 'essentials', share: 5000 },
+      { type: 'lifestyle', share: 3000 },
     ])
+    expect(unallocatedShare(result)).toBe(2000)
   })
 
   it('empties the plan when the last bucket goes', () => {
@@ -126,10 +128,18 @@ describe('normaliseShares', () => {
     expect(normaliseShares(balanced)).toEqual(balanced)
   })
 
-  it('scales a plan that does not add up', () => {
-    const result = normaliseShares([
+  it('leaves a plan under 100% alone', () => {
+    const under: BucketShare[] = [
       { type: 'essentials', share: 2500 },
       { type: 'lifestyle', share: 2500 },
+    ]
+    expect(normaliseShares(under)).toEqual(under)
+  })
+
+  it('scales down a plan over 100%', () => {
+    const result = normaliseShares([
+      { type: 'essentials', share: 9000 },
+      { type: 'lifestyle', share: 9000 },
     ])
     expect(result).toEqual([
       { type: 'essentials', share: 5000 },
@@ -157,6 +167,21 @@ describe('bucketCaps', () => {
 
   it('caps everything at zero with no income', () => {
     expect(bucketCaps(0, balanced).map((b) => b.cap)).toEqual([0, 0, 0])
+  })
+
+  it('leaves the unallocated part out of the caps', () => {
+    const freed = setShare(balanced, 'lifestyle', 2000)
+    expect(bucketCaps(10_000_00, freed).map((b) => b.cap)).toEqual([5_000_00, 2_000_00, 2_000_00])
+    expect(unallocatedAmount(10_000_00, freed)).toBe(1_000_00)
+  })
+
+  it('makes caps and unallocated add up to the income to the cent', () => {
+    const shares: BucketShare[] = [
+      { type: 'essentials', share: 3300 },
+      { type: 'lifestyle', share: 3300 },
+    ]
+    const caps = bucketCaps(1_000_01, shares).reduce((sum, b) => sum + b.cap, 0)
+    expect(caps + unallocatedAmount(1_000_01, shares)).toBe(1_000_01)
   })
 })
 

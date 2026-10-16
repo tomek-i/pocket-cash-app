@@ -8,9 +8,10 @@ import {
 } from './buckets'
 
 /**
- * The dial maths. Every function keeps one invariant: the shares of a plan add
- * up to exactly FULL_SHARE, and the dollar caps add up to exactly the income.
- * Integers throughout, so there is never a stray cent or a 99.99% total.
+ * The dial maths. Every function keeps one invariant: the shares of a plan never
+ * add up to more than FULL_SHARE. Anything under is unallocated, money the plan
+ * has not given a job yet. The dollar caps plus the unallocated amount add up to
+ * exactly the income. Integers throughout, so there is never a stray cent.
  */
 
 /** Shares move in whole percents by default. */
@@ -51,28 +52,36 @@ function spread(shares: readonly BucketShare[], units: number, step: number): Bu
   return shares.map((s, i) => ({ type: s.type, share: (split[i] ?? 0) * step }))
 }
 
+/** The share no bucket holds yet. Never negative. */
+export function unallocatedShare(shares: readonly BucketShare[]): number {
+  return Math.max(0, FULL_SHARE - shares.reduce((sum, s) => sum + s.share, 0))
+}
+
 /**
- * Set one bucket's share and rebalance the others so the total stays whole.
- * The others keep their proportions to each other. The new value is rounded to
- * `step` and clamped to the whole income.
+ * The most a bucket can take: its own share plus whatever is unallocated. A dial
+ * never takes from another bucket.
  */
-export function rebalance(
+export function maxShare(shares: readonly BucketShare[], type: BudgetBucketType): number {
+  const own = shares.find((s) => s.type === type)?.share ?? 0
+  return own + unallocatedShare(shares)
+}
+
+/**
+ * Set one bucket's share and leave every other bucket alone. Lowering a bucket
+ * frees its share as unallocated. Raising it is capped at what is unallocated,
+ * so the total never goes over 100%. The value is rounded to `step`.
+ */
+export function setShare(
   shares: readonly BucketShare[],
   type: BudgetBucketType,
   value: number,
   step: number = SHARE_STEP,
 ): BucketShare[] {
   if (!shares.some((s) => s.type === type)) return [...shares]
-  if (shares.length === 1) return [{ type, share: FULL_SHARE }]
-
-  const totalUnits = FULL_SHARE / step
-  const units = Math.min(totalUnits, Math.max(0, Math.round(value / step)))
-  const others = spread(
-    shares.filter((s) => s.type !== type),
-    totalUnits - units,
-    step,
-  )
-  return sortShares([...others, { type, share: units * step }])
+  const limit = maxShare(shares, type)
+  const rounded = Math.round(value / step) * step
+  const share = Math.min(limit, Math.max(0, rounded))
+  return shares.map((s) => (s.type === type ? { type, share } : s))
 }
 
 /** Add a bucket at 0%. It takes a share once the user drags it up. */
@@ -82,39 +91,47 @@ export function addBucket(shares: readonly BucketShare[], type: BudgetBucketType
   return sortShares([...shares, { type, share: 0 }])
 }
 
-/** Remove a bucket and hand its share to the rest, in proportion. */
+/** Remove a bucket. Its share becomes unallocated rather than going to the rest. */
 export function removeBucket(
   shares: readonly BucketShare[],
   type: BudgetBucketType,
-  step: number = SHARE_STEP,
 ): BucketShare[] {
-  const rest = shares.filter((s) => s.type !== type)
-  if (rest.length === 0) return []
-  return spread(rest, FULL_SHARE / step, step)
+  return shares.filter((s) => s.type !== type)
 }
 
-/** Repair shares that do not add up to the whole (e.g. from a hand-edited backup). */
+/**
+ * Repair shares that add up to more than the whole (e.g. a hand-edited backup)
+ * by scaling them down. A plan under 100% is valid and left alone.
+ */
 export function normaliseShares(
   shares: readonly BucketShare[],
   step: number = SHARE_STEP,
 ): BucketShare[] {
   const sorted = sortShares(shares)
   const total = sorted.reduce((sum, s) => sum + s.share, 0)
-  if (total === FULL_SHARE || sorted.length === 0) return sorted
+  if (total <= FULL_SHARE || sorted.length === 0) return sorted
   return spread(sorted, FULL_SHARE / step, step)
 }
 
-/** Each bucket's dollar cap, in minor units. The caps add up to the income exactly. */
+/**
+ * Each bucket's dollar cap, in minor units. The unallocated share is split out
+ * alongside the buckets, so the caps plus `unallocatedAmount` are the income.
+ */
 export function bucketCaps(
   income: number,
   shares: readonly BucketShare[],
 ): (BucketShare & { cap: number })[] {
-  const caps = largestRemainder(
-    Math.max(0, Math.round(income)),
-    shares.map((s) => s.share),
-  )
-  const anyShare = shares.some((s) => s.share > 0)
-  return shares.map((s, i) => ({ ...s, cap: anyShare ? (caps[i] ?? 0) : 0 }))
+  const amounts = largestRemainder(Math.max(0, Math.round(income)), [
+    ...shares.map((s) => s.share),
+    unallocatedShare(shares),
+  ])
+  return shares.map((s, i) => ({ ...s, cap: amounts[i] ?? 0 }))
+}
+
+/** The part of the income no bucket holds, in minor units. */
+export function unallocatedAmount(income: number, shares: readonly BucketShare[]): number {
+  const caps = bucketCaps(income, shares).reduce((sum, b) => sum + b.cap, 0)
+  return Math.max(0, Math.round(income)) - caps
 }
 
 /** The combined share of every spend, or every save, bucket. */

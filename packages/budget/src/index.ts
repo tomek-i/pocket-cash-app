@@ -3,7 +3,7 @@
  *
  * Pure functions over plain data. No database, no React, no I/O. Money is a
  * signed integer in minor units, like `transactions.amount`. Shares are whole
- * basis points (10000 is the whole income).
+ * basis points (10000 is the whole income) and never add up to more than that.
  */
 
 export {
@@ -11,10 +11,13 @@ export {
   bucketCaps,
   kindShare,
   largestRemainder,
+  maxShare,
   normaliseShares,
-  rebalance,
   removeBucket,
   SHARE_STEP,
+  setShare,
+  unallocatedAmount,
+  unallocatedShare,
 } from './allocation'
 export {
   BUCKET_DEFINITIONS,

@@ -6,7 +6,10 @@ import {
   type BudgetBucketType,
   bucketCaps,
   kindShare,
-  rebalance,
+  maxShare,
+  setShare,
+  unallocatedAmount,
+  unallocatedShare,
 } from '@repo/budget'
 import {
   Badge,
@@ -16,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@repo/ui'
-import { Pencil, Plus, X } from 'lucide-react'
+import { CircleAlert, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { formatMoney } from '@/lib/money'
 import {
@@ -34,8 +37,9 @@ import { CategoryAssignmentDialog } from './category-assignment-dialog'
 const SAVE_DELAY_MS = 400
 
 /**
- * The dials. Dragging one bucket rebalances the others on the spot, and the
- * split is saved once the dials sit still. The parent remounts this with a new
+ * The dials. Each dial moves only its own bucket: lowering one frees its share
+ * as unallocated, and raising one can only take what is unallocated, so the
+ * total never goes over 100%. The split is saved once the dials sit still. The parent remounts this with a new
  * key whenever the saved split changes elsewhere (a preset, an added bucket).
  */
 export function BucketPlanner({
@@ -71,15 +75,18 @@ export function BucketPlanner({
 
   const caps = bucketCaps(totalIncome, shares)
   const byType = new Map(buckets.map((bucket) => [bucket.type, bucket]))
+  const free = unallocatedShare(shares)
+  const freeAmount = unallocatedAmount(totalIncome, shares)
 
   return (
     <div className="grid gap-5">
       <div
         className="flex h-9 overflow-hidden rounded-lg border"
         role="img"
-        aria-label={shares
-          .map((s) => `${byType.get(s.type)?.label} ${formatShare(s.share)}`)
-          .join(', ')}
+        aria-label={[
+          ...shares.map((s) => `${byType.get(s.type)?.label} ${formatShare(s.share)}`),
+          ...(free > 0 ? [`Unallocated ${formatShare(free)}`] : []),
+        ].join(', ')}
       >
         {shares
           .filter((s) => s.share > 0)
@@ -96,7 +103,36 @@ export function BucketPlanner({
                   : null}
             </div>
           ))}
+        {free > 0 ? (
+          <div
+            className="flex min-w-0 items-center justify-center overflow-hidden whitespace-nowrap bg-[repeating-linear-gradient(45deg,var(--muted),var(--muted)_6px,transparent_6px,transparent_12px)] px-1 font-medium text-muted-foreground text-xs transition-[width]"
+            style={{ width: `${free / 100}%` }}
+          >
+            {free >= 1800
+              ? `Unallocated ${formatShare(free)}`
+              : free >= 600
+                ? formatShare(free)
+                : null}
+          </div>
+        ) : null}
       </div>
+
+      {free > 0 ? (
+        <p
+          role="status"
+          className="flex items-start gap-2 rounded-lg border border-chart-3/50 bg-chart-3/10 px-3 py-2 text-sm"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-chart-3" />
+          <span>
+            <span className="font-medium">
+              {formatShare(free)} unallocated ({formatMoney(freeAmount, currency)})
+            </span>{' '}
+            <span className="text-muted-foreground">
+              Raise a bucket to give it a job, or leave it as free money.
+            </span>
+          </span>
+        </p>
+      ) : null}
 
       <ul className="grid list-none gap-5 p-0">
         {caps.map(({ type, share, cap }) => {
@@ -154,11 +190,10 @@ export function BucketPlanner({
                 max={100}
                 step={1}
                 value={share / 100}
-                disabled={shares.length === 1}
                 aria-label={`${bucket.label} share of income`}
-                aria-valuetext={`${formatShare(share)}, ${formatMoney(cap, currency)}`}
+                aria-valuetext={`${formatShare(share)}, ${formatMoney(cap, currency)}, up to ${formatShare(maxShare(shares, type))}`}
                 onChange={(event) =>
-                  setShares((current) => rebalance(current, type, Number(event.target.value) * 100))
+                  setShares((current) => setShare(current, type, Number(event.target.value) * 100))
                 }
                 className="w-full"
                 style={{ accentColor: BUCKET_COLOURS[type] }}
@@ -187,6 +222,12 @@ export function BucketPlanner({
           <span className="font-medium text-foreground">
             {formatShare(kindShare(shares, 'save'))}
           </span>
+          {free > 0 ? (
+            <>
+              {' · '}
+              Unallocated <span className="font-medium text-foreground">{formatShare(free)}</span>
+            </>
+          ) : null}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <CategoryAssignmentDialog

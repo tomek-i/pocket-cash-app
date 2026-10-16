@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { rebalance } from './allocation'
+import { setShare } from './allocation'
 import { FULL_SHARE, isBudgetBucketType } from './buckets'
 import { BUDGET_PRESETS, getPreset, matchPreset, presetShares } from './presets'
 
@@ -39,11 +39,15 @@ describe('matchPreset', () => {
   })
 
   it('turns into custom after any edit', () => {
-    expect(matchPreset(rebalance(shares, 'essentials', 5100))).toBe('custom')
+    expect(matchPreset(setShare(shares, 'essentials', 4900))).toBe('custom')
   })
 
   it('turns into custom when a bucket is added', () => {
     expect(matchPreset([...shares, { type: 'debt', share: 0 }])).toBe('custom')
+  })
+
+  it('treats a plan under 100% as custom', () => {
+    expect(matchPreset(setShare(shares, 'savings', 1000))).toBe('custom')
   })
 
   it('treats an empty plan as custom', () => {

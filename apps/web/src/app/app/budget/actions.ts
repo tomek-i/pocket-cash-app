@@ -245,7 +245,8 @@ export async function saveBudgetShares(input: BucketShare[]): Promise<{ ok: bool
     if (!isBudgetBucketType(type) || shares.some((s) => s.type === type)) return { ok: false }
     shares.push({ type, share })
   }
-  if (shares.reduce((sum, s) => sum + s.share, 0) !== FULL_SHARE) return { ok: false }
+  // Under 100% is fine (the rest is unallocated). Over never is.
+  if (shares.reduce((sum, s) => sum + s.share, 0) > FULL_SHARE) return { ok: false }
 
   const current = await activeShares()
   const sameBuckets =

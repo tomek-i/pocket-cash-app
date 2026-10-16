@@ -120,7 +120,8 @@ export default async function BudgetPage() {
             <CardHeader>
               <CardTitle>Buckets</CardTitle>
               <CardDescription>
-                Drag a dial and the others make room, so the split always adds up to 100%.
+                Each dial moves on its own and the total never goes over 100%. Lowering one frees
+                its share.
               </CardDescription>
             </CardHeader>
             <CardContent>
