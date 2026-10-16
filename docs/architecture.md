@@ -34,6 +34,7 @@ home.
 ├──────────────────────────────────────────────────────────────┤
 │  Domain packages (shared, framework-light)                     │
 │  • @repo/csv         CSV import engine (pure, tested)          │
+│  • @repo/budget      budget planner engine (pure, tested)      │
 │  • @repo/validation  Zod finance schemas                       │
 │  • @repo/ai          opt-in, provider-agnostic AI (BYO key)    │
 │  • @repo/logger      zero-dep isomorphic logger                │
@@ -123,6 +124,17 @@ calculated against, so later rate edits cannot rewrite history.
 
 See [property.md](property.md) for the model and how schedules, effective dates
 and snapshots interact.
+
+### Budget: one live plan
+
+`@repo/budget` holds the bucket types, the presets and the dial maths. Shares are
+whole basis points and never add up to more than 100%. A dial moves only its own
+bucket, so lowering one leaves the difference unallocated rather than handing it
+to another bucket. Caps are split with the largest remainder method, so the caps
+plus the unallocated amount add up to exactly the income. There is one plan and
+no history. Income is entered by hand rather than read from transactions.
+Removing a bucket frees its share and only marks it inactive, so its category
+assignments come back with it.
 
 ---
 

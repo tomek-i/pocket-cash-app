@@ -136,6 +136,35 @@ export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>
 export const updateSubscriptionSchema = createSubscriptionSchema.extend({ id: z.string().uuid() })
 export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>
 
+// ── Budget ───────────────────────────────────────────────────────────────────
+
+export const createBudgetIncomeSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(60),
+  amount: amountMinor.refine((v) => v > 0, 'Enter an amount above zero'),
+})
+export type CreateBudgetIncomeInput = z.infer<typeof createBudgetIncomeSchema>
+
+export const updateBudgetIncomeSchema = createBudgetIncomeSchema.extend({ id: z.string().uuid() })
+export type UpdateBudgetIncomeInput = z.infer<typeof updateBudgetIncomeSchema>
+
+/** A bucket's own name. Empty goes back to the default name. */
+export const renameBudgetBucketSchema = z.object({
+  type: z.string().trim().min(1),
+  label: optionalText(40),
+})
+export type RenameBudgetBucketInput = z.infer<typeof renameBudgetBucketSchema>
+
+/** Dialled shares in basis points. Bucket types are checked by `@repo/budget`. */
+export const budgetSharesSchema = z
+  .array(z.object({ type: z.string(), share: z.number().int().min(0).max(10_000) }))
+  .min(1)
+
+/** A category moved into a bucket, or out of every bucket with null. */
+export const budgetCategoryAssignmentSchema = z.object({
+  categoryId: z.string().uuid(),
+  bucketType: z.string().nullable(),
+})
+
 // ── Workspace settings ─────────────────────────────────────────────────────────
 
 export const updateSettingsSchema = z.object({

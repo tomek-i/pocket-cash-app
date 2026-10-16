@@ -1,6 +1,7 @@
 import { accounts } from './accounts'
 import { banks } from './banks'
 import { branches } from './branches'
+import { budgetBucketCategories, budgetBuckets, budgetIncomes } from './budget'
 import { categories } from './categories'
 import { costCategories, costTypes } from './cost-types'
 import { csvImports } from './csv-imports'
@@ -48,6 +49,7 @@ import { transactions } from './transactions'
 export * from './accounts'
 export * from './banks'
 export * from './branches'
+export * from './budget'
 export * from './categories'
 export * from './cost-types'
 export * from './csv-imports'
@@ -91,6 +93,9 @@ export const schema = {
   propertyRentals,
   propertyScenarios,
   propertyAvailableFunds,
+  budgetIncomes,
+  budgetBuckets,
+  budgetBucketCategories,
   banksRelations,
   branchesRelations,
   accountsRelations,
@@ -158,3 +163,10 @@ export type PropertyScenario = typeof propertyScenarios.$inferSelect
 export type NewPropertyScenario = typeof propertyScenarios.$inferInsert
 export type PropertyAvailableFund = typeof propertyAvailableFunds.$inferSelect
 export type NewPropertyAvailableFund = typeof propertyAvailableFunds.$inferInsert
+
+// Budget planner.
+export type BudgetIncome = typeof budgetIncomes.$inferSelect
+export type NewBudgetIncome = typeof budgetIncomes.$inferInsert
+export type BudgetBucket = typeof budgetBuckets.$inferSelect
+export type NewBudgetBucket = typeof budgetBuckets.$inferInsert
+export type BudgetBucketCategory = typeof budgetBucketCategories.$inferSelect

@@ -35,6 +35,7 @@ packages/
   database          pg-core schema + Drizzle, embedded PGlite (@repo/database)
   csv               pure CSV import engine (@repo/csv)
   property          pure property calculation engine (@repo/property)
+  budget            pure budget planner engine (@repo/budget)
   validation        Zod finance schemas (@repo/validation)
   ai                opt-in, provider-agnostic AI, BYO key (@repo/ai)
   logger            zero-dep isomorphic logger (@repo/logger)
