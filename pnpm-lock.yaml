@@ -69,6 +69,9 @@ importers:
       '@repo/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@repo/budget':
+        specifier: workspace:*
+        version: link:../../packages/budget
       '@repo/csv':
         specifier: workspace:*
         version: link:../../packages/csv
@@ -168,6 +171,15 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/budget:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/csv:
     dependencies:
       papaparse:
@@ -192,6 +204,9 @@ importers:
       '@electric-sql/pglite':
         specifier: ^0.2.17
         version: 0.2.17
+      '@repo/budget':
+        specifier: workspace:*
+        version: link:../budget
       '@repo/property':
         specifier: workspace:*
         version: link:../property

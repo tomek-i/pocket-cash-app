@@ -42,6 +42,7 @@ Thumbs.db
 # Embedded PGlite data dir (offline desktop dev)
 .pglite/
 **/.pglite/
+**/.pglite-snapshots/
 
 # Desktop app icon — generated from apps/web/public/logo.png by
 # apps/desktop/scripts/prepare-icon.mjs at build time (single source of truth).

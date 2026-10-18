@@ -7,6 +7,9 @@ import {
   appSettings,
   banks,
   branches,
+  budgetBucketCategories,
+  budgetBuckets,
+  budgetIncomes,
   categories,
   costCategories,
   costTypes,
@@ -36,14 +39,16 @@ import {
  * Version 2 adds property plans, the property cost settings (jurisdictions, rate
  * schedules, cost categories and types, which the user can edit) and the app
  * settings. A restore only replaces the groups of tables the file contains, so
- * restoring an old version 1 file leaves property data alone.
+ * restoring an old version 1 file leaves property data alone. Version 3 adds the
+ * budget plan. Restoring an older file keeps the plan, but category assignments
+ * go with the categories the finance group replaces.
  */
 
 export const BACKUP_FORMAT = 'pocket-cash-backup'
-export const BACKUP_VERSION = 2
-const READABLE_VERSIONS = [1, 2]
+export const BACKUP_VERSION = 3
+const READABLE_VERSIONS = [1, 2, 3]
 
-type Group = 'finance' | 'propertyConfig' | 'property'
+type Group = 'finance' | 'propertyConfig' | 'property' | 'budget'
 
 /**
  * Every backed-up table, PARENT before CHILD within each group so inserts
@@ -73,10 +78,16 @@ const BACKUP_TABLES: { key: string; table: PgTable; group: Group }[] = [
   { key: 'propertyRentals', table: propertyRentals, group: 'property' },
   { key: 'propertyScenarios', table: propertyScenarios, group: 'property' },
   { key: 'propertyAvailableFunds', table: propertyAvailableFunds, group: 'property' },
+  { key: 'budgetIncomes', table: budgetIncomes, group: 'budget' },
+  { key: 'budgetBuckets', table: budgetBuckets, group: 'budget' },
+  { key: 'budgetBucketCategories', table: budgetBucketCategories, group: 'budget' },
 ]
 
-/** Wiped children-first: property plans before the cost settings they use. */
-const WIPE_ORDER: Group[] = ['property', 'propertyConfig', 'finance']
+/**
+ * Wiped children-first: property plans before the cost settings they use, and
+ * the budget's category links before the categories.
+ */
+const WIPE_ORDER: Group[] = ['budget', 'property', 'propertyConfig', 'finance']
 
 export interface BackupFile {
   format: typeof BACKUP_FORMAT

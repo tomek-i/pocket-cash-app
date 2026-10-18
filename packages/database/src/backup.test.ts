@@ -12,6 +12,10 @@ import {
   accounts,
   appSettings,
   banks,
+  budgetBucketCategories,
+  budgetBuckets,
+  budgetIncomes,
+  categories,
   costTypes,
   properties,
   propertyLoans,
@@ -71,6 +75,12 @@ beforeAll(async () => {
   await db.insert(propertyLoans).values({ propertyId, loanAmount: 520_000_00, annualRate: 0.06 })
   await db.insert(costTypes).values({ name: 'Solar inspection', defaultValue: 250_00 })
 
+  const [rent] = await db.insert(categories).values({ name: 'Rent' }).returning()
+  if (!rent) throw new Error('no category')
+  await db.insert(budgetIncomes).values({ name: 'Salary', amount: 6_500_00 })
+  await db.insert(budgetBuckets).values({ type: 'essentials', shareBps: 10_000, active: true })
+  await db.insert(budgetBucketCategories).values({ categoryId: rent.id, bucketType: 'essentials' })
+
   await db.insert(appSettings).values({
     id: 'app',
     settings: {
@@ -124,6 +134,21 @@ describe('restoreBackup', () => {
     expect(solar?.defaultValue).toBe(250_00)
   }, 60_000)
 
+  it('brings back the budget plan with its category links', async () => {
+    await db.delete(budgetIncomes)
+    await db.delete(budgetBuckets)
+
+    await restoreBackup(db, backup)
+
+    expect(await db.select().from(budgetIncomes)).toEqual([
+      expect.objectContaining({ name: 'Salary', amount: 6_500_00 }),
+    ])
+    expect(await db.select().from(budgetBuckets)).toEqual([
+      expect.objectContaining({ type: 'essentials', shareBps: 10_000, active: true }),
+    ])
+    expect(await db.select().from(budgetBucketCategories)).toHaveLength(1)
+  }, 60_000)
+
   it("keeps this machine's API key", async () => {
     const [row] = await db.select().from(appSettings).where(eq(appSettings.id, 'app'))
     expect(row?.settings.ai?.anthropicApiKey).toBe('sk-secret')
@@ -139,6 +164,7 @@ describe('restoreBackup', () => {
         Object.entries(backup.tables).filter(
           ([key]) =>
             !key.startsWith('property') &&
+            !key.startsWith('budget') &&
             ![
               'properties',
               'jurisdictions',
@@ -152,6 +178,7 @@ describe('restoreBackup', () => {
     await restoreBackup(db, v1)
 
     expect(await db.select().from(properties)).toHaveLength(1)
+    expect(await db.select().from(budgetIncomes)).toHaveLength(1)
     const [row] = await db.select().from(appSettings).where(eq(appSettings.id, 'app'))
     expect(row?.settings.defaultCurrency).toBe('NZD')
   }, 60_000)
