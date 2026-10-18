@@ -6,6 +6,15 @@
 # main.ts (PGLITE_DATA_DIR) and the export/import backup feature in the app.
 appId: app.pocketcash.desktop
 productName: Pocket Cash
+# A per-user one-click NSIS install names its folder after the package `name`,
+# not `productName` (electron-builder only uses productName for per-machine or
+# assisted installs). The workspace package is called `desktop` so pnpm filters
+# stay short, which gave %LOCALAPPDATA%\Programs\desktop. Override the name in the
+# packaged app only. Electron reads `productName` first, so the data dir above
+# does not move. Existing installs keep their old folder: the installer reuses
+# the InstallLocation it saved in the registry.
+extraMetadata:
+  name: pocket-cash-app
 # Where the in-app updater (apps/desktop/src/updater.ts) looks for new releases.
 # electron-builder writes this into resources/app-update.yml, and emits the
 # latest.yml / latest-mac.yml files the updater reads next to the artifacts. The
