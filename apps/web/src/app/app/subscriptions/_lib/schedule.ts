@@ -1,10 +1,16 @@
-import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
+import { BILLING_CYCLE_DAYS, type BillingCycle, type SubscriptionStatus } from '@repo/types'
 
 export const CYCLE_LABELS: Record<BillingCycle, string> = {
   weekly: 'Weekly',
   monthly: 'Monthly',
   quarterly: 'Quarterly',
   yearly: 'Yearly',
+}
+
+export const STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  active: 'Active',
+  paused: 'Paused',
+  cancelled: 'Cancelled',
 }
 
 /** Calendar step of one cycle. Months keep the day of month, weeks count days. */
@@ -105,21 +111,80 @@ export type PaymentStatus =
   /** The last expected charge is missing from the imported transactions. */
   | { kind: 'not-seen'; lastSeen: string | null }
 
+/** The status fields the user sets on a subscription. */
+export interface StatusFields {
+  status: SubscriptionStatus
+  pausedUntil: string | null
+  endDate: string | null
+}
+
+export type Lifecycle =
+  /** Billing. `endsOn` is a cancellation still to come, `resumedOn` a pause that ran out. */
+  | { kind: 'active'; endsOn: string | null; resumedOn: string | null }
+  /** On hold. `until` is null for a pause that lasts until the user resumes it. */
+  | { kind: 'paused'; until: string | null }
+  | { kind: 'cancelled'; endedOn: string | null }
+
 /**
- * Where a subscription stands today. A subscription is only flagged as not seen
- * when it has a matcher and the imported transactions reach past the due date,
- * so a missing import is not mistaken for a missing charge.
+ * Where a subscription stands today, from what the user set. A timed pause ends
+ * on its date by itself, and a cancellation only takes hold on its end date.
+ */
+export function lifecycle(sub: StatusFields, today: string): Lifecycle {
+  if (sub.status === 'paused') {
+    if (sub.pausedUntil && sub.pausedUntil <= today)
+      return { kind: 'active', endsOn: null, resumedOn: sub.pausedUntil }
+    return { kind: 'paused', until: sub.pausedUntil }
+  }
+  if (sub.status === 'cancelled') {
+    if (sub.endDate && sub.endDate > today)
+      return { kind: 'active', endsOn: sub.endDate, resumedOn: null }
+    return { kind: 'cancelled', endedOn: sub.endDate }
+  }
+  return { kind: 'active', endsOn: null, resumedOn: null }
+}
+
+/** Whether a subscription is billing today, so it counts towards costs. */
+export function isBilling(sub: StatusFields, today: string): boolean {
+  return lifecycle(sub, today).kind === 'active'
+}
+
+const ALWAYS_ACTIVE: StatusFields = { status: 'active', pausedUntil: null, endDate: null }
+
+/**
+ * Where a subscription's payments stand today. A subscription is only flagged as
+ * not seen when it has a matcher and the imported transactions reach past the
+ * due date, so a missing import is not mistaken for a missing charge. A paused
+ * one shows the first payment after its pause, and a cancelled one shows none.
  */
 export function paymentStatus(
-  sub: { cycle: BillingCycle; nextPaymentDate: string | null; matcher: string | null },
+  sub: {
+    cycle: BillingCycle
+    nextPaymentDate: string | null
+    matcher: string | null
+  } & Partial<StatusFields>,
   context: { today: string; charges: Charge[]; dataThrough: string | null },
 ): PaymentStatus {
   if (!sub.nextPaymentDate) return { kind: 'unknown' }
+  const state = lifecycle({ ...ALWAYS_ACTIVE, ...sub }, context.today)
+  if (state.kind === 'cancelled') return { kind: 'unknown' }
+  if (state.kind === 'paused') {
+    if (!state.until) return { kind: 'unknown' }
+    return { kind: 'upcoming', date: rollForward(sub.nextPaymentDate, sub.cycle, state.until).next }
+  }
+
   const { next, lastDue } = rollForward(sub.nextPaymentDate, sub.cycle, context.today)
+  if (state.endsOn && next >= state.endsOn) return { kind: 'unknown' }
 
   const matcher = sub.matcher ? normalizeText(sub.matcher) : ''
   const grace = GRACE_DAYS[sub.cycle]
-  if (matcher && lastDue && context.dataThrough && context.dataThrough >= addDays(lastDue, grace)) {
+  // A payment that fell inside a pause was never going to be charged.
+  const expected = lastDue && (!state.resumedOn || lastDue >= state.resumedOn)
+  if (
+    matcher &&
+    expected &&
+    context.dataThrough &&
+    context.dataThrough >= addDays(lastDue, grace)
+  ) {
     let lastSeen: string | null = null
     for (const charge of context.charges) {
       if (!charge.text.includes(matcher)) continue

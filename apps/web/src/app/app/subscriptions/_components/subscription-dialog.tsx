@@ -1,7 +1,7 @@
 'use client'
 
 import type { Category } from '@repo/database'
-import { BILLING_CYCLES } from '@repo/types'
+import { BILLING_CYCLES, SUBSCRIPTION_STATUSES, type SubscriptionStatus } from '@repo/types'
 import {
   Button,
   Dialog,
@@ -18,7 +18,7 @@ import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../banks/_components/form-field'
 import { CategoryIcon } from '../../categories/_components/category-icon'
-import { CYCLE_LABELS } from '../_lib/schedule'
+import { CYCLE_LABELS, STATUS_LABELS, todayIso } from '../_lib/schedule'
 import { createSubscription, type SubscriptionWithCategory, updateSubscription } from '../actions'
 
 export function SubscriptionDialog({
@@ -36,16 +36,27 @@ export function SubscriptionDialog({
   const action = subscription ? updateSubscription : createSubscription
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, null)
   const [open, setOpen] = useState(false)
+  const [status, setStatus] = useState<SubscriptionStatus>(
+    (state?.values?.status as SubscriptionStatus | undefined) ?? subscription?.status ?? 'active',
+  )
 
   useEffect(() => {
     if (state?.ok) setOpen(false)
+    else if (state?.values?.status) setStatus(state.values.status as SubscriptionStatus)
   }, [state])
 
   const amountDefault =
     state?.values?.amount ?? (subscription ? (subscription.amount / 100).toFixed(2) : '')
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // The status may have changed from the card menu since the last open.
+        if (next) setStatus(subscription?.status ?? 'active')
+        setOpen(next)
+      }}
+    >
       <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
@@ -125,6 +136,45 @@ export function SubscriptionDialog({
                 })),
               ]}
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="status">Status</Label>
+              <OptionSelect
+                id="status"
+                name="status"
+                value={status}
+                onValueChange={(next) => setStatus(next as SubscriptionStatus)}
+                options={SUBSCRIPTION_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
+              />
+            </div>
+            {status === 'paused' ? (
+              <div className="grid gap-1.5">
+                <Label htmlFor="pausedUntil">Resumes on</Label>
+                <Input
+                  id="pausedUntil"
+                  type="date"
+                  name="pausedUntil"
+                  defaultValue={state?.values?.pausedUntil ?? subscription?.pausedUntil ?? ''}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Leave empty to keep it paused until you resume it.
+                </p>
+              </div>
+            ) : null}
+            {status === 'cancelled' ? (
+              <div className="grid gap-1.5">
+                <Label htmlFor="endDate">End date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  name="endDate"
+                  defaultValue={state?.values?.endDate ?? subscription?.endDate ?? todayIso()}
+                />
+                <p className="text-muted-foreground text-xs">It keeps counting until this date.</p>
+              </div>
+            ) : null}
           </div>
 
           <Field

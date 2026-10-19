@@ -1,8 +1,14 @@
 import { db, lt, sql, transactions } from '@repo/database'
 import type { BillingCycle } from '@repo/types'
-import { normalizeText, type PaymentStatus, paymentStatus, todayIso } from './schedule'
+import {
+  normalizeText,
+  type PaymentStatus,
+  paymentStatus,
+  type StatusFields,
+  todayIso,
+} from './schedule'
 
-interface Schedule {
+interface Schedule extends StatusFields {
   id: string
   cycle: BillingCycle
   nextPaymentDate: string | null

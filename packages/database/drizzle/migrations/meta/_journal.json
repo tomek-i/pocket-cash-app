@@ -64,6 +64,20 @@
       "when": 1792130885004,
       "tag": "0008_budget_planner",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792376266588,
+      "tag": "0009_subscription_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792376279610,
+      "tag": "0010_drop_subscription_active",
+      "breakpoints": true
     }
   ]
 }

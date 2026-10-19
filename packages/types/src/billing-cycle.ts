@@ -15,3 +15,12 @@ export const BILLING_CYCLE_DAYS: Record<BillingCycle, number> = {
   quarterly: 91,
   yearly: 365,
 }
+
+/**
+ * Where a financial subscription stands. `paused` is a temporary hold, until a
+ * set date or until the user resumes it. `cancelled` has ended for good and is
+ * kept for its history.
+ */
+export const SUBSCRIPTION_STATUSES = ['active', 'paused', 'cancelled'] as const
+
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number]

@@ -17,7 +17,13 @@ import type { BillingCycle } from '@repo/types'
 import { formatMonth } from '@/lib/date-format'
 import { getDateLocale } from '@/lib/date-locale'
 import { getDefaultCurrency } from '../settings/actions'
-import { byPaymentStatus, monthlyCost, type PaymentStatus } from '../subscriptions/_lib/schedule'
+import {
+  byPaymentStatus,
+  isBilling,
+  monthlyCost,
+  type PaymentStatus,
+  todayIso,
+} from '../subscriptions/_lib/schedule'
 import { loadPaymentStatuses } from '../subscriptions/_lib/status'
 import { incomeSum, notTransfer, spendingSum, transferNetSum } from '../transactions/_lib/flows'
 
@@ -270,7 +276,8 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
   }))
 
   // ── Upcoming subscriptions ───────────────────────────────────────────────────
-  const subRows = await db
+  const today = todayIso()
+  const allSubs = await db
     .select({
       id: financialSubscriptions.id,
       name: financialSubscriptions.name,
@@ -279,16 +286,22 @@ export async function getDashboardData(monthKey?: string): Promise<DashboardData
       cycle: financialSubscriptions.cycle,
       nextPaymentDate: financialSubscriptions.nextPaymentDate,
       matcher: financialSubscriptions.matcher,
+      status: financialSubscriptions.status,
+      pausedUntil: financialSubscriptions.pausedUntil,
+      endDate: financialSubscriptions.endDate,
     })
     .from(financialSubscriptions)
-    .where(eq(financialSubscriptions.active, true))
     .orderBy(asc(financialSubscriptions.name))
+  // Paused and ended subscriptions are not upcoming and cost nothing this month.
+  const subRows = allSubs.filter((s) => isBilling(s, today))
   const subStatuses = await loadPaymentStatuses(subRows)
   const upcomingSubs = subRows
-    .map(({ nextPaymentDate: _stored, matcher: _matcher, ...sub }) => ({
-      ...sub,
-      status: subStatuses.get(sub.id) ?? { kind: 'unknown' as const },
-    }))
+    .map(
+      ({ nextPaymentDate: _d, matcher: _m, status: _s, pausedUntil: _p, endDate: _e, ...sub }) => ({
+        ...sub,
+        status: subStatuses.get(sub.id) ?? { kind: 'unknown' as const },
+      }),
+    )
     .sort((a, b) => byPaymentStatus(a.status, b.status))
 
   const subsMonthlyTotal = subRows.reduce((sum, s) => sum + monthlyCost(s.amount, s.cycle), 0)
