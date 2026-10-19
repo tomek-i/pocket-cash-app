@@ -1,10 +1,20 @@
-import { BILLING_CYCLE_DAYS, type BillingCycle, type SubscriptionStatus } from '@repo/types'
+import {
+  BILLING_CYCLE_DAYS,
+  type BillingCycle,
+  type SubscriptionKind,
+  type SubscriptionStatus,
+} from '@repo/types'
 
 export const CYCLE_LABELS: Record<BillingCycle, string> = {
   weekly: 'Weekly',
   monthly: 'Monthly',
   quarterly: 'Quarterly',
   yearly: 'Yearly',
+}
+
+export const KIND_LABELS: Record<SubscriptionKind, string> = {
+  subscription: 'Subscription',
+  bill: 'Bill',
 }
 
 export const STATUS_LABELS: Record<SubscriptionStatus, string> = {

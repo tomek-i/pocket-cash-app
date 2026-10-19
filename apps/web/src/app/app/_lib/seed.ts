@@ -106,6 +106,7 @@ export async function seedDemoData(tx: Tx, now: Date): Promise<number> {
     await tx.insert(financialSubscriptions).values(
       data.subscriptions.map((s) => ({
         name: s.name,
+        kind: s.kind ?? 'subscription',
         amount: s.amount,
         currency: 'USD',
         cycle: s.cycle,

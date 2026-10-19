@@ -56,7 +56,7 @@ const GROUPS = [
       { href: '/app/budget', label: 'Budget', icon: PiggyBank },
       { href: '/app/reports', label: 'Reports', icon: BarChart3 },
       { href: '/app/property', label: 'Property', icon: Building2 },
-      { href: '/app/subscriptions', label: 'Subscriptions', icon: RefreshCw },
+      { href: '/app/subscriptions', label: 'Subscriptions & bills', icon: RefreshCw },
     ],
   },
   {

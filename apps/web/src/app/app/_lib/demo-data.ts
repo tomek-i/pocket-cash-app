@@ -1,4 +1,4 @@
-import type { AccountType, BillingCycle } from '@repo/types'
+import type { AccountType, BillingCycle, SubscriptionKind } from '@repo/types'
 import { DEFAULT_CATEGORIES } from '../categories/default-categories'
 
 /**
@@ -27,6 +27,7 @@ export interface DemoTagDef {
 
 export interface DemoSubscriptionDef {
   name: string
+  kind?: SubscriptionKind // defaults to a subscription
   amount: number // positive minor units
   cycle: BillingCycle
   categoryName: string
@@ -100,6 +101,15 @@ const SUBSCRIPTIONS: DemoSubscriptionDef[] = [
     categoryName: 'Health',
     matcher: 'fitlife',
     nextPaymentInDays: 3,
+  },
+  {
+    name: 'City Utilities',
+    kind: 'bill',
+    amount: 12_050, // $120.50
+    cycle: 'monthly',
+    categoryName: 'Bills & Utilities',
+    matcher: 'city utilities',
+    nextPaymentInDays: 15,
   },
 ]
 

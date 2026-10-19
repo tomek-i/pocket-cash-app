@@ -1,7 +1,13 @@
 'use client'
 
 import type { Category } from '@repo/database'
-import { BILLING_CYCLES, SUBSCRIPTION_STATUSES, type SubscriptionStatus } from '@repo/types'
+import {
+  BILLING_CYCLES,
+  SUBSCRIPTION_KINDS,
+  SUBSCRIPTION_STATUSES,
+  type SubscriptionKind,
+  type SubscriptionStatus,
+} from '@repo/types'
 import {
   Button,
   Dialog,
@@ -18,19 +24,22 @@ import { type ReactElement, useActionState, useEffect, useState } from 'react'
 import type { ActionState } from '@/lib/action-state'
 import { Field } from '../../banks/_components/form-field'
 import { CategoryIcon } from '../../categories/_components/category-icon'
-import { CYCLE_LABELS, STATUS_LABELS, todayIso } from '../_lib/schedule'
+import { CYCLE_LABELS, KIND_LABELS, STATUS_LABELS, todayIso } from '../_lib/schedule'
 import { createSubscription, type SubscriptionWithCategory, updateSubscription } from '../actions'
 
 export function SubscriptionDialog({
   categories,
   subscription,
   defaultCurrency = 'USD',
+  defaultKind = 'subscription',
   trigger,
 }: {
   // Icon and colour included, so the picker looks like the thing it picks.
   categories: Pick<Category, 'id' | 'name' | 'icon' | 'color'>[]
   subscription?: SubscriptionWithCategory
   defaultCurrency?: string
+  /** The type a new one starts as. */
+  defaultKind?: SubscriptionKind
   trigger: ReactElement
 }) {
   const action = subscription ? updateSubscription : createSubscription
@@ -40,9 +49,14 @@ export function SubscriptionDialog({
     (state?.values?.status as SubscriptionStatus | undefined) ?? subscription?.status ?? 'active',
   )
 
+  const [kind, setKind] = useState<SubscriptionKind>(subscription?.kind ?? defaultKind)
+
   useEffect(() => {
     if (state?.ok) setOpen(false)
-    else if (state?.values?.status) setStatus(state.values.status as SubscriptionStatus)
+    else if (state?.values) {
+      if (state.values.status) setStatus(state.values.status as SubscriptionStatus)
+      if (state.values.kind) setKind(state.values.kind as SubscriptionKind)
+    }
   }, [state])
 
   const amountDefault =
@@ -53,29 +67,46 @@ export function SubscriptionDialog({
       open={open}
       onOpenChange={(next) => {
         // The status may have changed from the card menu since the last open.
-        if (next) setStatus(subscription?.status ?? 'active')
+        if (next) {
+          setStatus(subscription?.status ?? 'active')
+          setKind(subscription?.kind ?? defaultKind)
+        }
         setOpen(next)
       }}
     >
       <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{subscription ? 'Edit subscription' : 'Add subscription'}</DialogTitle>
+          <DialogTitle>
+            {subscription ? 'Edit' : 'Add'} {KIND_LABELS[kind].toLowerCase()}
+          </DialogTitle>
         </DialogHeader>
         <form action={formAction} className="grid gap-4">
           {subscription ? <input type="hidden" name="id" value={subscription.id} /> : null}
 
-          <Field
-            label="Name"
-            name="name"
-            defaultValue={state?.values?.name ?? subscription?.name ?? ''}
-            placeholder="Netflix"
-            error={state?.errors?.name}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Name"
+              name="name"
+              defaultValue={state?.values?.name ?? subscription?.name ?? ''}
+              placeholder={kind === 'bill' ? 'Electricity' : 'Netflix'}
+              error={state?.errors?.name}
+            />
+            <div className="grid gap-1.5">
+              <Label htmlFor="kind">Type</Label>
+              <OptionSelect
+                id="kind"
+                name="kind"
+                value={kind}
+                onValueChange={(next) => setKind(next as SubscriptionKind)}
+                options={SUBSCRIPTION_KINDS.map((k) => ({ value: k, label: KIND_LABELS[k] }))}
+              />
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Amount"
+              label={kind === 'bill' ? 'Typical amount' : 'Amount'}
               name="amount"
               defaultValue={amountDefault}
               placeholder="9.99"
