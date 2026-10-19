@@ -14,6 +14,7 @@ import {
 } from '@repo/database'
 import { createLogger } from '@repo/logger'
 import { revalidatePath } from 'next/cache'
+import { applySubscriptionCategories } from '../../../../../subscriptions/_lib/apply-categories'
 import { countTransferSuggestions } from '../../../../../transactions/transfer-actions'
 
 const log = createLogger('csv-import')
@@ -200,6 +201,9 @@ export async function runImport(input: {
     log.error('CSV import failed while inserting transactions', { err: error, batchId: batch.id })
     return { error: 'Import failed while saving transactions. Please try again.' }
   }
+
+  // New charges from a tracked subscription or bill take its category.
+  if (imported > 0) await applySubscriptionCategories()
 
   const result: ImportResult = {
     imported,

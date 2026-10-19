@@ -7,6 +7,7 @@ import { Empty } from '../_components/empty'
 import { ConfirmDeleteDialog } from '../banks/[bankId]/_components/confirm-delete-dialog'
 import { listCategories } from '../categories/actions'
 import { getDefaultCurrency } from '../settings/actions'
+import { ApplyCategoriesButton } from './_components/apply-categories-button'
 import { StatusMenu } from './_components/status-menu'
 import { SubscriptionDialog } from './_components/subscription-dialog'
 import { Suggestions } from './_components/suggestions'
@@ -173,6 +174,12 @@ export default async function SubscriptionsPage() {
       </div>
 
       <Suggestions detections={detections} />
+
+      {subscriptions.some((s) => s.matcher && s.categoryId) ? (
+        <div className="-mb-3 flex justify-end">
+          <ApplyCategoriesButton />
+        </div>
+      ) : null}
 
       {subscriptions.length === 0 ? (
         <Card>
