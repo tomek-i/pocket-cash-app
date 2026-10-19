@@ -1,5 +1,5 @@
 import { Badge, Button, Card, CardContent, cn } from '@repo/ui'
-import { CirclePause, CircleStop, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { CirclePause, CircleStop, Pencil, Plus, RefreshCw, Trash2, Zap } from 'lucide-react'
 import { formatDate } from '@/lib/date-format'
 import { getDateLocale } from '@/lib/date-locale'
 import { formatMoney } from '@/lib/money'
@@ -12,6 +12,7 @@ import { SubscriptionDialog } from './_components/subscription-dialog'
 import { Suggestions } from './_components/suggestions'
 import {
   CYCLE_LABELS,
+  KIND_LABELS,
   type Lifecycle,
   lifecycle,
   monthlyCost,
@@ -26,7 +27,7 @@ import {
   suggestSubscriptions,
 } from './actions'
 
-export const metadata = { title: 'Subscriptions' }
+export const metadata = { title: 'Subscriptions & bills' }
 
 function paymentLabel(status: PaymentStatus | undefined, locale: string): string | null {
   if (status?.kind === 'upcoming') return `next ${formatDate(status.date, locale)}`
@@ -47,7 +48,8 @@ function lifecycleLabel(state: Lifecycle, locale: string): string | null {
   return state.endedOn ? `ended ${formatDate(state.endedOn, locale)}` : 'cancelled'
 }
 
-const STATE_ICONS = { active: RefreshCw, paused: CirclePause, cancelled: CircleStop }
+const STATE_ICONS = { paused: CirclePause, cancelled: CircleStop }
+const KIND_ICONS = { subscription: RefreshCw, bill: Zap }
 
 export default async function SubscriptionsPage() {
   const [subscriptions, categories, detections, defaultCurrency] = await Promise.all([
@@ -62,25 +64,26 @@ export default async function SubscriptionsPage() {
 
   const rows = subscriptions.map((sub) => ({ sub, state: lifecycle(sub, today) }))
   const groups = {
-    active: rows.filter((r) => r.state.kind === 'active'),
+    subscriptions: rows.filter((r) => r.state.kind === 'active' && r.sub.kind === 'subscription'),
+    bills: rows.filter((r) => r.state.kind === 'active' && r.sub.kind === 'bill'),
     paused: rows.filter((r) => r.state.kind === 'paused'),
     cancelled: rows.filter((r) => r.state.kind === 'cancelled'),
   }
-  const monthlyTotal = groups.active.reduce(
-    (sum, { sub }) => sum + monthlyCost(sub.amount, sub.cycle),
-    0,
-  )
+  const monthlyTotal = (list: typeof rows) =>
+    list.reduce((sum, { sub }) => sum + monthlyCost(sub.amount, sub.cycle), 0)
 
   function renderCard({ sub, state }: { sub: SubscriptionWithCategory; state: Lifecycle }) {
     const status = statuses.get(sub.id)
+    const muted = state.kind !== 'active'
     const details = [
+      // Paused and cancelled groups mix both types.
+      muted ? KIND_LABELS[sub.kind] : null,
       CYCLE_LABELS[sub.cycle],
       lifecycleLabel(state, locale),
       paymentLabel(status, locale),
       sub.category?.name,
     ].filter(Boolean)
-    const Icon = STATE_ICONS[state.kind]
-    const muted = state.kind !== 'active'
+    const Icon = state.kind === 'active' ? KIND_ICONS[sub.kind] : STATE_ICONS[state.kind]
     return (
       <Card key={sub.id}>
         <CardContent className="flex items-center justify-between gap-3 p-4">
@@ -139,19 +142,34 @@ export default async function SubscriptionsPage() {
     <div className="flex flex-col gap-6 px-5 py-5 lg:px-8 lg:py-7">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-semibold text-2xl tracking-tight">Subscriptions</h1>
-          <p className="text-muted-foreground text-sm">Recurring bills like Netflix or Spotify.</p>
+          <h1 className="font-semibold text-2xl tracking-tight">Subscriptions & bills</h1>
+          <p className="text-muted-foreground text-sm">
+            Recurring payments, from Netflix to the power bill.
+          </p>
         </div>
-        <SubscriptionDialog
-          categories={categories}
-          defaultCurrency={defaultCurrency}
-          trigger={
-            <Button className="gap-2">
-              <Plus className="size-4" />
-              Add subscription
-            </Button>
-          }
-        />
+        <div className="flex flex-wrap gap-2">
+          <SubscriptionDialog
+            categories={categories}
+            defaultCurrency={defaultCurrency}
+            defaultKind="bill"
+            trigger={
+              <Button variant="outline" className="gap-2">
+                <Plus className="size-4" />
+                Add bill
+              </Button>
+            }
+          />
+          <SubscriptionDialog
+            categories={categories}
+            defaultCurrency={defaultCurrency}
+            trigger={
+              <Button className="gap-2">
+                <Plus className="size-4" />
+                Add subscription
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       <Suggestions detections={detections} />
@@ -161,8 +179,8 @@ export default async function SubscriptionsPage() {
           <Empty
             className="p-12"
             icon={RefreshCw}
-            title="No subscriptions yet"
-            description="Add one manually, or track a detected subscription above."
+            title="No subscriptions or bills yet"
+            description="Add one manually, or track a detected charge above."
             action={
               <SubscriptionDialog
                 categories={categories}
@@ -179,28 +197,43 @@ export default async function SubscriptionsPage() {
         </Card>
       ) : (
         <>
-          <section className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-semibold text-lg">Tracked</h2>
-              <p className="text-muted-foreground text-sm">
-                <span className="font-medium text-foreground tabular-nums">
-                  {formatMoney(monthlyTotal, defaultCurrency)}
-                </span>{' '}
-                a month
-              </p>
-            </div>
-            {groups.active.length > 0 ? (
-              <div className="grid gap-2">{groups.active.map(renderCard)}</div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Nothing is billing right now.</p>
-            )}
-          </section>
+          {[
+            {
+              title: 'Subscriptions',
+              list: groups.subscriptions,
+              empty: 'No subscriptions are billing right now.',
+            },
+            {
+              title: 'Bills',
+              list: groups.bills,
+              empty: 'No bills yet. Add power, water or insurance to see them here.',
+            },
+          ].map(({ title, list, empty }) => (
+            <section key={title} className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-semibold text-lg">{title}</h2>
+                {list.length > 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    <span className="font-medium text-foreground tabular-nums">
+                      {formatMoney(monthlyTotal(list), defaultCurrency)}
+                    </span>{' '}
+                    a month
+                  </p>
+                ) : null}
+              </div>
+              {list.length > 0 ? (
+                <div className="grid gap-2">{list.map(renderCard)}</div>
+              ) : (
+                <p className="text-muted-foreground text-sm">{empty}</p>
+              )}
+            </section>
+          ))}
 
           {groups.paused.length > 0 ? (
             <section className="flex flex-col gap-3">
               <div>
                 <h2 className="font-semibold text-lg">Paused</h2>
-                <p className="text-muted-foreground text-sm">Not counted in the monthly total.</p>
+                <p className="text-muted-foreground text-sm">Not counted in the monthly totals.</p>
               </div>
               <div className="grid gap-2">{groups.paused.map(renderCard)}</div>
             </section>

@@ -48,6 +48,7 @@ async function categoryExists(categoryId: string): Promise<boolean> {
 function readForm(formData: FormData) {
   return {
     name: String(formData.get('name') ?? ''),
+    kind: String(formData.get('kind') ?? 'subscription'),
     amount: String(formData.get('amount') ?? ''),
     currency: String(formData.get('currency') ?? ''),
     cycle: String(formData.get('cycle') ?? 'monthly'),
@@ -84,6 +85,7 @@ export async function createSubscription(
 
   await db.insert(financialSubscriptions).values({
     name: parsed.data.name,
+    kind: parsed.data.kind,
     amount: parsed.data.amount,
     currency: parsed.data.currency,
     cycle: parsed.data.cycle,
@@ -115,6 +117,7 @@ export async function updateSubscription(
     .update(financialSubscriptions)
     .set({
       name: parsed.data.name,
+      kind: parsed.data.kind,
       amount: parsed.data.amount,
       currency: parsed.data.currency,
       cycle: parsed.data.cycle,

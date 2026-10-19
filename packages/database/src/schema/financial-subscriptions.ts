@@ -1,12 +1,15 @@
 import { bigint, date, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { categories } from './categories'
-import { billingCycleEnum, subscriptionStatusEnum } from './enums'
+import { billingCycleEnum, subscriptionKindEnum, subscriptionStatusEnum } from './enums'
 
 /**
- * A recurring bill the user pays — Netflix, Spotify, rent. Either entered
- * manually or applied from an auto-detected suggestion. `matcher` is a lowercase
- * substring of the transaction description used to recognise the charge in
- * imported transactions.
+ * A recurring payment: a subscription (Netflix, Spotify) or a bill (power,
+ * insurance), told apart by `kind`. Either entered manually or applied from an
+ * auto-detected suggestion. `matcher` is a lowercase substring of the
+ * transaction description used to recognise the charge in imported transactions.
+ *
+ * `categoryId` is what the payment is for (Entertainment, Utilities), not that it
+ * recurs: `kind` already says that.
  *
  * `status` is what the user set. A paused subscription with a `pausedUntil` date
  * counts as active again from that date, and a cancelled one with an `endDate`
@@ -16,6 +19,7 @@ import { billingCycleEnum, subscriptionStatusEnum } from './enums'
 export const financialSubscriptions = pgTable('financial_subscriptions', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  kind: subscriptionKindEnum('kind').notNull().default('subscription'),
   amount: bigint('amount', { mode: 'number' }).notNull(), // cost in minor units (positive)
   currency: text('currency').notNull().default('USD'),
   cycle: billingCycleEnum('cycle').notNull().default('monthly'),
