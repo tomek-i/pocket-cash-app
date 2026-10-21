@@ -14,11 +14,16 @@ import {
   transactions,
 } from '@repo/database'
 import { BILLING_CYCLE_DAYS, type BillingCycle } from '@repo/types'
-import { createSubscriptionSchema, updateSubscriptionSchema } from '@repo/validation'
+import {
+  type CreateSubscriptionInput,
+  createSubscriptionSchema,
+  setSubscriptionStatusSchema,
+  updateSubscriptionSchema,
+} from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
 import { type HiddenDetections, isAlreadyTracked } from './_lib/detection'
-import { addDays, normalizeText } from './_lib/schedule'
+import { addDays, normalizeText, rollForward, todayIso } from './_lib/schedule'
 
 export type SubscriptionWithCategory = FinancialSubscription & {
   category: Pick<Category, 'id' | 'name' | 'color'> | null
@@ -49,6 +54,18 @@ function readForm(formData: FormData) {
     nextPaymentDate: String(formData.get('nextPaymentDate') ?? ''),
     categoryId: String(formData.get('categoryId') ?? ''),
     notes: String(formData.get('notes') ?? ''),
+    status: String(formData.get('status') ?? 'active'),
+    pausedUntil: String(formData.get('pausedUntil') ?? ''),
+    endDate: String(formData.get('endDate') ?? ''),
+  }
+}
+
+/** Keep only the date that goes with the status. A cancellation with no date ends today. */
+function statusColumns(input: Pick<CreateSubscriptionInput, 'status' | 'pausedUntil' | 'endDate'>) {
+  return {
+    status: input.status,
+    pausedUntil: input.status === 'paused' ? (input.pausedUntil ?? null) : null,
+    endDate: input.status === 'cancelled' ? (input.endDate ?? todayIso()) : null,
   }
 }
 
@@ -74,6 +91,7 @@ export async function createSubscription(
     categoryId: parsed.data.categoryId ?? null,
     matcher: parsed.data.matcher ?? null,
     notes: parsed.data.notes ?? null,
+    ...statusColumns(parsed.data),
   })
   revalidatePath('/app/subscriptions')
   return { ok: true }
@@ -103,10 +121,50 @@ export async function updateSubscription(
       nextPaymentDate: parsed.data.nextPaymentDate ?? null,
       categoryId: parsed.data.categoryId ?? null,
       notes: parsed.data.notes ?? null,
+      ...statusColumns(parsed.data),
       updatedAt: new Date(),
     })
     .where(eq(financialSubscriptions.id, parsed.data.id))
   revalidatePath('/app/subscriptions')
+  return { ok: true }
+}
+
+/**
+ * Pause until resumed, cancel as of today, or resume. Resuming moves the next
+ * payment date past today, so the payments skipped while it was paused or
+ * cancelled are not flagged as missing.
+ */
+export async function setSubscriptionStatus(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = setSubscriptionStatusSchema.safeParse({
+    id: formData.get('id'),
+    status: formData.get('status'),
+  })
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors }
+  const { id, status } = parsed.data
+
+  const sub = await db.query.financialSubscriptions.findFirst({
+    where: eq(financialSubscriptions.id, id),
+    columns: { cycle: true, nextPaymentDate: true },
+  })
+  if (!sub) return { errors: { id: ['Unknown subscription'] } }
+
+  const nextPaymentDate =
+    status === 'active' && sub.nextPaymentDate
+      ? rollForward(sub.nextPaymentDate, sub.cycle, todayIso()).next
+      : sub.nextPaymentDate
+  await db
+    .update(financialSubscriptions)
+    .set({
+      ...statusColumns({ status, pausedUntil: undefined, endDate: undefined }),
+      nextPaymentDate,
+      updatedAt: new Date(),
+    })
+    .where(eq(financialSubscriptions.id, id))
+  revalidatePath('/app/subscriptions')
+  revalidatePath('/app')
   return { ok: true }
 }
 

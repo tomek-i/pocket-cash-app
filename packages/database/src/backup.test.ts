@@ -3,7 +3,7 @@
  * a real (in-memory) database with the real migrations.
  */
 
-import { eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { type BackupFile, buildBackup, parseBackup, restoreBackup } from './backup'
 import type { Database } from './client'
@@ -17,6 +17,7 @@ import {
   budgetIncomes,
   categories,
   costTypes,
+  financialSubscriptions,
   properties,
   propertyLoans,
   transactions,
@@ -181,6 +182,35 @@ describe('restoreBackup', () => {
     expect(await db.select().from(budgetIncomes)).toHaveLength(1)
     const [row] = await db.select().from(appSettings).where(eq(appSettings.id, 'app'))
     expect(row?.settings.defaultCurrency).toBe('NZD')
+  }, 60_000)
+
+  it('turns the old subscription active flag into a status', async () => {
+    const sub = (name: string, active: boolean) => ({
+      id: crypto.randomUUID(),
+      name,
+      amount: 999,
+      currency: 'AUD',
+      cycle: 'monthly',
+      active,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-03-15T09:30:00.000Z',
+    })
+    await restoreBackup(db, {
+      ...backup,
+      tables: {
+        ...backup.tables,
+        financialSubscriptions: [sub('Netflix', true), sub('Gym', false)],
+      },
+    })
+
+    const rows = await db
+      .select()
+      .from(financialSubscriptions)
+      .orderBy(asc(financialSubscriptions.name))
+    expect(rows.map((r) => [r.name, r.status, r.endDate])).toEqual([
+      ['Gym', 'cancelled', '2026-03-15'],
+      ['Netflix', 'active', null],
+    ])
   }, 60_000)
 })
 

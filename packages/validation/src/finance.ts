@@ -1,4 +1,4 @@
-import { ACCOUNT_TYPES, BILLING_CYCLES } from '@repo/types'
+import { ACCOUNT_TYPES, BILLING_CYCLES, SUBSCRIPTION_STATUSES } from '@repo/types'
 import { z } from 'zod'
 
 /** Optional free-text field: empty string → undefined (stored as null). */
@@ -130,11 +130,23 @@ export const createSubscriptionSchema = z.object({
   categoryId: optionalUuid,
   matcher: optionalText(120),
   notes: optionalText(500),
+  status: z.enum(SUBSCRIPTION_STATUSES).default('active'),
+  /** Read only while paused. Empty means paused until resumed. */
+  pausedUntil: optionalIsoDate,
+  /** Read only while cancelled. Empty means it ends today. */
+  endDate: optionalIsoDate,
 })
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>
 
 export const updateSubscriptionSchema = createSubscriptionSchema.extend({ id: z.string().uuid() })
 export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>
+
+/** A quick status change from the subscription card. */
+export const setSubscriptionStatusSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(SUBSCRIPTION_STATUSES),
+})
+export type SetSubscriptionStatusInput = z.infer<typeof setSubscriptionStatusSchema>
 
 // ── Budget ───────────────────────────────────────────────────────────────────
 

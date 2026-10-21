@@ -187,6 +187,14 @@ export async function restoreBackup(db: Database, backup: BackupFile): Promise<n
           if (out[name] != null && col.dataType === 'date')
             out[name] = new Date(out[name] as string)
         }
+        // Files from before subscription statuses carry an `active` flag instead.
+        if (key === 'financialSubscriptions' && 'active' in out) {
+          if (out.status == null && out.active === false) {
+            out.status = 'cancelled'
+            out.endDate ??= String(row.updatedAt ?? '').slice(0, 10) || null
+          }
+          delete out.active
+        }
         if (key === 'transactions' && typeof out.transferPairId === 'string') {
           transferPairs.push({ id: String(out.id), pairId: out.transferPairId })
           out.transferPairId = null

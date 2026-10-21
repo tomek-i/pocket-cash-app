@@ -1,0 +1,1 @@
+ALTER TABLE "financial_subscriptions" DROP COLUMN "active";
