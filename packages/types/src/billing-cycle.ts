@@ -24,3 +24,12 @@ export const BILLING_CYCLE_DAYS: Record<BillingCycle, number> = {
 export const SUBSCRIPTION_STATUSES = ['active', 'paused', 'cancelled'] as const
 
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number]
+
+/**
+ * What a recurring payment is. A subscription is a lifestyle choice (Netflix, a
+ * gym). A bill is an essential (power, water, insurance) and often varies in
+ * amount from one charge to the next.
+ */
+export const SUBSCRIPTION_KINDS = ['subscription', 'bill'] as const
+
+export type SubscriptionKind = (typeof SUBSCRIPTION_KINDS)[number]

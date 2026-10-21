@@ -1,0 +1,2 @@
+CREATE TYPE "public"."subscription_kind" AS ENUM('subscription', 'bill');--> statement-breakpoint
+ALTER TABLE "financial_subscriptions" ADD COLUMN "kind" "subscription_kind" DEFAULT 'subscription' NOT NULL;

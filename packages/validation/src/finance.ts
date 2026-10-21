@@ -1,4 +1,9 @@
-import { ACCOUNT_TYPES, BILLING_CYCLES, SUBSCRIPTION_STATUSES } from '@repo/types'
+import {
+  ACCOUNT_TYPES,
+  BILLING_CYCLES,
+  SUBSCRIPTION_KINDS,
+  SUBSCRIPTION_STATUSES,
+} from '@repo/types'
 import { z } from 'zod'
 
 /** Optional free-text field: empty string → undefined (stored as null). */
@@ -123,6 +128,7 @@ export type UpdateTagInput = z.infer<typeof updateTagSchema>
 
 export const createSubscriptionSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(80),
+  kind: z.enum(SUBSCRIPTION_KINDS).default('subscription'),
   amount: amountMinor,
   currency: z.string().trim().length(3, 'Use a 3-letter currency code').toUpperCase(),
   cycle: z.enum(BILLING_CYCLES),

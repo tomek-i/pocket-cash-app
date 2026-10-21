@@ -22,6 +22,7 @@ import {
 } from '@repo/validation'
 import { revalidatePath } from 'next/cache'
 import type { ActionState } from '@/lib/action-state'
+import { applySubscriptionCategories } from './_lib/apply-categories'
 import { type HiddenDetections, isAlreadyTracked } from './_lib/detection'
 import { addDays, normalizeText, rollForward, todayIso } from './_lib/schedule'
 
@@ -48,11 +49,13 @@ async function categoryExists(categoryId: string): Promise<boolean> {
 function readForm(formData: FormData) {
   return {
     name: String(formData.get('name') ?? ''),
+    kind: String(formData.get('kind') ?? 'subscription'),
     amount: String(formData.get('amount') ?? ''),
     currency: String(formData.get('currency') ?? ''),
     cycle: String(formData.get('cycle') ?? 'monthly'),
     nextPaymentDate: String(formData.get('nextPaymentDate') ?? ''),
     categoryId: String(formData.get('categoryId') ?? ''),
+    matcher: String(formData.get('matcher') ?? ''),
     notes: String(formData.get('notes') ?? ''),
     status: String(formData.get('status') ?? 'active'),
     pausedUntil: String(formData.get('pausedUntil') ?? ''),
@@ -84,16 +87,17 @@ export async function createSubscription(
 
   await db.insert(financialSubscriptions).values({
     name: parsed.data.name,
+    kind: parsed.data.kind,
     amount: parsed.data.amount,
     currency: parsed.data.currency,
     cycle: parsed.data.cycle,
     nextPaymentDate: parsed.data.nextPaymentDate ?? null,
     categoryId: parsed.data.categoryId ?? null,
-    matcher: parsed.data.matcher ?? null,
+    matcher: parsed.data.matcher?.toLowerCase() ?? null,
     notes: parsed.data.notes ?? null,
     ...statusColumns(parsed.data),
   })
-  revalidatePath('/app/subscriptions')
+  await syncCategories()
   return { ok: true }
 }
 
@@ -111,22 +115,48 @@ export async function updateSubscription(
   if (parsed.data.categoryId && !(await categoryExists(parsed.data.categoryId)))
     return { errors: { categoryId: ['Unknown category'] }, values }
 
+  const before = await db.query.financialSubscriptions.findFirst({
+    where: eq(financialSubscriptions.id, parsed.data.id),
+    columns: { categoryId: true },
+  })
   await db
     .update(financialSubscriptions)
     .set({
       name: parsed.data.name,
+      kind: parsed.data.kind,
       amount: parsed.data.amount,
       currency: parsed.data.currency,
       cycle: parsed.data.cycle,
       nextPaymentDate: parsed.data.nextPaymentDate ?? null,
       categoryId: parsed.data.categoryId ?? null,
+      matcher: parsed.data.matcher?.toLowerCase() ?? null,
       notes: parsed.data.notes ?? null,
       ...statusColumns(parsed.data),
       updatedAt: new Date(),
     })
     .where(eq(financialSubscriptions.id, parsed.data.id))
-  revalidatePath('/app/subscriptions')
+  // Charges still in the old category follow the subscription to the new one.
+  await syncCategories({ id: parsed.data.id, fromCategoryId: before?.categoryId ?? null })
   return { ok: true }
+}
+
+/** Bring every matched charge in line with its subscription's category. */
+export async function applyCategoriesNow(): Promise<{ changed: number }> {
+  const changed = await applySubscriptionCategories()
+  revalidatePath('/app/subscriptions')
+  revalidatePath('/app/transactions')
+  revalidatePath('/app')
+  return { changed }
+}
+
+/** Matched charges take their subscription's category. Also refreshes the pages. */
+async function syncCategories(moved?: { id: string; fromCategoryId: string | null }) {
+  const changed = await applySubscriptionCategories(moved)
+  revalidatePath('/app/subscriptions')
+  if (changed > 0) {
+    revalidatePath('/app/transactions')
+    revalidatePath('/app')
+  }
 }
 
 /**
