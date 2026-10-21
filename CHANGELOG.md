@@ -9,6 +9,14 @@ New entries below are generated automatically by
 [Conventional Commit](https://www.conventionalcommits.org/) messages when a release
 is cut — see [docs/releasing.md](./docs/releasing.md).
 
+## [0.10.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.9.0...v0.10.0) (2026-10-21)
+
+
+### Features
+
+* **subscriptions:** pause, cancel and resume subscriptions ([#153](https://github.com/tomek-i/pocket-cash-app/issues/153)) ([ed86c2d](https://github.com/tomek-i/pocket-cash-app/commit/ed86c2d1bff685beb7056840a6969e5eebda62e9)), closes [#45](https://github.com/tomek-i/pocket-cash-app/issues/45)
+* **subscriptions:** track bills next to subscriptions ([#154](https://github.com/tomek-i/pocket-cash-app/issues/154)) ([b3edcac](https://github.com/tomek-i/pocket-cash-app/commit/b3edcac0f98f514d7e84c6c26867228b95b2182d))
+
 ## [0.9.0](https://github.com/tomek-i/pocket-cash-app/compare/v0.8.0...v0.9.0) (2026-10-18)
 
 
