@@ -169,6 +169,19 @@ export function SubscriptionDialog({
             />
           </div>
 
+          <div className="grid gap-1.5">
+            <Field
+              label="Matches transactions containing"
+              name="matcher"
+              defaultValue={state?.values?.matcher ?? subscription?.matcher ?? ''}
+              placeholder={kind === 'bill' ? 'city utilities' : 'netflix'}
+              error={state?.errors?.matcher}
+            />
+            <p className="text-muted-foreground text-xs">
+              Matched transactions take this category, unless you gave one a different category.
+            </p>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="status">Status</Label>
