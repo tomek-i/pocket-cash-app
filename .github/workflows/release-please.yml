@@ -62,6 +62,9 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # PRs opened with GITHUB_TOKEN don't trigger the required CI, so use a
+          # personal token. Falls back to github.token if the secret is missing.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
   build-desktop:
     name: Build ${{ matrix.label }}
