@@ -54,3 +54,9 @@ apps/desktop/build/icon.png
 
 # Impeccable design-skill working files
 .impeccable/
+
+# software factory runtime state
+.factory/runs/
+.factory/factory.db*
+.worktrees/
+.factory/drafts/
